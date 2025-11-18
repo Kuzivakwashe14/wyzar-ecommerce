@@ -17,13 +17,28 @@ const UserSchema = new Schema({
     required: [true, 'Password is required'],
     minlength: [6, 'Password must be at least 6 characters long']
   },
+  phone: {
+    type: String,
+    required: [true, 'Phone number is required'],
+    unique: true,
+    trim: true,
+    match: [/^(\+263|0)[0-9]{9}$/, 'Please provide a valid Zimbabwean phone number']
+  },
+  isPhoneVerified: {
+    type: Boolean,
+    default: false
+  },
+  isEmailVerified: {
+    type: Boolean,
+    default: false
+  },
   
   // --- ADD THESE NEW FIELDS ---
   isSeller: {
     type: Boolean,
     default: false
   },
-  isVerified: { // For admin to approve later
+  isVerified: { // For admin to approve seller accounts
     type: Boolean,
     default: false
   },

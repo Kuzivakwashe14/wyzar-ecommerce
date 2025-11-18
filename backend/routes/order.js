@@ -10,6 +10,13 @@ const Order = require('../models/Order');
 const Product = require('../models/Product');
 const User = require('../models/User');
 
+// Import notification service
+const {
+  sendOrderConfirmation,
+  sendOrderStatusUpdate,
+  notifySellerOfOrder,
+} = require('../services/notificationService');
+
 // --- 1. Initialize Paynow ---
 // Make sure these are in your .env file
 const paynow = new Paynow(
@@ -76,6 +83,38 @@ router.post('/create', auth, async (req, res) => {
 
     // 5. Save the pending order
     const savedOrder = await newOrder.save();
+    
+    // 6. Send order confirmation notifications (Email + SMS) - Don't block the response
+    sendOrderConfirmation(savedOrder, user).catch(err => {
+      console.error('Error sending order confirmation:', err);
+    });
+
+    // 7. Notify sellers of new orders - Group items by seller
+    const sellerOrders = {};
+    for (const item of orderItems) {
+      const product = await Product.findById(item.product).populate('seller');
+      if (product && product.seller) {
+        if (!sellerOrders[product.seller._id]) {
+          sellerOrders[product.seller._id] = {
+            seller: product.seller,
+            items: []
+          };
+        }
+        sellerOrders[product.seller._id].items.push(item);
+      }
+    }
+
+    // Send notification to each seller
+    for (const sellerId in sellerOrders) {
+      const { seller, items } = sellerOrders[sellerId];
+      const sellerOrderDetails = {
+        ...savedOrder.toObject(),
+        orderItems: items
+      };
+      notifySellerOfOrder(seller, sellerOrderDetails).catch(err => {
+        console.error(`Error notifying seller ${sellerId}:`, err);
+      });
+    }
     
     // --- B. Create Paynow Payment ---
 
@@ -159,6 +198,14 @@ router.post('/paynow/callback', async (req, res) => {
       await order.save();
       console.log(`Order ${order._id} marked as Paid.`);
       
+      // Send payment confirmation notification
+      const user = await User.findById(order.user);
+      if (user) {
+        sendOrderStatusUpdate(order, user, 'Paid').catch(err => {
+          console.error('Error sending payment confirmation:', err);
+        });
+      }
+      
     } else {
       console.log(`Order ${order._id} status: ${statusUpdate.status}`);
       // Handle 'Cancelled' or 'Failed' statuses
@@ -214,6 +261,150 @@ router.get('/:id', auth, async (req, res) => {
       return res.status(404).json({ msg: 'Order not found' });
     }
     res.status(500).send('Server Error');
+  }
+});
+
+// --- 6. Update Order Status (For Sellers) ---
+// @route   PUT /api/orders/:id/status
+// @desc    Update order status (Shipped, Delivered, etc.)
+// @access  Private (Seller only)
+router.put('/:id/status', auth, async (req, res) => {
+  try {
+    const { status, trackingNumber } = req.body;
+
+    // Validate status
+    const validStatuses = ['Pending', 'Paid', 'Shipped', 'Delivered', 'Cancelled'];
+    if (!validStatuses.includes(status)) {
+      return res.status(400).json({ 
+        success: false,
+        msg: 'Invalid status. Must be: Pending, Paid, Shipped, Delivered, or Cancelled' 
+      });
+    }
+
+    // Find the order
+    const order = await Order.findById(req.params.id).populate('user');
+    if (!order) {
+      return res.status(404).json({ 
+        success: false,
+        msg: 'Order not found' 
+      });
+    }
+
+    // Check if user is seller of at least one product in the order
+    const user = await User.findById(req.user.id);
+    if (!user.isSeller) {
+      return res.status(403).json({ 
+        success: false,
+        msg: 'Only sellers can update order status' 
+      });
+    }
+
+    // Verify seller owns at least one product in this order
+    const sellerProducts = await Product.find({ 
+      seller: req.user.id,
+      _id: { $in: order.orderItems.map(item => item.product) }
+    });
+
+    if (sellerProducts.length === 0) {
+      return res.status(403).json({ 
+        success: false,
+        msg: 'You can only update orders containing your products' 
+      });
+    }
+
+    // Update order status
+    const oldStatus = order.status;
+    order.status = status;
+
+    // Add tracking number if provided
+    if (trackingNumber) {
+      order.trackingNumber = trackingNumber;
+    }
+
+    // Set timestamps based on status
+    if (status === 'Shipped' && !order.shippedAt) {
+      order.shippedAt = new Date();
+    }
+    if (status === 'Delivered' && !order.deliveredAt) {
+      order.deliveredAt = new Date();
+    }
+
+    await order.save();
+
+    // Send status update notification to buyer
+    sendOrderStatusUpdate(order, order.user, status).catch(err => {
+      console.error('Error sending status update notification:', err);
+    });
+
+    res.json({
+      success: true,
+      msg: `Order status updated from ${oldStatus} to ${status}`,
+      order: {
+        id: order._id,
+        status: order.status,
+        trackingNumber: order.trackingNumber,
+        shippedAt: order.shippedAt,
+        deliveredAt: order.deliveredAt
+      }
+    });
+
+  } catch (err) {
+    console.error('Update order status error:', err.message);
+    res.status(500).json({ 
+      success: false,
+      msg: 'Server Error',
+      error: err.message 
+    });
+  }
+});
+
+// --- 7. Get Seller's Orders ---
+// @route   GET /api/orders/seller/orders
+// @desc    Get all orders containing seller's products
+// @access  Private (Seller only)
+router.get('/seller/orders', auth, async (req, res) => {
+  try {
+    const user = await User.findById(req.user.id);
+    if (!user.isSeller) {
+      return res.status(403).json({ 
+        success: false,
+        msg: 'Only sellers can access this route' 
+      });
+    }
+
+    // Find all products by this seller
+    const sellerProducts = await Product.find({ seller: req.user.id });
+    const productIds = sellerProducts.map(p => p._id.toString());
+
+    // Find orders containing these products
+    const orders = await Order.find({
+      'orderItems.product': { $in: productIds }
+    })
+    .populate('user', 'email phone')
+    .sort({ createdAt: -1 });
+
+    // Filter order items to show only seller's products
+    const filteredOrders = orders.map(order => {
+      const orderObj = order.toObject();
+      orderObj.orderItems = orderObj.orderItems.filter(item => 
+        productIds.includes(item.product.toString())
+      );
+      return orderObj;
+    });
+
+    res.json({
+      success: true,
+      count: filteredOrders.length,
+      orders: filteredOrders
+    });
+
+  } catch (err) {
+    console.error('Get seller orders error:', err.message);
+    res.status(500).json({ 
+      success: false,
+      msg: 'Server Error',
+      error: err.message 
+    });
   }
 });
 
