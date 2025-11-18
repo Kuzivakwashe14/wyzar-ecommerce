@@ -18,15 +18,26 @@ const {
 } = require('../services/notificationService');
 
 // --- 1. Initialize Paynow ---
-// Make sure these are in your .env file
-const paynow = new Paynow(
-  process.env.PAYNOW_INTEGRATION_ID,
-  process.env.PAYNOW_INTEGRATION_KEY
-);
+// Check if Paynow is configured (for production) or if we're in development mode
+const isPaynowConfigured =
+  process.env.PAYNOW_INTEGRATION_ID &&
+  process.env.PAYNOW_INTEGRATION_ID !== 'your_id' &&
+  process.env.PAYNOW_INTEGRATION_KEY &&
+  process.env.PAYNOW_INTEGRATION_KEY !== 'your_key';
 
-// Set the return and result URLs
-paynow.returnUrl = process.env.PAYNOW_RETURN_URL;
-paynow.resultUrl = " https://unintriguing-shila-unintellectually.ngrok-free.dev/api/orders/paynow/callback"; // Paynow -> Your Backend
+let paynow;
+if (isPaynowConfigured) {
+  paynow = new Paynow(
+    process.env.PAYNOW_INTEGRATION_ID,
+    process.env.PAYNOW_INTEGRATION_KEY
+  );
+  // Set the return and result URLs
+  paynow.returnUrl = process.env.PAYNOW_RETURN_URL;
+  paynow.resultUrl = process.env.PAYNOW_RESULT_URL;
+  console.log('✅ Paynow payment integration enabled');
+} else {
+  console.log('⚠️ Paynow not configured - running in DEVELOPMENT mode (orders will be auto-approved)');
+}
 
 // --- 2. Create Order & Initiate Payment Route ---
 // @route   POST /api/orders/create
@@ -111,32 +122,58 @@ router.post('/create', auth, async (req, res) => {
         ...savedOrder.toObject(),
         orderItems: items
       };
-      notifySellerOfOrder(seller, sellerOrderDetails).catch(err => {
+      notifySellerOfOrder(sellerOrderDetails, seller).catch(err => {
         console.error(`Error notifying seller ${sellerId}:`, err);
       });
     }
-    
-    // --- B. Create Paynow Payment ---
 
-    // 1. Create a new payment
-    // We use the Order ID as the invoice number
-    const payment = paynow.createPayment(savedOrder._id.toString(), user.email);
+    // --- B. Handle Payment ---
+    if (isPaynowConfigured) {
+      // Production: Use Paynow payment gateway
+      // 1. Create a new payment
+      const payment = paynow.createPayment(savedOrder._id.toString(), user.email);
 
-    // 2. Add total as a single item
-    payment.add("WyZar Order", savedOrder.totalPrice);
-    
-    // 3. Send the payment to Paynow
-    const response = await paynow.send(payment);
+      // 2. Add total as a single item
+      payment.add("WyZar Order", savedOrder.totalPrice);
 
-    if (response.success) {
-      // 4. Send back the redirect URL to the frontend
+      // 3. Send the payment to Paynow
+      const response = await paynow.send(payment);
+
+      if (response.success) {
+        // 4. Send back the redirect URL to the frontend
+        res.json({
+          orderId: savedOrder._id,
+          paynowRedirectUrl: response.redirectUrl,
+        });
+      } else {
+        console.error("Paynow error:", response.error);
+        return res.status(500).json({ msg: "Paynow initiation failed", error: response.error });
+      }
+    } else {
+      // Development mode: Auto-approve the order and update stock
+      savedOrder.status = 'Paid';
+      savedOrder.paidAt = new Date();
+      savedOrder.paymentResult = {
+        id: 'DEV_' + Date.now(),
+        status: 'Development Mode - Auto Approved',
+        update_time: new Date().toISOString(),
+      };
+
+      // Update product stock
+      for (const item of savedOrder.orderItems) {
+        await Product.findByIdAndUpdate(item.product, {
+          $inc: { quantity: -item.quantity }
+        });
+      }
+
+      await savedOrder.save();
+
+      // Return success without payment URL
       res.json({
         orderId: savedOrder._id,
-        paynowRedirectUrl: response.redirectUrl,
+        message: 'Order created successfully (Development mode - payment skipped)',
+        redirectUrl: `/order/success?orderId=${savedOrder._id}`,
       });
-    } else {
-      console.error("Paynow error:", response.error);
-      return res.status(500).json({ msg: "Paynow initiation failed", error: response.error });
     }
 
   } catch (err) {

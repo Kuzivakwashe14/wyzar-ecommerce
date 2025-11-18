@@ -23,6 +23,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { api } from "@/context/AuthContent";
 import axios from "axios";
 import Image from "next/image";
+import { toast } from "sonner";
 
 // Get the backend URL
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
@@ -74,14 +75,24 @@ export default function CheckoutPage() {
         cartItems: cartItems,
       });
 
-      const { paynowRedirectUrl } = response.data;
+      const { paynowRedirectUrl, redirectUrl, message } = response.data;
 
       // Clear the cart *after* order is created
       clearCart();
 
-      // Redirect user to Paynow
-      // We use window.location.href to redirect to an external site
-      window.location.href = paynowRedirectUrl;
+      // Show success message if in development mode
+      if (message) {
+        toast.success("Order Created", { description: message });
+      }
+
+      // Redirect to payment gateway (production) or success page (development)
+      const finalRedirectUrl = paynowRedirectUrl || redirectUrl;
+      if (finalRedirectUrl) {
+        window.location.href = finalRedirectUrl;
+      } else {
+        // Fallback to order success page
+        router.push('/order/success');
+      }
 
     } catch (error: any) {
       console.error("Order creation failed:", error);

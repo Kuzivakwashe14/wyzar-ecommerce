@@ -30,6 +30,8 @@ export interface Product {
     };
   };
   createdAt: string;
+  deliveryTime?: string;
+  countryOfOrigin?: string;
 }
 
 interface ProductCardProps {

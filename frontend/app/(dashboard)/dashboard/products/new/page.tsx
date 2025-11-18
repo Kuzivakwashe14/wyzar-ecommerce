@@ -30,19 +30,19 @@ const ACCEPTED_IMAGE_TYPES = ["image/jpeg", "image/jpg", "image/png"];
 const formSchema = z.object({
   name: z.string().min(3, "Name must be at least 3 characters."),
   description: z.string().min(10, "Description must be at least 10 characters."),
-  price: z.coerce.number().positive("Price must be a positive number."),
+  price: z.string().min(1, "Price is required."),
   category: z.string().min(2, "Category is required."),
-  quantity: z.coerce.number().int().min(0, "Quantity can't be negative."),
+  quantity: z.string().min(1, "Quantity is required."),
   deliveryTime: z.string().optional(),
   countryOfOrigin: z.string().optional(),
   productImages: z.any()
     .refine((files) => files?.length >= 1, "At least one image is required.")
     .refine((files) => files?.length <= 5, "Maximum 5 images allowed.")
-    .refine((files) => 
-      Array.from(files).every((file: any) => file?.size <= MAX_FILE_SIZE), 
+    .refine((files) =>
+      Array.from(files).every((file: any) => file?.size <= MAX_FILE_SIZE),
       `Max file size is 5MB.`
     )
-    .refine((files) => 
+    .refine((files) =>
       Array.from(files).every((file: any) => ACCEPTED_IMAGE_TYPES.includes(file?.type)),
       "Only .jpg, .jpeg, and .png files are accepted."
     ),
@@ -62,14 +62,14 @@ export default function NewProductPage() {
   }, [isAuthenticated, user, loading, router]);
 
   // 3. Define the form
-  const form = useForm<z.infer<typeof formSchema>>({
+  const form = useForm({
     resolver: zodResolver(formSchema),
     defaultValues: {
       name: "",
       description: "",
-      price: 0,
+      price: "",
       category: "",
-      quantity: 1,
+      quantity: "",
       deliveryTime: "",
       countryOfOrigin: "",
     },

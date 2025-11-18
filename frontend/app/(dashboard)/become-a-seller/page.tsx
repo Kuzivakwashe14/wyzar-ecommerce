@@ -32,8 +32,8 @@ const formSchema = z.object({
   businessName: z.string().min(2, {
     message: "Business name must be at least 2 characters.",
   }),
-  sellerType: z.enum(["individual", "business", "international"], {
-    required_error: "You need to select a seller type.",
+  sellerType: z.enum(["individual", "business", "international"]).refine((val) => val !== undefined, {
+    message: "You need to select a seller type.",
   }),
   verificationDocument: z.any()
     .refine((files) => files?.length === 1, "Verification document is required.")

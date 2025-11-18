@@ -29,9 +29,9 @@ import { Product } from "@/components/ProductCard"; // Reuse type
 const formSchema = z.object({
   name: z.string().min(3, "Name must be at least 3 characters."),
   description: z.string().min(10, "Description must be at least 10 characters."),
-  price: z.coerce.number().positive("Price must be a positive number."),
+  price: z.string().min(1, "Price is required."),
   category: z.string().min(2, "Category is required."),
-  quantity: z.coerce.number().int().min(0, "Quantity can't be negative."),
+  quantity: z.string().min(1, "Quantity is required."),
   deliveryTime: z.string().optional(),
   countryOfOrigin: z.string().optional(),
 });
@@ -45,7 +45,7 @@ export default function EditProductPage() {
   const [product, setProduct] = useState<Product | null>(null);
 
   // 3. Define the form
-  const form = useForm<z.infer<typeof formSchema>>({
+  const form = useForm({
     resolver: zodResolver(formSchema),
     // We'll set default values after we fetch the product
   });
@@ -59,13 +59,13 @@ export default function EditProductPage() {
         const productData = res.data;
         setProduct(productData);
 
-        // Pre-fill the form with existing data
+        // Pre-fill the form with existing data (convert numbers to strings)
         form.reset({
           name: productData.name,
           description: productData.description,
-          price: productData.price,
+          price: String(productData.price),
           category: productData.category,
-          quantity: productData.quantity,
+          quantity: String(productData.quantity),
           deliveryTime: productData.deliveryTime,
           countryOfOrigin: productData.countryOfOrigin,
         });
@@ -83,8 +83,15 @@ export default function EditProductPage() {
     setIsSubmitting(true);
 
     try {
+      // Convert string values to numbers before sending
+      const updateData = {
+        ...values,
+        price: parseFloat(values.price),
+        quantity: parseInt(values.quantity, 10),
+      };
+
       // Use the PUT route
-      await api.put(`/products/${product?._id}`, values); 
+      await api.put(`/products/${product?._id}`, updateData); 
       toast(
         "Success!",{
         description: "Your product has been updated.",
@@ -157,7 +164,9 @@ export default function EditProductPage() {
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Price (USD)</FormLabel>
-                  <FormControl><Input type="number" step="0.01" {...field} /></FormControl>
+                  <FormControl>
+                    <Input type="number" step="0.01" {...field} />
+                  </FormControl>
                   <FormMessage />
                 </FormItem>
               )}
@@ -168,7 +177,9 @@ export default function EditProductPage() {
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Stock Quantity</FormLabel>
-                  <FormControl><Input type="number" step="1" {...field} /></FormControl>
+                  <FormControl>
+                    <Input type="number" step="1" {...field} />
+                  </FormControl>
                   <FormMessage />
                 </FormItem>
               )}
