@@ -86,16 +86,19 @@ router.get('/', async (req, res) => {
 });
 
 // @route   GET /api/products/:id
-// @desc    Get a single product by ID
+// @desc    Get a single product by ID (with view tracking)
 // @access  Public
 router.get('/:id', async (req, res) => {
   try {
     const product = await Product.findById(req.params.id)
-      .populate('seller', ['sellerDetails.businessName']); // Get seller's name
+      .populate('seller', ['sellerDetails.businessName', 'email']); // Get seller's info
 
     if (!product) {
       return res.status(404).json({ msg: 'Product not found' });
     }
+
+    // Increment view count (don't wait for it)
+    Product.findByIdAndUpdate(req.params.id, { $inc: { views: 1 } }).exec();
 
     res.json(product);
   } catch (err) {

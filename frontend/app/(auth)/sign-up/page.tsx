@@ -1,11 +1,12 @@
-// In frontend/app/(auth)/sign-up/page.tsx
-"use client"; // This must be a client component for forms
+"use client";
 
+import { useState } from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import * as z from "zod";
-import axios from "axios";
 import { toast } from "sonner";
+import { useRouter } from "next/navigation";
+import Link from "next/link";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -15,73 +16,183 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
+  FormDescription,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
+import { OTPInput } from "@/components/ui/otp-input";
+import { api, useAuth } from "@/context/AuthContent";
 
-// 1. Define the API URL
-// We'll move this to a .env file later
-const API_URL = "http://localhost:5001/api/auth";
-
-// 2. Define the form schema with Zod
-const formSchema = z.object({
+// Step 1: Registration details schema
+const registrationSchema = z.object({
   email: z.string().email({
     message: "Please enter a valid email address.",
   }),
   password: z.string().min(6, {
     message: "Password must be at least 6 characters.",
   }),
+  confirmPassword: z.string(),
+  phone: z.string().regex(/^(\+263|0)[0-9]{9}$/, {
+    message: "Please enter a valid Zimbabwean phone number (e.g., 0771234567 or +263771234567)",
+  }),
+}).refine((data) => data.password === data.confirmPassword, {
+  message: "Passwords don't match",
+  path: ["confirmPassword"],
 });
 
-export default function SignUpForm() {
-  // 3. Define the form
-  const form = useForm<z.infer<typeof formSchema>>({
-    resolver: zodResolver(formSchema),
+type RegistrationFormValues = z.infer<typeof registrationSchema>;
+
+export default function SignUpPage() {
+  const router = useRouter();
+  const { register } = useAuth();
+  const [step, setStep] = useState<1 | 2>(1);
+  const [isLoading, setIsLoading] = useState(false);
+  const [otp, setOtp] = useState("");
+  const [formData, setFormData] = useState<RegistrationFormValues | null>(null);
+  const [canResend, setCanResend] = useState(false);
+  const [countdown, setCountdown] = useState(60);
+
+  const form = useForm<RegistrationFormValues>({
+    resolver: zodResolver(registrationSchema),
     defaultValues: {
       email: "",
       password: "",
+      confirmPassword: "",
+      phone: "",
     },
   });
 
-  // 4. Define the submit handler
-  async function onSubmit(values: z.infer<typeof formSchema>) {
+  // Step 1: Send OTP
+  const onSubmitDetails = async (values: RegistrationFormValues) => {
+    setIsLoading(true);
     try {
-      const response = await axios.post(`${API_URL}/register`, values);
-
-      // Show success message
-      toast.success("Account Created", {
-        description: "Your account has been created successfully.",
-        duration: 3000,
+      // Send OTP to phone number
+      const response = await api.post('/otp/send', {
+        phone: values.phone,
+        type: 'registration'
       });
 
-      // Optionally, reset the form
-      form.reset();
+      if (response.data.success) {
+        setFormData(values);
+        setStep(2);
+        toast.success("OTP Sent", {
+          description: "We've sent a verification code to your phone number.",
+        });
 
-      // (Later, we will redirect the user to the login page or dashboard)
-
-    } catch (error: any) {
-      console.error("Registration failed:", error);
-
-      // Show error message
-      let errorMessage = "Registration failed. Please try again.";
-      if (axios.isAxiosError(error) && error.response) {
-        errorMessage = error.response.data.msg || errorMessage;
+        // Start countdown for resend
+        startResendCountdown();
       }
-
-      toast.error("Registration Failed", {
+    } catch (error: any) {
+      console.error("Failed to send OTP:", error);
+      const errorMessage = error.response?.data?.msg || "Failed to send OTP. Please try again.";
+      toast.error("Error", {
         description: errorMessage,
-        duration: 3000,
       });
+    } finally {
+      setIsLoading(false);
     }
-  }
+  };
 
-  // 5. Build the form component
+  // Step 2: Verify OTP and Complete Registration
+  const onSubmitOTP = async () => {
+    if (otp.length !== 6) {
+      toast.error("Invalid OTP", {
+        description: "Please enter the complete 6-digit code.",
+      });
+      return;
+    }
+
+    if (!formData) return;
+
+    setIsLoading(true);
+    try {
+      // First verify OTP
+      const otpResponse = await api.post('/otp/verify', {
+        phone: formData.phone,
+        otp,
+        type: 'registration'
+      });
+
+      if (otpResponse.data.success) {
+        // OTP verified, now register the user
+        await register(formData.email, formData.password, formData.phone);
+
+        toast.success("Account Created", {
+          description: "Your account has been created successfully!",
+        });
+
+        // Redirect to home page
+        router.push('/');
+      }
+    } catch (error: any) {
+      console.error("Verification failed:", error);
+      const errorMessage = error.response?.data?.msg || "Verification failed. Please try again.";
+      toast.error("Verification Failed", {
+        description: errorMessage,
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Resend OTP
+  const handleResendOTP = async () => {
+    if (!formData || !canResend) return;
+
+    setIsLoading(true);
+    try {
+      const response = await api.post('/otp/send', {
+        phone: formData.phone,
+        type: 'registration'
+      });
+
+      if (response.data.success) {
+        toast.success("OTP Resent", {
+          description: "We've sent a new verification code to your phone.",
+        });
+        setOtp(""); // Clear current OTP
+        startResendCountdown();
+      }
+    } catch (error: any) {
+      const errorMessage = error.response?.data?.msg || "Failed to resend OTP.";
+      toast.error("Error", {
+        description: errorMessage,
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Countdown timer for resend
+  const startResendCountdown = () => {
+    setCanResend(false);
+    setCountdown(60);
+
+    const interval = setInterval(() => {
+      setCountdown((prev) => {
+        if (prev <= 1) {
+          clearInterval(interval);
+          setCanResend(true);
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+  };
+
   return (
-    <div className="w-full max-w-md p-8 space-y-6 bg-white rounded-lg shadow-md">
-      <div className="w-full max-w-md p-8 space-y-6 bg-white rounded-lg shadow-md">
-        <h2 className="text-2xl font-bold text-center">Create your Account</h2>
-        <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+    <div className="w-full max-w-md p-8 space-y-6 bg-card rounded-lg shadow-lg border">
+      <div className="space-y-2 text-center">
+        <h2 className="text-3xl font-bold tracking-tight">Create Account</h2>
+        <p className="text-sm text-muted-foreground">
+          {step === 1
+            ? "Enter your details to get started"
+            : "Enter the verification code sent to your phone"}
+        </p>
+      </div>
 
+      {step === 1 ? (
+        <Form {...form}>
+          <form onSubmit={form.handleSubmit(onSubmitDetails)} className="space-y-4">
             <FormField
               control={form.control}
               name="email"
@@ -89,8 +200,35 @@ export default function SignUpForm() {
                 <FormItem>
                   <FormLabel>Email</FormLabel>
                   <FormControl>
-                    <Input placeholder="name@example.com" {...field} />
+                    <Input
+                      placeholder="name@example.com"
+                      type="email"
+                      disabled={isLoading}
+                      {...field}
+                    />
                   </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="phone"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Phone Number</FormLabel>
+                  <FormControl>
+                    <Input
+                      placeholder="0771234567"
+                      type="tel"
+                      disabled={isLoading}
+                      {...field}
+                    />
+                  </FormControl>
+                  <FormDescription>
+                    We'll send an OTP to verify your phone number
+                  </FormDescription>
                   <FormMessage />
                 </FormItem>
               )}
@@ -103,18 +241,97 @@ export default function SignUpForm() {
                 <FormItem>
                   <FormLabel>Password</FormLabel>
                   <FormControl>
-                    <Input type="password" placeholder="********" {...field} />
+                    <Input
+                      type="password"
+                      placeholder="Min. 6 characters"
+                      disabled={isLoading}
+                      {...field}
+                    />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
               )}
             />
 
-            <Button type="submit" className="w-full">
-              Create Account
+            <FormField
+              control={form.control}
+              name="confirmPassword"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Confirm Password</FormLabel>
+                  <FormControl>
+                    <Input
+                      type="password"
+                      placeholder="Re-enter your password"
+                      disabled={isLoading}
+                      {...field}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <Button type="submit" className="w-full" disabled={isLoading}>
+              {isLoading ? "Sending OTP..." : "Continue"}
             </Button>
           </form>
         </Form>
+      ) : (
+        <div className="space-y-6">
+          <div className="space-y-4">
+            <div className="text-center">
+              <p className="text-sm text-muted-foreground mb-4">
+                Code sent to {formData?.phone}
+              </p>
+              <OTPInput
+                length={6}
+                value={otp}
+                onChange={setOtp}
+                disabled={isLoading}
+              />
+            </div>
+
+            <Button
+              onClick={onSubmitOTP}
+              className="w-full"
+              disabled={isLoading || otp.length !== 6}
+            >
+              {isLoading ? "Verifying..." : "Verify & Create Account"}
+            </Button>
+
+            <div className="text-center space-y-2">
+              <button
+                type="button"
+                onClick={handleResendOTP}
+                disabled={!canResend || isLoading}
+                className="text-sm text-primary hover:underline disabled:opacity-50 disabled:cursor-not-allowed disabled:no-underline"
+              >
+                {canResend ? "Resend Code" : `Resend in ${countdown}s`}
+              </button>
+
+              <div>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setStep(1);
+                    setOtp("");
+                  }}
+                  className="text-sm text-muted-foreground hover:text-foreground hover:underline"
+                >
+                  Change phone number
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      <div className="text-center text-sm">
+        Already have an account?{" "}
+        <Link href="/login" className="text-primary hover:underline font-medium">
+          Sign in
+        </Link>
       </div>
     </div>
   );

@@ -5,7 +5,7 @@ import React, { createContext, useContext, useState, useEffect } from 'react';
 import axios from 'axios';
 
 // 1. Define the API URL and a utility for API requests
-const API_URL = "http://localhost:5001/api";
+const API_URL = "http://localhost:5000/api";
 
 // Create an Axios instance
 const api = axios.create({
@@ -25,9 +25,12 @@ const setAuthToken = (token: string | null) => {
 interface User {
   _id: string;
   email: string;
+  phone: string;
   isSeller: boolean;
   isVerified: boolean;
-  sellerDetails?: { // <-- Make sure this is here
+  isPhoneVerified: boolean;
+  isEmailVerified: boolean;
+  sellerDetails?: {
     businessName: string;
   };
 }
@@ -39,7 +42,7 @@ interface AuthContextType {
   loading: boolean;
   login: (token: string) => Promise<void>;
   logout: () => void;
-  // We will add register function later
+  register: (email: string, password: string, phone: string) => Promise<void>;
 }
 
 // 3. Create the context
@@ -100,6 +103,21 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     window.location.href = '/login';
   };
 
+  // 9. Register function
+  const register = async (email: string, password: string, phone: string) => {
+    setLoading(true);
+    try {
+      const res = await api.post('/auth/register', { email, password, phone });
+      const { token } = res.data;
+
+      // After successful registration, log the user in
+      await login(token);
+    } catch (err) {
+      setLoading(false);
+      throw err; // Re-throw to handle in the component
+    }
+  };
+
   return (
     <AuthContext.Provider value={{
       token,
@@ -107,7 +125,8 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       isAuthenticated: !!token && !!user, // True if token and user exist
       loading,
       login,
-      logout
+      logout,
+      register
     }}>
       {!loading && children}
     </AuthContext.Provider>

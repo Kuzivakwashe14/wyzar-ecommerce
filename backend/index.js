@@ -30,10 +30,11 @@ app.get('/', (req, res) => {
 });
 
 app.use('/api/auth', require('./routes/auth'));
-// app.use('/api/otp', require('./routes/otp')); // TODO: Create otp.js route file
+app.use('/api/otp', require('./routes/otp'));
 app.use('/api/seller', require('./routes/seller'));
 app.use('/api/products', require('./routes/product'));
 app.use('/api/orders', require('./routes/order'));
+app.use('/api/search', require('./routes/search'));
 
 // --- Start the Server ---
 app.listen(PORT, () => {

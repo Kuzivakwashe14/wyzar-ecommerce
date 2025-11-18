@@ -2,7 +2,10 @@
   "permissions": {
     "allow": [
       "Bash(npm start)",
-      "Bash(node index.js:*)"
+      "Bash(node index.js:*)",
+      "Bash(cat:*)",
+      "Bash(dir:*)",
+      "Bash(npm install:*)"
     ],
     "deny": [],
     "ask": []
