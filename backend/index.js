@@ -36,6 +36,13 @@ app.use('/api/products', require('./routes/product'));
 app.use('/api/orders', require('./routes/order'));
 app.use('/api/search', require('./routes/search'));
 
+// Admin routes
+app.use('/api/admin', require('./routes/admin'));
+app.use('/api/admin/users', require('./routes/adminUsers'));
+app.use('/api/admin/sellers', require('./routes/adminSellers'));
+app.use('/api/admin/products', require('./routes/adminProducts'));
+app.use('/api/admin/orders', require('./routes/adminOrders'));
+
 // --- Start the Server ---
 app.listen(PORT, () => {
   console.log(`Server is running on http://localhost:${PORT}`);

@@ -30,6 +30,7 @@ interface User {
   isVerified: boolean;
   isPhoneVerified: boolean;
   isEmailVerified: boolean;
+  role: string;
   sellerDetails?: {
     businessName: string;
   };
@@ -43,6 +44,7 @@ interface AuthContextType {
   login: (token: string) => Promise<void>;
   logout: () => void;
   register: (email: string, password: string, phone: string) => Promise<void>;
+  axiosInstance: typeof api;
 }
 
 // 3. Create the context
@@ -126,7 +128,8 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       loading,
       login,
       logout,
-      register
+      register,
+      axiosInstance: api
     }}>
       {!loading && children}
     </AuthContext.Provider>

@@ -76,7 +76,8 @@ router.post('/register', async (req, res) => {
         id: user.id,
         email: user.email,
         phone: user.phone,
-        isSeller: user.isSeller
+        isSeller: user.isSeller,
+        role: user.role
       }
     };
 
@@ -95,7 +96,8 @@ router.post('/register', async (req, res) => {
             email: user.email,
             phone: user.phone,
             isPhoneVerified: user.isPhoneVerified,
-            isSeller: user.isSeller
+            isSeller: user.isSeller,
+            role: user.role
           }
         });
       }
@@ -165,7 +167,8 @@ router.post('/login', async (req, res) => {
         email: user.email,
         phone: user.phone,
         isSeller: user.isSeller,
-        isVerified: user.isVerified
+        isVerified: user.isVerified,
+        role: user.role
       }
     };
 
@@ -188,6 +191,7 @@ router.post('/login', async (req, res) => {
             isEmailVerified: user.isEmailVerified,
             isSeller: user.isSeller,
             isVerified: user.isVerified,
+            role: user.role,
             sellerDetails: user.sellerDetails
           }
         });

@@ -42,6 +42,18 @@ const UserSchema = new Schema({
     type: Boolean,
     default: false
   },
+  role: {
+    type: String,
+    enum: ['user', 'seller', 'admin'],
+    default: 'user'
+  },
+  isSuspended: {
+    type: Boolean,
+    default: false
+  },
+  suspensionReason: {
+    type: String
+  },
   sellerDetails: {
     businessName: {
       type: String,
