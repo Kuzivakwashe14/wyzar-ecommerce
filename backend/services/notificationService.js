@@ -1,29 +1,58 @@
 // backend/services/notificationService.js
-// Temporarily disabled email service - will enable after fixing nodemailer
-// const { sendWelcomeEmail } = require('./emailService');
-// const { sendOTP } = require('./smsService');
+const {
+  sendWelcomeEmail,
+  sendLoginAlertEmail,
+  sendOrderConfirmationEmail,
+  sendOrderNotification,
+  sendSellerOrderNotification
+} = require('./emailService');
 
 /**
- * Send welcome notification (Email + SMS) after registration
+ * Send welcome notification after registration
  * @param {Object} user - User object from database
  */
 const sendWelcomeNotification = async (user) => {
   try {
-    console.log(`Welcome notification for user: ${user.email}`);
-    console.log('Email notifications temporarily disabled - will be enabled after setup');
+    console.log(`Sending welcome notification to: ${user.email}`);
 
-    // TODO: Enable email once nodemailer is configured
-    // const emailResult = await sendWelcomeEmail(user.email, user.email.split('@')[0]);
+    const emailResult = await sendWelcomeEmail(user);
 
-    // Optionally send welcome SMS (commented out to avoid SMS costs in development)
-    // const smsResult = await sendOTP(user.phone, 'Welcome to WyZar!');
+    if (emailResult.success) {
+      console.log(`Welcome email sent successfully to ${user.email}`);
+    } else {
+      console.error(`Failed to send welcome email: ${emailResult.error}`);
+    }
 
-    return {
-      success: true,
-      message: 'User registered (email notifications disabled in development)'
-    };
+    return emailResult;
   } catch (error) {
     console.error('Error in sendWelcomeNotification:', error);
+    return {
+      success: false,
+      error: error.message
+    };
+  }
+};
+
+/**
+ * Send login alert notification
+ * @param {Object} user - User object from database
+ * @param {Object} loginInfo - Login details (ip, time, etc.)
+ */
+const sendLoginAlert = async (user, loginInfo = {}) => {
+  try {
+    console.log(`Sending login alert to: ${user.email}`);
+
+    const emailResult = await sendLoginAlertEmail(user, loginInfo);
+
+    if (emailResult.success) {
+      console.log(`Login alert sent successfully to ${user.email}`);
+    } else {
+      console.error(`Failed to send login alert: ${emailResult.error}`);
+    }
+
+    return emailResult;
+  } catch (error) {
+    console.error('Error in sendLoginAlert:', error);
     return {
       success: false,
       error: error.message
@@ -38,16 +67,17 @@ const sendWelcomeNotification = async (user) => {
  */
 const sendOrderConfirmation = async (order, user) => {
   try {
-    console.log(`Order confirmation for order: ${order._id}, user: ${user.email}`);
-    console.log('Email notifications temporarily disabled - will be enabled after setup');
+    console.log(`Sending order confirmation for order: ${order._id} to user: ${user.email}`);
 
-    // TODO: Enable email once nodemailer is configured
-    // const emailResult = await sendOrderEmail(user.email, order);
+    const emailResult = await sendOrderConfirmationEmail(order, user);
 
-    return {
-      success: true,
-      message: 'Order confirmation sent (email notifications disabled in development)'
-    };
+    if (emailResult.success) {
+      console.log(`Order confirmation email sent successfully to ${user.email}`);
+    } else {
+      console.error(`Failed to send order confirmation: ${emailResult.error}`);
+    }
+
+    return emailResult;
   } catch (error) {
     console.error('Error in sendOrderConfirmation:', error);
     return {
@@ -64,16 +94,17 @@ const sendOrderConfirmation = async (order, user) => {
  */
 const sendOrderStatusUpdate = async (order, user) => {
   try {
-    console.log(`Order status update for order: ${order._id}, status: ${order.status}`);
-    console.log('Email notifications temporarily disabled - will be enabled after setup');
+    console.log(`Sending order status update for order: ${order._id}, status: ${order.status}`);
 
-    // TODO: Enable email once nodemailer is configured
-    // const emailResult = await sendStatusUpdateEmail(user.email, order);
+    const emailResult = await sendOrderNotification(user.email, order.orderNumber || order._id, order.status);
 
-    return {
-      success: true,
-      message: 'Order status update sent (email notifications disabled in development)'
-    };
+    if (emailResult.success) {
+      console.log(`Order status update email sent successfully to ${user.email}`);
+    } else {
+      console.error(`Failed to send order status update: ${emailResult.error}`);
+    }
+
+    return emailResult;
   } catch (error) {
     console.error('Error in sendOrderStatusUpdate:', error);
     return {
@@ -91,15 +122,16 @@ const sendOrderStatusUpdate = async (order, user) => {
 const notifySellerOfOrder = async (order, seller) => {
   try {
     console.log(`Notifying seller: ${seller.email} of new order: ${order._id}`);
-    console.log('Email notifications temporarily disabled - will be enabled after setup');
 
-    // TODO: Enable email once nodemailer is configured
-    // const emailResult = await sendSellerNotificationEmail(seller.email, order);
+    const emailResult = await sendSellerOrderNotification(order, seller);
 
-    return {
-      success: true,
-      message: 'Seller notified (email notifications disabled in development)'
-    };
+    if (emailResult.success) {
+      console.log(`Seller notification sent successfully to ${seller.email}`);
+    } else {
+      console.error(`Failed to send seller notification: ${emailResult.error}`);
+    }
+
+    return emailResult;
   } catch (error) {
     console.error('Error in notifySellerOfOrder:', error);
     return {
@@ -111,6 +143,7 @@ const notifySellerOfOrder = async (order, seller) => {
 
 module.exports = {
   sendWelcomeNotification,
+  sendLoginAlert,
   sendOrderConfirmation,
   sendOrderStatusUpdate,
   notifySellerOfOrder

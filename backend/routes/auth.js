@@ -6,7 +6,7 @@ const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const auth = require('../middleware/auth');
 const User = require('../models/User'); // Import our User model
-const { sendWelcomeNotification } = require('../services/notificationService');
+const { sendWelcomeNotification, sendLoginAlert } = require('../services/notificationService');
 const { authLimiter } = require('../config/security');
 
 // --- Registration Route ---
@@ -142,6 +142,15 @@ router.post('/login', authLimiter, async (req, res) => {
       // You can either block login or just warn the user
       console.log('Warning: User logging in with unverified email');
     }
+
+    // 4.5. Send login alert email (fire and forget - don't block login)
+    sendLoginAlert(user, {
+      time: new Date().toLocaleString(),
+      ip: req.ip || req.connection.remoteAddress || 'Unknown'
+    }).catch(err => {
+      console.error('Error sending login alert:', err);
+      // Don't fail login if notification fails
+    });
 
     // 5. Create JWT token with user info
     const payload = {

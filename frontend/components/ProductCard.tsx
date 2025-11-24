@@ -29,7 +29,7 @@ export interface Product {
     sellerDetails: {
       businessName: string;
     };
-  };
+  } | null;
   createdAt: string;
   deliveryTime?: string;
   countryOfOrigin?: string;
@@ -69,7 +69,7 @@ export default function ProductCard({ product }: ProductCardProps) {
             {product.name}
           </CardTitle>
           <CardDescription className="text-sm text-gray-600 mt-1">
-            By {product.seller.sellerDetails.businessName}
+            By {product.seller?.sellerDetails?.businessName || 'Unknown Seller'}
           </CardDescription>
         </CardContent>
         <CardFooter className="flex justify-between items-center p-4 pt-0">
