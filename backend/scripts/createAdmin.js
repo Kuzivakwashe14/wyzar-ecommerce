@@ -1,33 +1,43 @@
-// In backend/scripts/createAdmin.js
-// Script to create the first admin user
+// Script to create an admin user
+// Run this with: node scripts/createAdmin.js
 
-require('dotenv').config();
 const mongoose = require('mongoose');
 const bcrypt = require('bcryptjs');
+require('dotenv').config();
+
+// Import User model
 const User = require('../models/User');
 
-const ADMIN_EMAIL = 'admin@wyzar.co.zw';
-const ADMIN_PASSWORD = 'Admin@123456'; // Change this after first login!
-const ADMIN_PHONE = '+263771234567';
+// Admin credentials
+const ADMIN_EMAIL = 'admin@wyzar.com';
+const ADMIN_PASSWORD = 'Admin@123456';
 
 async function createAdmin() {
   try {
     // Connect to MongoDB
     await mongoose.connect(process.env.MONGODB_URI);
-    console.log('✅ Connected to MongoDB');
+    console.log('Connected to MongoDB');
 
     // Check if admin already exists
     const existingAdmin = await User.findOne({ email: ADMIN_EMAIL });
     if (existingAdmin) {
-      console.log('❌ Admin user already exists!');
-      console.log(`   Email: ${ADMIN_EMAIL}`);
+      console.log('Admin user already exists!');
+      console.log('Email:', existingAdmin.email);
+      console.log('Role:', existingAdmin.role);
 
-      // Update existing user to admin if they're not already
+      // Update to admin if not already
       if (existingAdmin.role !== 'admin') {
         existingAdmin.role = 'admin';
+        existingAdmin.isEmailVerified = true;
         await existingAdmin.save();
-        console.log('✅ Updated existing user to admin role');
+        console.log('User role updated to admin');
       }
+
+      console.log('================================');
+      console.log('Admin Login Credentials:');
+      console.log('Email:', ADMIN_EMAIL);
+      console.log('Password:', ADMIN_PASSWORD);
+      console.log('================================');
 
       process.exit(0);
     }
@@ -37,31 +47,29 @@ async function createAdmin() {
     const hashedPassword = await bcrypt.hash(ADMIN_PASSWORD, salt);
 
     // Create admin user
-    const admin = new User({
+    const adminUser = new User({
       email: ADMIN_EMAIL,
       password: hashedPassword,
-      phone: ADMIN_PHONE,
-      isPhoneVerified: true,
-      isEmailVerified: true,
       role: 'admin',
+      isEmailVerified: true,
       isSeller: false,
       isVerified: true
     });
 
-    await admin.save();
+    await adminUser.save();
 
-    console.log('\n🎉 Admin user created successfully!');
-    console.log('═══════════════════════════════════════');
-    console.log(`📧 Email:    ${ADMIN_EMAIL}`);
-    console.log(`🔒 Password: ${ADMIN_PASSWORD}`);
-    console.log(`📱 Phone:    ${ADMIN_PHONE}`);
-    console.log('═══════════════════════════════════════');
+    console.log('✅ Admin user created successfully!');
+    console.log('================================');
+    console.log('Admin Login Credentials:');
+    console.log('Email:', ADMIN_EMAIL);
+    console.log('Password:', ADMIN_PASSWORD);
+    console.log('Role:', adminUser.role);
+    console.log('================================');
     console.log('⚠️  IMPORTANT: Change the password after first login!');
-    console.log('\n');
 
     process.exit(0);
   } catch (error) {
-    console.error('❌ Error creating admin:', error.message);
+    console.error('Error creating admin user:', error);
     process.exit(1);
   }
 }

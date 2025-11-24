@@ -68,6 +68,7 @@ app.use('/api/admin/users', require('./routes/adminUsers'));
 app.use('/api/admin/sellers', require('./routes/adminSellers'));
 app.use('/api/admin/products', require('./routes/adminProducts'));
 app.use('/api/admin/orders', require('./routes/adminOrders'));
+app.use('/api/admin/access-control', require('./routes/adminAccessControl'));
 
 // --- Start the Server ---
 if (USE_HTTPS) {

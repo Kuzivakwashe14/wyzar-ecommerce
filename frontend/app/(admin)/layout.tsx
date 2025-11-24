@@ -18,7 +18,8 @@ import {
   CheckCircle,
   BarChart3,
   ShoppingCart,
-  MessageSquare
+  MessageSquare,
+  Shield
 } from 'lucide-react';
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
@@ -57,6 +58,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     { name: 'Orders', href: '/admin/orders', icon: ShoppingCart },
     { name: 'Reviews', href: '/admin/reviews', icon: MessageSquare },
     { name: 'Analytics', href: '/admin/analytics', icon: BarChart3 },
+    { name: 'Access Control', href: '/admin/access-control', icon: Shield },
     { name: 'Settings', href: '/admin/settings', icon: Settings },
   ];
 
