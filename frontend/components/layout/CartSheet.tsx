@@ -46,7 +46,7 @@ export default function CartSheet() {
         <SheetHeader>
           <SheetTitle>Shopping Cart ({itemCount} items)</SheetTitle>
         </SheetHeader>
-        
+
         {itemCount === 0 ? (
           <div className="flex-1 flex flex-col items-center justify-center">
             <ShoppingCart className="h-16 w-16 text-gray-300" />
@@ -102,11 +102,11 @@ export default function CartSheet() {
                   <span>${cartTotal.toFixed(2)}</span>
                 </div>
                 <SheetClose asChild>
-                <Link href="/checkout" passHref>
-                  <Button className="w-full" size="lg">
-                    Proceed to Checkout
-                  </Button>
-                </Link>
+                  <Link href="/checkout" passHref>
+                    <Button className="w-full" size="lg">
+                      Proceed to Checkout
+                    </Button>
+                  </Link>
                 </SheetClose>
               </div>
             </SheetFooter>

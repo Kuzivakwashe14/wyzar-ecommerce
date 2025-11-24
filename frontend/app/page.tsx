@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { api } from "@/context/AuthContent";
 import ProductCard, { Product } from "@/components/ProductCard";
 import { Button } from "@/components/ui/button";
@@ -76,20 +77,28 @@ export default function HomePage() {
   return (
     <div className="flex flex-col min-h-screen">
       {/* Hero Section */}
-      <section className="relative w-full min-h-[600px] bg-linear-to-br from-purple-600 via-purple-700 to-blue-800 text-white overflow-hidden">
-        {/* Decorative elements */}
-        <div className="absolute inset-0 opacity-10">
-          <div className="absolute top-0 left-0 w-96 h-96 bg-white rounded-full blur-3xl -translate-x-1/2 -translate-y-1/2"></div>
-          <div className="absolute bottom-0 right-0 w-96 h-96 bg-white rounded-full blur-3xl translate-x-1/2 translate-y-1/2"></div>
+      <section className="relative w-full min-h-[600px] text-white overflow-hidden">
+        {/* Background Image */}
+        <div className="absolute inset-0">
+          <Image
+            src="/hero-bg.jpg"
+            alt="Shopping Background"
+            fill
+            className="object-cover"
+            priority
+          />
+          <div className="absolute inset-0 bg-black/60" />
         </div>
 
         <div className="container mx-auto px-4 py-20 relative z-10">
           <div className="max-w-3xl mx-auto text-center space-y-8">
-            <Badge className="bg-white/20 text-white border-white/30 hover:bg-white/30 text-sm px-4 py-1">
-              Zimbabwe&apos;s Premier Online Marketplace
-            </Badge>
+            <div className="animate-in fade-in slide-in-from-bottom-4 duration-700">
+              <Badge className="bg-white/20 text-white border-white/30 hover:bg-white/30 text-sm px-4 py-1 backdrop-blur-sm">
+                Zimbabwe&apos;s Premier Online Marketplace
+              </Badge>
+            </div>
 
-            <h1 className="text-5xl md:text-7xl font-bold leading-tight">
+            <h1 className="text-5xl md:text-7xl font-bold leading-tight animate-in fade-in slide-in-from-bottom-8 duration-700 delay-100">
               Shop Smarter,
               <br />
               <span className="text-transparent bg-clip-text bg-linear-to-r from-yellow-200 to-pink-200">
@@ -97,19 +106,19 @@ export default function HomePage() {
               </span>
             </h1>
 
-            <p className="text-xl md:text-2xl text-purple-100 max-w-2xl mx-auto">
+            <p className="text-xl md:text-2xl text-purple-100 max-w-2xl mx-auto animate-in fade-in slide-in-from-bottom-8 duration-700 delay-200">
               Discover thousands of products from local and international sellers. Quality guaranteed, delivered to your door.
             </p>
 
-            <div className="flex flex-col sm:flex-row gap-4 justify-center items-center pt-4">
+            <div className="flex flex-col sm:flex-row gap-4 justify-center items-center pt-4 animate-in fade-in slide-in-from-bottom-8 duration-700 delay-300">
               <Link href="/products">
-                <Button size="lg" className="bg-white text-purple-700 hover:bg-gray-100 text-lg px-8 py-6 h-auto">
+                <Button size="lg" className="bg-white text-purple-700 hover:bg-gray-100 text-lg px-8 py-6 h-auto transition-transform hover:scale-105">
                   <ShoppingBag className="mr-2 h-5 w-5" />
                   Start Shopping
                 </Button>
               </Link>
               <Link href="/become-a-seller">
-                <Button size="lg" variant="outline" className="border-white/30 text-purple-700 hover:bg-gray-100 text-lg px-8 py-6 h-auto">
+                <Button size="lg" variant="outline" className="border-white/30 text-purple-700 hover:bg-gray-100 text-lg px-8 py-6 h-auto transition-transform hover:scale-105">
                   Become a Seller
                   <ArrowRight className="ml-2 h-5 w-5" />
                 </Button>
@@ -117,7 +126,7 @@ export default function HomePage() {
             </div>
 
             {/* Stats */}
-            <div className="grid grid-cols-3 gap-8 pt-12 max-w-2xl mx-auto">
+            <div className="grid grid-cols-3 gap-8 pt-12 max-w-2xl mx-auto animate-in fade-in slide-in-from-bottom-8 duration-700 delay-500">
               <div className="text-center">
                 <div className="text-3xl md:text-4xl font-bold">10K+</div>
                 <div className="text-purple-200 text-sm mt-1">Products</div>
@@ -136,13 +145,17 @@ export default function HomePage() {
       </section>
 
       {/* Features Section */}
-      <section className="py-12 bg-muted/30">
+      <section className="py-12 bg-muted/30 dark:bg-transparent">
         <div className="container mx-auto px-4">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
             {features.map((feature, index) => (
-              <Card key={index} className="border-none shadow-none bg-transparent">
+              <Card
+                key={index}
+                className="border-none shadow-none bg-transparent animate-in fade-in slide-in-from-bottom-4 duration-500"
+                style={{ animationDelay: `${index * 100}ms` }}
+              >
                 <CardContent className="flex items-start gap-4 p-6">
-                  <div className="p-3 bg-primary/10 rounded-lg">
+                  <div className="p-3 bg-primary/10 rounded-lg transition-transform hover:scale-110 duration-300">
                     <feature.icon className="h-6 w-6 text-primary" />
                   </div>
                   <div className="space-y-1">
@@ -158,7 +171,7 @@ export default function HomePage() {
 
       {/* Categories Section */}
       <section className="py-16 container mx-auto px-4">
-        <div className="text-center mb-12">
+        <div className="text-center mb-12 animate-in fade-in slide-in-from-bottom-4 duration-700 view-animate">
           <h2 className="text-3xl md:text-4xl font-bold mb-4">Shop by Category</h2>
           <p className="text-muted-foreground text-lg">Find exactly what you&apos;re looking for</p>
         </div>
@@ -166,9 +179,12 @@ export default function HomePage() {
         <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
           {categories.map((category, index) => (
             <Link key={index} href={category.href}>
-              <Card className="group hover:shadow-lg transition-all duration-300 cursor-pointer border-2 hover:border-primary">
+              <Card
+                className="group hover:shadow-lg transition-all duration-300 cursor-pointer border-2 hover:border-primary animate-in fade-in zoom-in-95 duration-500"
+                style={{ animationDelay: `${index * 100}ms` }}
+              >
                 <CardContent className="p-8 text-center space-y-4">
-                  <div className={`mx-auto w-16 h-16 ${category.color} rounded-2xl flex items-center justify-center group-hover:scale-110 transition-transform duration-300`}>
+                  <div className={`mx-auto w-16 h-16 ${category.color} rounded-2xl flex items-center justify-center group-hover:scale-110 transition-transform duration-300 shadow-md`}>
                     <category.icon className="h-8 w-8 text-white" />
                   </div>
                   <h3 className="font-semibold text-lg">{category.name}</h3>
@@ -180,15 +196,15 @@ export default function HomePage() {
       </section>
 
       {/* Featured Products Section */}
-      <section className="py-16 bg-muted/30">
+      <section className="py-16 bg-muted/30 dark:bg-transparent">
         <div className="container mx-auto px-4">
-          <div className="flex justify-between items-center mb-12">
+          <div className="flex justify-between items-center mb-12 animate-in fade-in slide-in-from-bottom-4 duration-700">
             <div>
               <h2 className="text-3xl md:text-4xl font-bold mb-2">Featured Products</h2>
               <p className="text-muted-foreground">Handpicked items just for you</p>
             </div>
             <Link href="/products">
-              <Button variant="outline" className="hidden md:flex">
+              <Button variant="outline" className="hidden md:flex transition-transform hover:translate-x-1">
                 View All
                 <ArrowRight className="ml-2 h-4 w-4" />
               </Button>
@@ -209,12 +225,18 @@ export default function HomePage() {
             </div>
           ) : products.length > 0 ? (
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-              {products.map((product) => (
-                <ProductCard key={product._id} product={product} />
+              {products.map((product, index) => (
+                <div
+                  key={product._id}
+                  className="animate-in fade-in slide-in-from-bottom-4 duration-500"
+                  style={{ animationDelay: `${index * 100}ms` }}
+                >
+                  <ProductCard product={product} />
+                </div>
               ))}
             </div>
           ) : (
-            <div className="text-center py-16">
+            <div className="text-center py-16 animate-in fade-in zoom-in-95 duration-500">
               <ShoppingBag className="mx-auto h-16 w-16 text-muted-foreground mb-4" />
               <h3 className="text-xl font-semibold mb-2">No products yet</h3>
               <p className="text-muted-foreground">Check back soon for amazing deals!</p>
@@ -233,28 +255,41 @@ export default function HomePage() {
       </section>
 
       {/* CTA Section */}
-      <section className="py-20 bg-linear-to-r from-purple-600 to-blue-600 text-white">
-        <div className="container mx-auto px-4 text-center">
+      <section className="relative py-20 text-white overflow-hidden">
+        {/* Background Image */}
+        <div className="absolute inset-0">
+          <Image
+            src="/hero-bg.jpg"
+            alt="CTA Background"
+            fill
+            className="object-cover"
+          />
+          <div className="absolute inset-0 bg-black/60" />
+        </div>
+
+        <div className="container mx-auto px-4 text-center relative z-10">
           <div className="max-w-3xl mx-auto space-y-6">
-            <Badge className="bg-white/20 text-white border-white/30 hover:bg-white/30">
-              Start Selling Today
-            </Badge>
-            <h2 className="text-4xl md:text-5xl font-bold">
+            <div className="animate-in fade-in slide-in-from-bottom-4 duration-700 delay-100">
+              <Badge className="bg-white/20 text-white border-white/30 hover:bg-white/30 backdrop-blur-sm">
+                Start Selling Today
+              </Badge>
+            </div>
+            <h2 className="text-4xl md:text-5xl font-bold animate-in fade-in slide-in-from-bottom-4 duration-700 delay-200">
               Turn Your Products Into Profit
             </h2>
-            <p className="text-xl text-purple-100">
+            <p className="text-xl text-purple-100 animate-in fade-in slide-in-from-bottom-4 duration-700 delay-300">
               Join thousands of successful sellers on Zimbabwe&apos;s fastest-growing marketplace.
               Start your business journey with zero upfront costs.
             </p>
-            <div className="flex flex-col sm:flex-row gap-4 justify-center pt-4">
+            <div className="flex flex-col sm:flex-row gap-4 justify-center pt-4 animate-in fade-in slide-in-from-bottom-4 duration-700 delay-400">
               <Link href="/become-a-seller">
-                <Button size="lg" className="bg-white text-purple-700 hover:bg-gray-100 text-lg px-8 py-6 h-auto">
+                <Button size="lg" className="bg-white text-purple-700 hover:bg-gray-100 text-lg px-8 py-6 h-auto transition-transform hover:scale-105 shadow-lg">
                   <Star className="mr-2 h-5 w-5" />
                   Become a Seller
                 </Button>
               </Link>
               <Link href="/products">
-                <Button size="lg" variant="outline" className="border-white/30 text-purple-700 hover:bg-gray-100 text-lg px-8 py-6 h-auto">
+                <Button size="lg" variant="outline" className="border-white/30 text-purple-700 hover:bg-gray-100 text-lg px-8 py-6 h-auto transition-transform hover:scale-105">
                   Learn More
                 </Button>
               </Link>

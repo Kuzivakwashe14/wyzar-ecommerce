@@ -134,7 +134,7 @@ export default function ProductDetailPage() {
   return (
     <div className="min-h-screen bg-background">
       {/* Breadcrumb */}
-      <div className="border-b bg-muted/30">
+      <div className="border-b bg-muted/30 dark:bg-transparent">
         <div className="container mx-auto px-4 py-4">
           <nav className="flex items-center space-x-2 text-sm text-muted-foreground">
             <Link href="/" className="hover:text-foreground transition-colors">Home</Link>

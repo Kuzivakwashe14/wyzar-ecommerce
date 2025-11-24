@@ -7,6 +7,13 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Star, CheckCircle, ThumbsUp, MessageSquare } from 'lucide-react';
 import { toast } from 'sonner';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import ReviewForm from './ReviewForm';
 
 interface Review {
@@ -105,17 +112,16 @@ export default function ProductReviews({ productId }: ProductReviewsProps) {
       md: 'w-4 h-4',
       lg: 'w-5 h-5'
     };
-    
+
     return (
       <div className="flex items-center gap-0.5">
         {[1, 2, 3, 4, 5].map((star) => (
           <Star
             key={star}
-            className={`${sizeClasses[size]} ${
-              star <= rating
+            className={`${sizeClasses[size]} ${star <= rating
                 ? 'fill-yellow-400 text-yellow-400'
                 : 'text-gray-300'
-            }`}
+              }`}
           />
         ))}
       </div>
@@ -259,20 +265,24 @@ export default function ProductReviews({ productId }: ProductReviewsProps) {
         <CardHeader>
           <div className="flex items-center justify-between">
             <CardTitle>Reviews</CardTitle>
-            <select
+            <Select
               value={sortBy}
-              onChange={(e) => {
-                setSortBy(e.target.value);
+              onValueChange={(value) => {
+                setSortBy(value);
                 setCurrentPage(1);
               }}
-              className="px-3 py-1 text-sm border rounded-md"
             >
-              <option value="newest">Newest First</option>
-              <option value="oldest">Oldest First</option>
-              <option value="highest">Highest Rating</option>
-              <option value="lowest">Lowest Rating</option>
-              <option value="helpful">Most Helpful</option>
-            </select>
+              <SelectTrigger className="w-[180px]">
+                <SelectValue placeholder="Sort by" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="newest">Newest First</SelectItem>
+                <SelectItem value="oldest">Oldest First</SelectItem>
+                <SelectItem value="highest">Highest Rating</SelectItem>
+                <SelectItem value="lowest">Lowest Rating</SelectItem>
+                <SelectItem value="helpful">Most Helpful</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
         </CardHeader>
         <CardContent>

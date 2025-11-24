@@ -70,7 +70,7 @@ export default function Navbar() {
   return (
     <nav className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-backdrop-filter:bg-background/60">
       {/* Top Bar */}
-      <div className="border-b bg-muted/30">
+      <div className="border-b bg-muted/30 dark:bg-transparent">
         <div className="container mx-auto px-4">
           <div className="flex h-10 items-center justify-between text-sm">
             <div className="flex items-center gap-4">
@@ -95,124 +95,117 @@ export default function Navbar() {
 
       {/* Main Navbar */}
       <div className="container mx-auto px-4">
-        <div className="flex h-16 items-center gap-4">
-          {/* Mobile Menu */}
-          <Sheet open={mobileMenuOpen} onOpenChange={setMobileMenuOpen}>
-            <SheetTrigger asChild className="md:hidden">
-              <Button variant="ghost" size="icon">
-                <Menu className="h-5 w-5" />
-              </Button>
-            </SheetTrigger>
-            <SheetContent side="left" className="w-80">
-              <div className="flex flex-col gap-4 py-4">
-                <Link href="/" className="text-2xl font-bold" onClick={() => setMobileMenuOpen(false)}>
-                  WyZar
-                </Link>
-                <div className="space-y-2">
-                  <Link href="/" onClick={() => setMobileMenuOpen(false)}>
-                    <Button variant="ghost" className="w-full justify-start">
-                      <HomeIcon className="mr-2 h-4 w-4" />
-                      Home
-                    </Button>
+        <div className="flex h-16 items-center justify-between gap-4">
+          {/* Left Section: Logo & Navigation */}
+          <div className="flex items-center gap-4 md:gap-8">
+            {/* Mobile Menu */}
+            <Sheet open={mobileMenuOpen} onOpenChange={setMobileMenuOpen}>
+              <SheetTrigger asChild className="md:hidden">
+                <Button variant="ghost" size="icon">
+                  <Menu className="h-5 w-5" />
+                </Button>
+              </SheetTrigger>
+              <SheetContent side="left" className="w-80">
+                <div className="flex flex-col gap-4 py-4">
+                  <Link href="/" className="text-2xl font-bold" onClick={() => setMobileMenuOpen(false)}>
+                    WyZar
                   </Link>
-                  <Link href="/products" onClick={() => setMobileMenuOpen(false)}>
-                    <Button variant="ghost" className="w-full justify-start">
-                      <Package className="mr-2 h-4 w-4" />
-                      All Products
-                    </Button>
-                  </Link>
-                  <div className="py-2">
-                    <p className="px-4 text-sm font-semibold text-muted-foreground mb-2">Categories</p>
-                    {categories.map((category) => (
-                      <Link key={category.name} href={category.href} onClick={() => setMobileMenuOpen(false)}>
-                        <Button variant="ghost" className="w-full justify-start">
-                          <category.icon className="mr-2 h-4 w-4" />
-                          {category.name}
-                        </Button>
-                      </Link>
-                    ))}
+                  <div className="space-y-2">
+
+                    <Link href="/products" onClick={() => setMobileMenuOpen(false)}>
+                      <Button variant="ghost" className="w-full justify-start">
+                        <Package className="mr-2 h-4 w-4" />
+                        All Products
+                      </Button>
+                    </Link>
+                    <div className="py-2">
+                      <p className="px-4 text-sm font-semibold text-muted-foreground mb-2">Categories</p>
+                      {categories.map((category) => (
+                        <Link key={category.name} href={category.href} onClick={() => setMobileMenuOpen(false)}>
+                          <Button variant="ghost" className="w-full justify-start">
+                            <category.icon className="mr-2 h-4 w-4" />
+                            {category.name}
+                          </Button>
+                        </Link>
+                      ))}
+                    </div>
                   </div>
                 </div>
-              </div>
-            </SheetContent>
-          </Sheet>
+              </SheetContent>
+            </Sheet>
 
-          {/* Logo */}
-          <Link href="/" className="flex items-center gap-2">
-            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-linear-to-br from-purple-600 to-blue-600">
-              <span className="text-xl font-bold text-white">W</span>
-            </div>
-            <span className="hidden sm:inline-block text-xl font-bold bg-linear-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent">
-              WyZar
-            </span>
-          </Link>
+            {/* Logo */}
+            <Link href="/" className="flex items-center gap-2">
+              <span className="text-2xl font-bold bg-linear-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent">
+                WyZar
+              </span>
+            </Link>
 
-          {/* Desktop Navigation */}
-          <NavigationMenu className="hidden md:flex">
-            <NavigationMenuList>
-              <NavigationMenuItem>
-                <NavigationMenuLink asChild className={navigationMenuTriggerStyle()}>
-                  <Link href="/">Home</Link>
-                </NavigationMenuLink>
-              </NavigationMenuItem>
+            {/* Desktop Navigation */}
+            <NavigationMenu className="hidden md:flex">
+              <NavigationMenuList>
 
-              <NavigationMenuItem>
-                <NavigationMenuTrigger>Categories</NavigationMenuTrigger>
-                <NavigationMenuContent>
-                  <div className="grid w-[400px] gap-3 p-4 md:w-[500px] md:grid-cols-2">
-                    {categories.map((category) => (
-                      <Link key={category.name} href={category.href}>
-                        <div className="group flex items-start gap-3 rounded-lg p-3 hover:bg-accent transition-colors">
+
+                <NavigationMenuItem>
+                  <NavigationMenuTrigger>Categories</NavigationMenuTrigger>
+                  <NavigationMenuContent>
+                    <div className="grid w-[400px] gap-3 p-4 md:w-[500px] md:grid-cols-2">
+                      {categories.map((category) => (
+                        <Link key={category.name} href={category.href}>
+                          <div className="group flex items-start gap-3 rounded-lg p-3 hover:bg-accent transition-colors">
+                            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-primary/10 group-hover:bg-primary/20 transition-colors">
+                              <category.icon className="h-5 w-5 text-primary" />
+                            </div>
+                            <div className="space-y-1">
+                              <p className="font-medium leading-none">{category.name}</p>
+                              <p className="text-sm text-muted-foreground">Browse {category.name.toLowerCase()}</p>
+                            </div>
+                          </div>
+                        </Link>
+                      ))}
+                      <Link href="/products">
+                        <div className="group flex items-start gap-3 rounded-lg p-3 hover:bg-accent transition-colors md:col-span-2">
                           <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-primary/10 group-hover:bg-primary/20 transition-colors">
-                            <category.icon className="h-5 w-5 text-primary" />
+                            <Sparkles className="h-5 w-5 text-primary" />
                           </div>
                           <div className="space-y-1">
-                            <p className="font-medium leading-none">{category.name}</p>
-                            <p className="text-sm text-muted-foreground">Browse {category.name.toLowerCase()}</p>
+                            <p className="font-medium leading-none">All Products</p>
+                            <p className="text-sm text-muted-foreground">Explore our entire collection</p>
                           </div>
                         </div>
                       </Link>
-                    ))}
+                    </div>
+                  </NavigationMenuContent>
+                </NavigationMenuItem>
+
+                <NavigationMenuItem>
+                  <NavigationMenuLink asChild className={navigationMenuTriggerStyle()}>
                     <Link href="/products">
-                      <div className="group flex items-start gap-3 rounded-lg p-3 hover:bg-accent transition-colors md:col-span-2">
-                        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-primary/10 group-hover:bg-primary/20 transition-colors">
-                          <Sparkles className="h-5 w-5 text-primary" />
-                        </div>
-                        <div className="space-y-1">
-                          <p className="font-medium leading-none">All Products</p>
-                          <p className="text-sm text-muted-foreground">Explore our entire collection</p>
-                        </div>
-                      </div>
+                      Trending
                     </Link>
-                  </div>
-                </NavigationMenuContent>
-              </NavigationMenuItem>
+                  </NavigationMenuLink>
+                </NavigationMenuItem>
+              </NavigationMenuList>
+            </NavigationMenu>
+          </div>
 
-              <NavigationMenuItem>
-                <NavigationMenuLink asChild className={navigationMenuTriggerStyle()}>
-                  <Link href="/products">
-                    Trending
-                  </Link>
-                </NavigationMenuLink>
-              </NavigationMenuItem>
-            </NavigationMenuList>
-          </NavigationMenu>
+          {/* Center Section: Search Bar */}
+          <div className="hidden sm:flex flex-1 justify-center max-w-md mx-auto">
+            <form onSubmit={handleSearch} className="w-full">
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input
+                  type="search"
+                  placeholder="Search products..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="pl-10 pr-4 w-full"
+                />
+              </div>
+            </form>
+          </div>
 
-          {/* Search Bar */}
-          <form onSubmit={handleSearch} className="flex-1 hidden sm:block max-w-md mx-4">
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <Input
-                type="search"
-                placeholder="Search products..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-10 pr-4"
-              />
-            </div>
-          </form>
-
-          {/* Right Side Actions */}
+          {/* Right Section: Actions */}
           <div className="flex items-center gap-2">
             {isAuthenticated && user ? (
               <>
