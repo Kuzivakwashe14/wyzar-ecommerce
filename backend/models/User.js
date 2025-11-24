@@ -19,8 +19,9 @@ const UserSchema = new Schema({
   },
   phone: {
     type: String,
-    required: [true, 'Phone number is required'],
+    required: false,
     unique: true,
+    sparse: true, // Allows multiple null values
     trim: true,
     match: [/^(\+263|0)[0-9]{9}$/, 'Please provide a valid Zimbabwean phone number']
   },

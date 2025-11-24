@@ -43,7 +43,7 @@ interface AuthContextType {
   loading: boolean;
   login: (token: string) => Promise<void>;
   logout: () => void;
-  register: (email: string, password: string, phone: string) => Promise<void>;
+  register: (email: string, password: string) => Promise<void>;
   axiosInstance: typeof api;
 }
 
@@ -106,10 +106,10 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   };
 
   // 9. Register function
-  const register = async (email: string, password: string, phone: string) => {
+  const register = async (email: string, password: string) => {
     setLoading(true);
     try {
-      const res = await api.post('/auth/register', { email, password, phone });
+      const res = await api.post('/auth/register', { email, password });
       const { token } = res.data;
 
       // After successful registration, log the user in

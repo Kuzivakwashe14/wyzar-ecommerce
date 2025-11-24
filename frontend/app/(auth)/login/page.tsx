@@ -20,10 +20,10 @@ import {
 import { Input } from "@/components/ui/input";
 import { api, useAuth } from "@/context/AuthContent";
 
-// Login schema - supports both email and phone
+// Login schema - supports email
 const loginSchema = z.object({
   identifier: z.string().min(1, {
-    message: "Email or phone number is required.",
+    message: "Email address is required.",
   }),
   password: z.string().min(6, {
     message: "Password must be at least 6 characters.",
@@ -48,12 +48,10 @@ export default function LoginPage() {
   const onSubmit = async (values: LoginFormValues) => {
     setIsLoading(true);
     try {
-      // Determine if identifier is email or phone
-      const isEmail = values.identifier.includes('@');
-
-      const loginData = isEmail
-        ? { email: values.identifier, password: values.password }
-        : { phone: values.identifier, password: values.password };
+      const loginData = {
+        email: values.identifier,
+        password: values.password
+      };
 
       const response = await api.post('/auth/login', loginData);
       const { token } = response.data;
@@ -100,10 +98,11 @@ export default function LoginPage() {
             name="identifier"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Email or Phone Number</FormLabel>
+                <FormLabel>Email Address</FormLabel>
                 <FormControl>
                   <Input
-                    placeholder="name@example.com or 0771234567"
+                    placeholder="name@example.com"
+                    type="email"
                     disabled={isLoading}
                     {...field}
                   />

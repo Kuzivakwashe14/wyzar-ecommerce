@@ -31,9 +31,6 @@ const registrationSchema = z.object({
     message: "Password must be at least 6 characters.",
   }),
   confirmPassword: z.string(),
-  phone: z.string().regex(/^(\+263|0)[0-9]{9}$/, {
-    message: "Please enter a valid Zimbabwean phone number (e.g., 0771234567 or +263771234567)",
-  }),
 }).refine((data) => data.password === data.confirmPassword, {
   message: "Passwords don't match",
   path: ["confirmPassword"],
@@ -57,7 +54,6 @@ export default function SignUpPage() {
       email: "",
       password: "",
       confirmPassword: "",
-      phone: "",
     },
   });
 
@@ -65,9 +61,9 @@ export default function SignUpPage() {
   const onSubmitDetails = async (values: RegistrationFormValues) => {
     setIsLoading(true);
     try {
-      // Send OTP to phone number
+      // Send OTP to email address
       const response = await api.post('/otp/send', {
-        phone: values.phone,
+        email: values.email,
         type: 'registration'
       });
 
@@ -75,7 +71,7 @@ export default function SignUpPage() {
         setFormData(values);
         setStep(2);
         toast.success("OTP Sent", {
-          description: "We've sent a verification code to your phone number.",
+          description: "We've sent a verification code to your email address.",
         });
 
         // Start countdown for resend
@@ -107,14 +103,14 @@ export default function SignUpPage() {
     try {
       // First verify OTP
       const otpResponse = await api.post('/otp/verify', {
-        phone: formData.phone,
+        email: formData.email,
         otp,
         type: 'registration'
       });
 
       if (otpResponse.data.success) {
         // OTP verified, now register the user
-        await register(formData.email, formData.password, formData.phone);
+        await register(formData.email, formData.password, formData.email);
 
         toast.success("Account Created", {
           description: "Your account has been created successfully!",
@@ -141,13 +137,13 @@ export default function SignUpPage() {
     setIsLoading(true);
     try {
       const response = await api.post('/otp/send', {
-        phone: formData.phone,
+        email: formData.email,
         type: 'registration'
       });
 
       if (response.data.success) {
         toast.success("OTP Resent", {
-          description: "We've sent a new verification code to your phone.",
+          description: "We've sent a new verification code to your email.",
         });
         setOtp(""); // Clear current OTP
         startResendCountdown();
@@ -186,7 +182,7 @@ export default function SignUpPage() {
         <p className="text-sm text-muted-foreground">
           {step === 1
             ? "Enter your details to get started"
-            : "Enter the verification code sent to your phone"}
+            : "Enter the verification code sent to your email"}
         </p>
       </div>
 
@@ -207,28 +203,6 @@ export default function SignUpPage() {
                       {...field}
                     />
                   </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <FormField
-              control={form.control}
-              name="phone"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Phone Number</FormLabel>
-                  <FormControl>
-                    <Input
-                      placeholder="0771234567"
-                      type="tel"
-                      disabled={isLoading}
-                      {...field}
-                    />
-                  </FormControl>
-                  <FormDescription>
-                    We&apos;ll send an OTP to verify your phone number
-                  </FormDescription>
                   <FormMessage />
                 </FormItem>
               )}
@@ -282,7 +256,7 @@ export default function SignUpPage() {
           <div className="space-y-4">
             <div className="text-center">
               <p className="text-sm text-muted-foreground mb-4">
-                Code sent to {formData?.phone}
+                Code sent to {formData?.email}
               </p>
               <OTPInput
                 length={6}
@@ -319,7 +293,7 @@ export default function SignUpPage() {
                   }}
                   className="text-sm text-muted-foreground hover:text-foreground hover:underline"
                 >
-                  Change phone number
+                  Change email address
                 </button>
               </div>
             </div>

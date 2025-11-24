@@ -4,7 +4,7 @@ const express = require('express');
 const router = express.Router();
 const OTP = require('../models/OTP');
 const User = require('../models/User');
-const { sendOTP, sendPasswordResetOTP } = require('../services/smsService');
+const { sendOTP, sendPasswordResetOTP } = require('../services/emailService');
 const { otpLimiter } = require('../config/security');
 
 /**
@@ -16,17 +16,17 @@ const generateOTP = () => {
 
 // --- Send OTP Route ---
 // @route   POST /api/otp/send
-// @desc    Send OTP to phone number via SMS
+// @desc    Send OTP to email address via Email
 // @access  Public
 router.post('/send', otpLimiter, async (req, res) => {
-  const { phone, type } = req.body;
+  const { email, type } = req.body;
 
   try {
     // Validate input
-    if (!phone || !type) {
+    if (!email || !type) {
       return res.status(400).json({
         success: false,
-        msg: 'Phone number and type are required'
+        msg: 'Email address and type are required'
       });
     }
 
@@ -38,31 +38,31 @@ router.post('/send', otpLimiter, async (req, res) => {
       });
     }
 
-    // For registration, check if phone already exists
+    // For registration, check if email already exists
     if (type === 'registration') {
-      const existingUser = await User.findOne({ phone });
+      const existingUser = await User.findOne({ email });
       if (existingUser) {
         return res.status(400).json({
           success: false,
-          msg: 'Phone number already registered'
+          msg: 'Email address already registered'
         });
       }
     }
 
-    // For password-reset, check if phone exists
+    // For password-reset, check if email exists
     if (type === 'password-reset') {
-      const user = await User.findOne({ phone });
+      const user = await User.findOne({ email });
       if (!user) {
         return res.status(404).json({
           success: false,
-          msg: 'No account found with this phone number'
+          msg: 'No account found with this email address'
         });
       }
     }
 
     // Check for recent OTP requests (rate limiting - max 1 per minute)
     const recentOTP = await OTP.findOne({
-      phone,
+      email,
       type,
       createdAt: { $gte: new Date(Date.now() - 60 * 1000) } // Last 60 seconds
     });
@@ -79,7 +79,7 @@ router.post('/send', otpLimiter, async (req, res) => {
 
     // Create OTP record in database
     const otpRecord = new OTP({
-      phone,
+      email,
       otp: otpCode,
       type,
       expiresAt: new Date(Date.now() + 10 * 60 * 1000) // 10 minutes
@@ -87,23 +87,23 @@ router.post('/send', otpLimiter, async (req, res) => {
 
     await otpRecord.save();
 
-    // Send OTP via SMS
-    let smsResult;
+    // Send OTP via Email
+    let emailResult;
     if (type === 'password-reset') {
-      smsResult = await sendPasswordResetOTP(phone, otpCode);
+      emailResult = await sendPasswordResetOTP(email, otpCode);
     } else {
-      smsResult = await sendOTP(phone, otpCode);
+      emailResult = await sendOTP(email, otpCode);
     }
 
-    if (!smsResult.success) {
-      // SMS failed but OTP is saved in database
+    if (!emailResult.success) {
+      // Email failed but OTP is saved in database
       // In development, you might want to log the OTP
-      console.log(`OTP for ${phone}: ${otpCode} (SMS failed to send)`);
+      console.log(`OTP for ${email}: ${otpCode} (Email failed to send)`);
 
       return res.status(200).json({
         success: true,
-        msg: 'OTP generated but SMS delivery failed. Please try again.',
-        warning: 'SMS service unavailable',
+        msg: 'OTP generated but email delivery failed. Please try again.',
+        warning: 'Email service unavailable',
         // In development/testing, you might want to include the OTP
         ...(process.env.NODE_ENV === 'development' && { otp: otpCode })
       });
@@ -112,7 +112,7 @@ router.post('/send', otpLimiter, async (req, res) => {
     // Success response
     res.status(200).json({
       success: true,
-      msg: 'OTP sent successfully to your phone number',
+      msg: 'OTP sent successfully to your email address',
       expiresIn: '10 minutes',
       // In development/testing, you might want to include the OTP
       ...(process.env.NODE_ENV === 'development' && { otp: otpCode })
@@ -133,20 +133,20 @@ router.post('/send', otpLimiter, async (req, res) => {
 // @desc    Verify OTP code
 // @access  Public
 router.post('/verify', async (req, res) => {
-  const { phone, otp, type } = req.body;
+  const { email, otp, type } = req.body;
 
   try {
     // Validate input
-    if (!phone || !otp || !type) {
+    if (!email || !otp || !type) {
       return res.status(400).json({
         success: false,
-        msg: 'Phone number, OTP, and type are required'
+        msg: 'Email address, OTP, and type are required'
       });
     }
 
-    // Find the most recent OTP for this phone and type
+    // Find the most recent OTP for this email and type
     const otpRecord = await OTP.findOne({
-      phone,
+      email,
       type,
       verified: false
     }).sort({ createdAt: -1 });
@@ -190,11 +190,11 @@ router.post('/verify', async (req, res) => {
     otpRecord.verified = true;
     await otpRecord.save();
 
-    // If this is for registration or login, you might want to update user's phone verification status
+    // If this is for registration or login, you might want to update user's email verification status
     if (type === 'registration' || type === 'login') {
-      const user = await User.findOne({ phone });
-      if (user && !user.isPhoneVerified) {
-        user.isPhoneVerified = true;
+      const user = await User.findOne({ email });
+      if (user && !user.isEmailVerified) {
+        user.isEmailVerified = true;
         await user.save();
       }
     }

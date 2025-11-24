@@ -3,10 +3,11 @@ const mongoose = require('mongoose');
 const Schema = mongoose.Schema;
 
 const OTPSchema = new Schema({
-  phone: {
+  email: {
     type: String,
     required: true,
-    trim: true
+    trim: true,
+    lowercase: true
   },
   otp: {
     type: String,
@@ -41,7 +42,7 @@ const OTPSchema = new Schema({
 });
 
 // Index for faster queries
-OTPSchema.index({ phone: 1, type: 1, createdAt: -1 });
+OTPSchema.index({ email: 1, type: 1, createdAt: -1 });
 
 // Method to check if OTP is expired
 OTPSchema.methods.isExpired = function() {
