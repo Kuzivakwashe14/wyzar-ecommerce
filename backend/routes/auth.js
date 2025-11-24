@@ -7,12 +7,13 @@ const jwt = require('jsonwebtoken');
 const auth = require('../middleware/auth');
 const User = require('../models/User'); // Import our User model
 const { sendWelcomeNotification } = require('../services/notificationService');
+const { authLimiter } = require('../config/security');
 
 // --- Registration Route ---
 // @route   POST /api/auth/register
 // @desc    Register a new user (must verify phone with OTP first)
 // @access  Public
-router.post('/register', async (req, res) => {
+router.post('/register', authLimiter, async (req, res) => {
   // 1. Get email, password, and phone from the request body
   const { email, password, phone } = req.body;
 
@@ -117,7 +118,7 @@ router.post('/register', async (req, res) => {
 // @route   POST /api/auth/login
 // @desc    Authenticate user & get token (supports email or phone)
 // @access  Public
-router.post('/login', async (req, res) => {
+router.post('/login', authLimiter, async (req, res) => {
   // 1. Get credentials from request body (can be email or phone)
   const { email, phone, password } = req.body;
 

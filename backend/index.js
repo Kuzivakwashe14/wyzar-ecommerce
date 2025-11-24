@@ -1,16 +1,41 @@
 const express = require('express');
 const mongoose = require('mongoose');
-const cors = require('cors');
+const https = require('https');
+const http = require('http');
+const fs = require('fs');
 const path = require('path');
+const cookieParser = require('cookie-parser');
 require('dotenv').config(); // Load environment variables
+
+// Security configuration
+const {
+  helmetConfig,
+  getCorsConfig,
+  generalLimiter,
+  mongoSanitizeConfig,
+  hppConfig,
+  securityHeaders
+} = require('./config/security');
 
 const app = express();
 const PORT = process.env.PORT || 5000;
+const HTTPS_PORT = process.env.HTTPS_PORT || 5443;
+const USE_HTTPS = process.env.USE_HTTPS === 'true';
 
-// Middleware
-app.use(cors()); // Enable Cross-Origin Resource Sharing
-app.use(express.json()); // Parse JSON bodies from requests
-app.use(express.urlencoded({ extended: true }));
+// --- Security Middleware (Applied First) ---
+app.use(helmetConfig); // Security headers
+app.use(securityHeaders); // Additional custom security headers
+app.use(getCorsConfig()); // CORS with proper configuration
+app.use(generalLimiter); // Rate limiting
+// app.use(mongoSanitizeConfig); // TODO: Temporarily disabled - incompatible with Express 5
+app.use(hppConfig); // Prevent HTTP Parameter Pollution
+
+// --- Body Parsing Middleware ---
+app.use(express.json({ limit: '10mb' })); // Parse JSON bodies (with size limit)
+app.use(express.urlencoded({ extended: true, limit: '10mb' }));
+app.use(cookieParser()); // Parse cookies
+
+// --- Static Files ---
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
 // --- Database Connection ---
@@ -45,6 +70,47 @@ app.use('/api/admin/products', require('./routes/adminProducts'));
 app.use('/api/admin/orders', require('./routes/adminOrders'));
 
 // --- Start the Server ---
-app.listen(PORT, () => {
-  console.log(`Server is running on http://localhost:${PORT}`);
+if (USE_HTTPS) {
+  // Load SSL certificates
+  const sslOptions = {
+    key: fs.readFileSync(path.join(__dirname, 'ssl', 'server.key')),
+    cert: fs.readFileSync(path.join(__dirname, 'ssl', 'server.cert'))
+  };
+
+  // Create HTTPS server
+  const httpsServer = https.createServer(sslOptions, app);
+
+  httpsServer.listen(HTTPS_PORT, () => {
+    console.log(`🔒 HTTPS Server running on https://localhost:${HTTPS_PORT}`);
+    console.log(`🔐 SSL/TLS encryption enabled`);
+  });
+
+  // Optional: Redirect HTTP to HTTPS
+  if (process.env.REDIRECT_HTTP === 'true') {
+    const httpApp = express();
+    httpApp.use('*', (req, res) => {
+      res.redirect(`https://${req.hostname}:${HTTPS_PORT}${req.url}`);
+    });
+    httpApp.listen(PORT, () => {
+      console.log(`📡 HTTP Server (redirect) running on http://localhost:${PORT}`);
+    });
+  }
+} else {
+  // Regular HTTP server (for development without SSL)
+  app.listen(PORT, () => {
+    console.log(`📡 HTTP Server running on http://localhost:${PORT}`);
+    console.log(`⚠️  Warning: Running without SSL/TLS encryption`);
+    console.log(`   Set USE_HTTPS=true in .env to enable HTTPS`);
+  });
+}
+
+// Graceful shutdown
+process.on('SIGTERM', () => {
+  console.log('SIGTERM signal received: closing HTTP server');
+  process.exit(0);
+});
+
+process.on('SIGINT', () => {
+  console.log('SIGINT signal received: closing HTTP server');
+  process.exit(0);
 });

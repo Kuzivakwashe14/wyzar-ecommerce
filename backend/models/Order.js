@@ -1,6 +1,7 @@
 // In backend/models/Order.js
 const mongoose = require('mongoose');
 const Schema = mongoose.Schema;
+const encryptedFieldsPlugin = require('../utils/encryptedField');
 
 // This is a sub-document schema for items *within* an order
 const OrderItemSchema = new Schema({
@@ -24,10 +25,10 @@ const OrderSchema = new Schema(
     },
     orderItems: [OrderItemSchema], // An array of items
     shippingAddress: {
-      fullName: { type: String, required: true },
-      address: { type: String, required: true },
+      fullName: { type: String, required: true, encrypted: true },
+      address: { type: String, required: true, encrypted: true },
       city: { type: String, required: true },
-      phone: { type: String, required: true },
+      phone: { type: String, required: true, encrypted: true },
     },
     paymentMethod: {
       type: String,
@@ -68,5 +69,8 @@ const OrderSchema = new Schema(
     timestamps: true, // Adds createdAt and updatedAt automatically
   }
 );
+
+// Apply encrypted fields plugin to automatically encrypt/decrypt sensitive data
+OrderSchema.plugin(encryptedFieldsPlugin);
 
 module.exports = mongoose.model('Order', OrderSchema);

@@ -1,0 +1,16 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(NUL)",
+      "Bash(findstr:*)",
+      "Bash(npm install:*)",
+      "Bash(openssl version:*)",
+      "Bash(openssl req:*)",
+      "Bash(node:*)",
+      "Bash(npm start)",
+      "Bash(timeout /t 5)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}

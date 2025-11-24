@@ -5,6 +5,7 @@ const router = express.Router();
 const OTP = require('../models/OTP');
 const User = require('../models/User');
 const { sendOTP, sendPasswordResetOTP } = require('../services/smsService');
+const { otpLimiter } = require('../config/security');
 
 /**
  * Generate a random 6-digit OTP
@@ -17,7 +18,7 @@ const generateOTP = () => {
 // @route   POST /api/otp/send
 // @desc    Send OTP to phone number via SMS
 // @access  Public
-router.post('/send', async (req, res) => {
+router.post('/send', otpLimiter, async (req, res) => {
   const { phone, type } = req.body;
 
   try {
