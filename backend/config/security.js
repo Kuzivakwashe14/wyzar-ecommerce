@@ -47,8 +47,8 @@ const getCorsConfig = () => {
  */
 const authLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 5, // Limit each IP to 5 requests per windowMs
-  message: 'Too many login attempts, please try again after 15 minutes',
+  max: 10, // Limit each IP to 10 login attempts per windowMs
+  message: { msg: 'Too many login attempts, please try again after 15 minutes' },
   standardHeaders: true,
   legacyHeaders: false,
   // Skip successful requests
@@ -60,21 +60,32 @@ const authLimiter = rateLimit({
  */
 const otpLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 3, // Limit each IP to 3 OTP requests per windowMs
-  message: 'Too many OTP requests, please try again after 15 minutes',
+  max: 5, // Limit each IP to 5 OTP requests per windowMs
+  message: { msg: 'Too many OTP requests, please try again after 15 minutes' },
   standardHeaders: true,
   legacyHeaders: false,
 });
 
 /**
  * General rate limiting for all routes
+ * More lenient for browsing/shopping
  */
 const generalLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 100, // Limit each IP to 100 requests per windowMs
-  message: 'Too many requests, please try again later',
+  windowMs: 1 * 60 * 1000, // 1 minute window
+  max: process.env.NODE_ENV === 'development' ? 1000 : 200, // Higher limit in dev
+  message: { msg: 'Too many requests, please try again later' },
   standardHeaders: true,
   legacyHeaders: false,
+  // Skip rate limiting for static files and product browsing in development
+  skip: (req) => {
+    if (process.env.NODE_ENV === 'development') {
+      // Skip rate limiting for GET requests to products in development
+      if (req.method === 'GET' && req.path.includes('/products')) {
+        return true;
+      }
+    }
+    return false;
+  }
 });
 
 /**

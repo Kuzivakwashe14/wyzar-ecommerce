@@ -37,7 +37,8 @@ interface Order {
     phone?: string;
   };
   orderItems: OrderItem[];
-  status: 'Pending' | 'Paid' | 'Shipped' | 'Delivered' | 'Cancelled';
+  paymentMethod?: 'Paynow' | 'CashOnDelivery';
+  status: 'Pending' | 'Confirmed' | 'Paid' | 'Shipped' | 'Delivered' | 'Cancelled';
   createdAt: string;
   totalPrice: number; // This is the total for the whole order
 }
@@ -106,8 +107,36 @@ const SellerOrdersPage = () => {
     }
   };
 
+  // Handle manual payment confirmation for Paynow orders
+  const handleConfirmPayment = async (orderId: string) => {
+    if (!isAuthenticated) {
+      toast.error('Authentication error. Please log in again.');
+      return;
+    }
+
+    try {
+      const { data } = await api.post(`/orders/${orderId}/confirm-payment`);
+
+      if (data.success) {
+        setOrders(prevOrders =>
+          prevOrders.map(order =>
+            order._id === orderId ? { ...order, status: 'Paid' } : order
+          )
+        );
+        toast.success(data.msg || 'Payment confirmed successfully!');
+      } else {
+        toast.error(data.msg || 'Failed to confirm payment.');
+      }
+    } catch (err: any) {
+      toast.error(err.response?.data?.msg || 'An error occurred.');
+      console.error(err);
+    }
+  };
+
   const getStatusBadgeVariant = (status: Order['status']) => {
     switch (status) {
+      case 'Confirmed':
+        return 'default'; // COD orders confirmed but not paid
       case 'Paid':
         return 'default';
       case 'Shipped':
@@ -194,21 +223,47 @@ const SellerOrdersPage = () => {
                             </Button>
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="end">
+                            {/* Confirm Payment - for Pending Paynow orders (when callback fails) */}
+                            {order.status === 'Pending' && order.paymentMethod !== 'CashOnDelivery' && (
+                              <DropdownMenuItem
+                                onClick={() => handleConfirmPayment(order._id)}
+                                className="text-green-600"
+                              >
+                                ✓ Confirm Paynow Payment
+                              </DropdownMenuItem>
+                            )}
+                            {/* Mark as Paid - for COD orders that are Confirmed, Shipped, or Delivered */}
+                            {order.paymentMethod === 'CashOnDelivery' && 
+                             ['Confirmed', 'Shipped', 'Delivered'].includes(order.status) && (
+                              <DropdownMenuItem
+                                onClick={() => handleStatusUpdate(order._id, 'Paid')}
+                              >
+                                ✓ Confirm Payment Received
+                              </DropdownMenuItem>
+                            )}
                             <DropdownMenuItem
                               onClick={() => handleStatusUpdate(order._id, 'Shipped')}
-                              disabled={order.status === 'Shipped' || order.status === 'Delivered'}
+                              disabled={
+                                order.status === 'Shipped' || 
+                                order.status === 'Delivered' ||
+                                order.status === 'Pending' // Must be Paid or Confirmed first
+                              }
                             >
                               Mark as Shipped
                             </DropdownMenuItem>
                             <DropdownMenuItem
                               onClick={() => handleStatusUpdate(order._id, 'Delivered')}
-                              disabled={order.status === 'Delivered'}
+                              disabled={order.status !== 'Shipped'}
                             >
                               Mark as Delivered
                             </DropdownMenuItem>
-                             <DropdownMenuItem
+                            <DropdownMenuItem
                               onClick={() => handleStatusUpdate(order._id, 'Cancelled')}
-                              disabled={order.status === 'Cancelled' || order.status === 'Delivered'}
+                              disabled={
+                                order.status === 'Cancelled' || 
+                                order.status === 'Delivered' ||
+                                order.status === 'Shipped'
+                              }
                             >
                               Cancel Order
                             </DropdownMenuItem>

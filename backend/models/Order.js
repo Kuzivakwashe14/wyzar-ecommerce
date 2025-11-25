@@ -33,7 +33,8 @@ const OrderSchema = new Schema(
     paymentMethod: {
       type: String,
       required: true,
-      default: 'Paynow', // From your MVP
+      enum: ['Paynow', 'CashOnDelivery'],
+      default: 'Paynow',
     },
     paymentResult: {
       // This will be filled by Paynow's response
@@ -49,7 +50,7 @@ const OrderSchema = new Schema(
     },
     status: {
       type: String,
-      enum: ['Pending', 'Paid', 'Shipped', 'Delivered', 'Cancelled'],
+      enum: ['Pending', 'Confirmed', 'Paid', 'Shipped', 'Delivered', 'Cancelled'],
       default: 'Pending',
     },
     paidAt: {

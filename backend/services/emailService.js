@@ -358,11 +358,14 @@ const sendLoginAlertEmail = async (user, loginInfo = {}) => {
  */
 const sendOrderConfirmationEmail = async (order, user) => {
   try {
-    // Calculate total
-    const total = order.items.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+    // Use orderItems from the Order model (not items)
+    const items = order.orderItems || order.items || [];
+    
+    // Use totalPrice from order or calculate it
+    const total = order.totalPrice || items.reduce((sum, item) => sum + (item.price * item.quantity), 0);
 
     // Generate items HTML
-    const itemsHtml = order.items.map(item => `
+    const itemsHtml = items.map(item => `
       <tr>
         <td style="padding: 10px; border-bottom: 1px solid #ddd;">${item.name || item.product?.name || 'Product'}</td>
         <td style="padding: 10px; border-bottom: 1px solid #ddd; text-align: center;">${item.quantity}</td>
@@ -449,9 +452,12 @@ const sendOrderConfirmationEmail = async (order, user) => {
  */
 const sendSellerOrderNotification = async (order, seller) => {
   try {
-    const sellerItems = order.items.filter(item =>
-      item.seller && item.seller.toString() === seller._id.toString()
-    );
+    // Use orderItems from the Order model (not items)
+    const items = order.orderItems || order.items || [];
+    
+    // For seller notifications, we already filter items in the route
+    // so just use all items passed in the order object
+    const sellerItems = items;
 
     if (sellerItems.length === 0) return { success: true, message: 'No items for this seller' };
 

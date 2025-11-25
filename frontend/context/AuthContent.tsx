@@ -1,11 +1,11 @@
 // In frontend/context/AuthContext.tsx
 "use client";
 
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import axios from 'axios';
 
 // 1. Define the API URL and a utility for API requests
-const API_URL = "http://localhost:5000/api";
+const API_URL = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:5000/api";
 
 // Create an Axios instance
 const api = axios.create({
@@ -56,28 +56,82 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
 
+  // 8. Logout function - defined first so it can be used in interceptor
+  const logout = useCallback(() => {
+    localStorage.removeItem('token');
+    setAuthToken(null);
+    setToken(null);
+    setUser(null);
+    setLoading(false);
+    // Only redirect if we're not already on the login page
+    if (typeof window !== 'undefined' && !window.location.pathname.includes('/login')) {
+      window.location.href = '/login';
+    }
+  }, []);
+
+  // Setup axios interceptor for handling 401 errors
+  useEffect(() => {
+    const interceptor = api.interceptors.response.use(
+      (response) => response,
+      (error) => {
+        const status = error.response?.status;
+        const url = error.config?.url || '';
+        
+        // Handle 429 (Too Many Requests) - don't logout, just show error
+        if (status === 429) {
+          console.warn('Rate limited - too many requests');
+          // Don't logout on rate limiting
+          return Promise.reject(error);
+        }
+        
+        // Only logout on 401 if it's not a login/register request
+        if (status === 401) {
+          // Don't logout for auth endpoints (login, register, etc.)
+          if (!url.includes('/auth/login') && !url.includes('/auth/register')) {
+            console.warn('Session expired or invalid token');
+            // Don't auto-logout, just clear the token silently
+            // The user will be redirected when they try to access protected content
+            localStorage.removeItem('token');
+            setAuthToken(null);
+            setToken(null);
+            setUser(null);
+          }
+        }
+        return Promise.reject(error);
+      }
+    );
+
+    // Cleanup interceptor on unmount
+    return () => {
+      api.interceptors.response.eject(interceptor);
+    };
+  }, []);
+
   // 5. Load user function: Gets token from localStorage and fetches user
-  const loadUser = async () => {
+  const loadUser = useCallback(async () => {
     const localToken = localStorage.getItem('token');
     if (localToken) {
       setAuthToken(localToken);
       setToken(localToken);
       try {
-        const res = await api.get('/auth/me'); // Call our new /me route
+        const res = await api.get('/auth/me');
         setUser(res.data);
-      } catch (err) {
-        console.error("Failed to load user", err);
-        // If token is invalid, log out
-        logout();
+      } catch (err: any) {
+        console.error("Failed to load user:", err?.response?.data?.msg || err.message);
+        // Only clear token, don't force redirect
+        localStorage.removeItem('token');
+        setAuthToken(null);
+        setToken(null);
+        setUser(null);
       }
     }
     setLoading(false);
-  };
+  }, []);
 
   // 6. useEffect to load user on app start
   useEffect(() => {
     loadUser();
-  }, []);
+  }, [loadUser]);
 
   // 7. Login function
   const login = async (token: string) => {
@@ -92,17 +146,6 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       console.error("Failed to login/load user", err);
     }
     setLoading(false);
-  };
-
-  // 8. Logout function
-  const logout = () => {
-    localStorage.removeItem('token');
-    setAuthToken(null);
-    setToken(null);
-    setUser(null);
-    setLoading(false);
-    // Optional: redirect to login
-    window.location.href = '/login';
   };
 
   // 9. Register function

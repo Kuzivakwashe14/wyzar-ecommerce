@@ -68,10 +68,15 @@ export default function LoginPage() {
 
     } catch (error: any) {
       console.error("Login failed:", error);
+      console.error("Response data:", error.response?.data);
 
       let errorMessage = "Login failed. Please check your credentials.";
       if (error.response?.data?.msg) {
         errorMessage = error.response.data.msg;
+      } else if (error.response?.data?.message) {
+        errorMessage = error.response.data.message;
+      } else if (error.message) {
+        errorMessage = error.message;
       }
 
       toast.error("Login Failed", {

@@ -20,10 +20,13 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Label } from "@/components/ui/label";
 import { api } from "@/context/AuthContent";
 import axios from "axios";
 import Image from "next/image";
 import { toast } from "sonner";
+import { CreditCard, Banknote } from "lucide-react";
 
 // Get the backend URL
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
@@ -34,6 +37,9 @@ const shippingSchema = z.object({
   address: z.string().min(5, "A valid address is required"),
   city: z.string().min(2, "City is required"),
   phone: z.string().min(8, "A valid phone number is required"),
+  paymentMethod: z.enum(["Paynow", "CashOnDelivery"], {
+    required_error: "Please select a payment method",
+  }),
 });
 
 export default function CheckoutPage() {
@@ -61,6 +67,7 @@ export default function CheckoutPage() {
       address: "",
       city: "",
       phone: "",
+      paymentMethod: "Paynow",
     },
   });
 
@@ -71,11 +78,17 @@ export default function CheckoutPage() {
     try {
       // Call our new backend route
       const response = await api.post('/orders/create', {
-        shippingAddress: values,
+        shippingAddress: {
+          fullName: values.fullName,
+          address: values.address,
+          city: values.city,
+          phone: values.phone,
+        },
         cartItems: cartItems,
+        paymentMethod: values.paymentMethod,
       });
 
-      const { paynowRedirectUrl, redirectUrl, message } = response.data;
+      const { paynowRedirectUrl, redirectUrl, message, paymentMethod } = response.data;
 
       // Clear the cart *after* order is created
       clearCart();
@@ -170,14 +183,59 @@ export default function CheckoutPage() {
                   </FormItem>
                 )}
               />
+
+              {/* Payment Method Selection */}
+              <FormField
+                control={form.control}
+                name="paymentMethod"
+                render={({ field }) => (
+                  <FormItem className="space-y-3">
+                    <FormLabel>Payment Method</FormLabel>
+                    <FormControl>
+                      <RadioGroup
+                        onValueChange={field.onChange}
+                        defaultValue={field.value}
+                        className="flex flex-col space-y-2"
+                      >
+                        <div className="flex items-center space-x-3 rounded-lg border p-4 cursor-pointer hover:bg-accent transition-colors">
+                          <RadioGroupItem value="Paynow" id="paynow" />
+                          <Label htmlFor="paynow" className="flex items-center gap-2 cursor-pointer flex-1">
+                            <CreditCard className="h-5 w-5 text-primary" />
+                            <div>
+                              <p className="font-medium">Pay with Paynow</p>
+                              <p className="text-sm text-muted-foreground">Pay securely with EcoCash, OneMoney, or bank</p>
+                            </div>
+                          </Label>
+                        </div>
+                        <div className="flex items-center space-x-3 rounded-lg border p-4 cursor-pointer hover:bg-accent transition-colors">
+                          <RadioGroupItem value="CashOnDelivery" id="cod" />
+                          <Label htmlFor="cod" className="flex items-center gap-2 cursor-pointer flex-1">
+                            <Banknote className="h-5 w-5 text-green-600" />
+                            <div>
+                              <p className="font-medium">Cash on Delivery</p>
+                              <p className="text-sm text-muted-foreground">Pay with cash when your order arrives</p>
+                            </div>
+                          </Label>
+                        </div>
+                      </RadioGroup>
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
               
               <Button 
                 type="submit" 
                 className="w-full" 
                 size="lg"
-                disabled={isSubmitting} // <-- 6. Disable button
+                disabled={isSubmitting}
               >
-                {isSubmitting ? "Processing..." : "Proceed to Payment"}
+                {isSubmitting 
+                  ? "Processing..." 
+                  : form.watch("paymentMethod") === "CashOnDelivery" 
+                    ? "Place Order (Pay on Delivery)" 
+                    : "Proceed to Payment"
+                }
               </Button>
             </form>
           </Form>

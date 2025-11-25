@@ -45,7 +45,13 @@ if (isPaynowConfigured) {
 // @access  Private
 router.post('/create', auth, async (req, res) => {
   try {
-    const { shippingAddress, cartItems } = req.body;
+    const { shippingAddress, cartItems, paymentMethod = 'Paynow' } = req.body;
+    
+    // Validate payment method
+    const validPaymentMethods = ['Paynow', 'CashOnDelivery'];
+    if (!validPaymentMethods.includes(paymentMethod)) {
+      return res.status(400).json({ msg: 'Invalid payment method' });
+    }
     
     // Get the logged-in user
     const user = await User.findById(req.user.id);
@@ -88,8 +94,9 @@ router.post('/create', auth, async (req, res) => {
       user: req.user.id,
       orderItems,
       shippingAddress,
+      paymentMethod,
       totalPrice,
-      status: 'Pending', // We wait for Paynow confirmation
+      status: paymentMethod === 'CashOnDelivery' ? 'Confirmed' : 'Pending', // COD orders are confirmed immediately
     });
 
     // 5. Save the pending order
@@ -128,6 +135,32 @@ router.post('/create', auth, async (req, res) => {
     }
 
     // --- B. Handle Payment ---
+    
+    // Handle Cash on Delivery orders
+    if (paymentMethod === 'CashOnDelivery') {
+      // Update product stock immediately for COD orders
+      for (const item of savedOrder.orderItems) {
+        await Product.findByIdAndUpdate(item.product, {
+          $inc: { quantity: -item.quantity }
+        });
+      }
+
+      savedOrder.paymentResult = {
+        id: 'COD_' + Date.now(),
+        status: 'Cash on Delivery - Payment pending',
+        update_time: new Date().toISOString(),
+      };
+      await savedOrder.save();
+
+      return res.json({
+        orderId: savedOrder._id,
+        message: 'Order placed successfully! Pay with cash upon delivery.',
+        redirectUrl: `/order/success?orderId=${savedOrder._id}`,
+        paymentMethod: 'CashOnDelivery'
+      });
+    }
+    
+    // Handle Paynow payment
     if (isPaynowConfigured) {
       // Production: Use Paynow payment gateway
       // 1. Create a new payment
@@ -260,6 +293,149 @@ router.post('/paynow/callback', async (req, res) => {
 });
 
 
+// --- 3.5 Manual Payment Verification Route ---
+// @route   POST /api/orders/:id/verify-payment
+// @desc    Manually verify payment status with Paynow (for when callbacks fail)
+// @access  Private (Seller only)
+router.post('/:id/verify-payment', auth, async (req, res) => {
+  try {
+    const order = await Order.findById(req.params.id);
+    
+    if (!order) {
+      return res.status(404).json({ success: false, msg: 'Order not found' });
+    }
+
+    // Check if user is a seller
+    const user = await User.findById(req.user.id);
+    if (!user.isSeller) {
+      return res.status(403).json({ success: false, msg: 'Only sellers can verify payments' });
+    }
+
+    // Only verify pending orders
+    if (order.status !== 'Pending') {
+      return res.status(400).json({ 
+        success: false, 
+        msg: `Order is already ${order.status}. No verification needed.` 
+      });
+    }
+
+    // If Paynow is configured, try to poll for status
+    if (paynow && order.paymentResult?.pollUrl) {
+      try {
+        const status = await paynow.pollTransaction(order.paymentResult.pollUrl);
+        
+        if (status.paid) {
+          order.status = 'Paid';
+          order.paidAt = new Date();
+          order.paymentResult.status = 'Paid (Verified)';
+          order.paymentResult.update_time = new Date().toISOString();
+
+          // Update stock
+          for (const item of order.orderItems) {
+            await Product.findByIdAndUpdate(item.product, {
+              $inc: { quantity: -item.quantity }
+            });
+          }
+
+          await order.save();
+          
+          return res.json({
+            success: true,
+            msg: 'Payment verified successfully! Order marked as Paid.',
+            order: { _id: order._id, status: order.status }
+          });
+        } else {
+          return res.json({
+            success: false,
+            msg: 'Payment not yet completed on Paynow.',
+            paynowStatus: status
+          });
+        }
+      } catch (pollError) {
+        console.error('Paynow poll error:', pollError);
+        // Fall through to manual confirmation option
+      }
+    }
+
+    // If we can't verify automatically, allow manual confirmation
+    return res.json({
+      success: false,
+      msg: 'Unable to verify payment automatically. Use "Confirm Payment" to manually mark as paid if you have confirmed payment was received.',
+      allowManualConfirmation: true
+    });
+
+  } catch (err) {
+    console.error('Verify payment error:', err.message);
+    res.status(500).json({ success: false, msg: 'Server Error', error: err.message });
+  }
+});
+
+
+// --- 3.6 Manual Payment Confirmation Route ---
+// @route   POST /api/orders/:id/confirm-payment
+// @desc    Manually confirm payment was received (for when Paynow callbacks fail)
+// @access  Private (Seller only)
+router.post('/:id/confirm-payment', auth, async (req, res) => {
+  try {
+    const order = await Order.findById(req.params.id);
+    
+    if (!order) {
+      return res.status(404).json({ success: false, msg: 'Order not found' });
+    }
+
+    // Check if user is a seller
+    const user = await User.findById(req.user.id);
+    if (!user.isSeller) {
+      return res.status(403).json({ success: false, msg: 'Only sellers can confirm payments' });
+    }
+
+    // Only confirm pending orders
+    if (order.status !== 'Pending') {
+      return res.status(400).json({ 
+        success: false, 
+        msg: `Order is already ${order.status}. Cannot confirm payment.` 
+      });
+    }
+
+    // Mark as paid
+    order.status = 'Paid';
+    order.paidAt = new Date();
+    order.paymentResult = {
+      id: 'MANUAL_' + Date.now(),
+      status: 'Manually Confirmed by Seller',
+      update_time: new Date().toISOString(),
+    };
+
+    // Update stock
+    for (const item of order.orderItems) {
+      await Product.findByIdAndUpdate(item.product, {
+        $inc: { quantity: -item.quantity }
+      });
+    }
+
+    await order.save();
+
+    // Notify buyer
+    const buyer = await User.findById(order.user);
+    if (buyer) {
+      sendOrderStatusUpdate(order, buyer, 'Paid').catch(err => {
+        console.error('Error sending payment confirmation:', err);
+      });
+    }
+
+    res.json({
+      success: true,
+      msg: 'Payment confirmed! Order marked as Paid.',
+      order: { _id: order._id, status: order.status }
+    });
+
+  } catch (err) {
+    console.error('Confirm payment error:', err.message);
+    res.status(500).json({ success: false, msg: 'Server Error', error: err.message });
+  }
+});
+
+
 // --- 4. Get Logged-in User's Orders ---
 // @route   GET /api/orders/myorders
 // @desc    Get all orders for the logged-in user
@@ -310,11 +486,11 @@ router.put('/:id/status', auth, async (req, res) => {
     const { status, trackingNumber } = req.body;
 
     // Validate status
-    const validStatuses = ['Pending', 'Paid', 'Shipped', 'Delivered', 'Cancelled'];
+    const validStatuses = ['Pending', 'Confirmed', 'Paid', 'Shipped', 'Delivered', 'Cancelled'];
     if (!validStatuses.includes(status)) {
       return res.status(400).json({ 
         success: false,
-        msg: 'Invalid status. Must be: Pending, Paid, Shipped, Delivered, or Cancelled' 
+        msg: 'Invalid status. Must be: Pending, Confirmed, Paid, Shipped, Delivered, or Cancelled' 
       });
     }
 
@@ -373,9 +549,10 @@ router.put('/:id/status', auth, async (req, res) => {
     const oldStatus = order.status;
     const validTransitions = {
       'Pending': ['Paid', 'Cancelled'],
+      'Confirmed': ['Shipped', 'Paid', 'Cancelled'], // COD orders: can be marked Paid anytime
       'Paid': ['Shipped', 'Cancelled'],
-      'Shipped': ['Delivered'],
-      'Delivered': [], // Cannot transition from Delivered
+      'Shipped': ['Delivered', 'Paid'], // COD orders can be marked as Paid after shipping
+      'Delivered': ['Paid'], // COD orders can be marked as Paid after delivery
       'Cancelled': [] // Cannot transition from Cancelled
     };
 
