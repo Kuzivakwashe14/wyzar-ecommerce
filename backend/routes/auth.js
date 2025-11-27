@@ -42,10 +42,14 @@ router.post('/register', authLimiter, sanitizeRequestBody, validateRegistration,
     // The user will verify it in the next step
 
     // 4. Create a new user instance
+    // Auto-assign admin role if email contains @wyzar
+    const role = email.toLowerCase().includes('@wyzar') ? 'admin' : 'user';
+
     const user = new User({
       email,
       password,
-      isEmailVerified: false // Will be set to true after OTP verification
+      isEmailVerified: false, // Will be set to true after OTP verification
+      role: role
     });
 
     // 5. Hash the password

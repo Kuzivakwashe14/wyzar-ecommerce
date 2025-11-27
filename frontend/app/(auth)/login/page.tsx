@@ -54,7 +54,7 @@ export default function LoginPage() {
       };
 
       const response = await api.post('/auth/login', loginData);
-      const { token } = response.data;
+      const { token, user } = response.data;
 
       // Call the context login function
       await login(token);
@@ -63,8 +63,14 @@ export default function LoginPage() {
         description: "You have successfully logged in.",
       });
 
-      // Redirect to homepage
-      router.push('/');
+      // Redirect based on user role
+      // If user is admin, redirect to admin portal
+      if (user?.role === 'admin') {
+        router.push('/admin');
+      } else {
+        // Regular users and sellers go to homepage
+        router.push('/');
+      }
 
     } catch (error: any) {
       console.error("Login failed:", error);
