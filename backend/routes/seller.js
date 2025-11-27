@@ -3,16 +3,16 @@
 const express = require('express');
 const router = express.Router();
 const auth = require('../middleware/auth'); // To protect the route
-const upload = require('../middleware/upload'); // Our new upload handler
+const verificationUploadOptimized = require('../middleware/verificationUploadOptimized'); // Optimized upload handler
 const User = require('../models/User');
 
 // @route   POST /api/seller/apply
 // @desc    Apply to become a seller
 // @access  Private (only logged-in users)
 router.post('/apply', auth, (req, res) => {
-  // 1. Run the upload middleware
+  // 1. Run the verificationUploadOptimized middleware
   // It will handle the file first. If there's an error, it will be caught.
-  upload(req, res, async (err) => {
+  verificationUploadOptimized(req, res, async (err) => {
     if (err) {
       // Handle upload errors (e.g., file type, size)
       return res.status(400).json({ msg: err.message });

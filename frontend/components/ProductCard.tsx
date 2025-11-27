@@ -53,12 +53,13 @@ export default function ProductCard({ product }: ProductCardProps) {
     <Link href={`/products/${product._id}`}>
       <Card className="w-full overflow-hidden transition-shadow hover:shadow-lg">
         <CardHeader className="p-0">
-          <div className="relative w-full aspect-square">
+          <div className="relative w-full aspect-auto min-h-[200px] flex items-center justify-center bg-gray-50">
             <Image
               src={imageUrl}
               alt={product.name}
-              fill // Makes the image fill the container
-              style={{ objectFit: 'cover' }} // Ensures the image covers the area
+              width={500}
+              height={500}
+              style={{ objectFit: 'contain', width: '100%', height: 'auto' }} // Fits entire image without cropping
               sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
               unoptimized={true}
             />

@@ -3,11 +3,12 @@
 const express = require('express');
 const router = express.Router();
 const auth = require('../middleware/auth'); // Auth middleware
-const productUpload = require('../middleware/productUpload'); // Our new upload middleware
+const productUploadOptimized = require('../middleware/productUploadOptimized'); // Optimized upload middleware
 const csvUpload = require('../middleware/csvUpload'); // CSV upload middleware
 const papa = require('papaparse'); // CSV parser
 const Product = require('../models/Product'); // Product model
 const User = require('../models/User'); // We need User model to check if seller is verified
+const { getPublicUrl } = require('../config/localStorage'); // Import helper function
 
 // @route   POST /api/products/bulk-upload
 // @desc    Bulk upload products from CSV
@@ -136,8 +137,8 @@ router.post('/bulk-upload', auth, csvUpload, async (req, res) => {
 // @desc    Create a new product
 // @access  Private (Sellers Only)
 router.post('/', auth, (req, res) => {
-  // 1. Run the productUpload middleware
-  productUpload(req, res, async (err) => {
+  // 1. Run the productUploadOptimized middleware
+  productUploadOptimized(req, res, async (err) => {
     if (err) {
       return res.status(400).json({ msg: err.message });
     }
@@ -165,8 +166,8 @@ router.post('/', auth, (req, res) => {
 
       // (Later, we'll add: if (!seller.isVerified) ... )
 
-      // 6. Get image paths
-      const images = req.files.map(file => file.path);
+      // 6. Get image paths - convert to public URLs for Nginx
+      const images = req.files.map(file => getPublicUrl(file.path));
 
       // 7. Create new product instance
       const newProduct = new Product({
@@ -259,7 +260,7 @@ router.get('/seller/me', auth, async (req, res) => {
 // @desc    Update a product
 // @access  Private (Sellers Only)
 router.put('/:id', auth, (req, res) => {
-  productUpload(req, res, async (err) => {
+  productUploadOptimized(req, res, async (err) => {
     if (err) {
       return res.status(400).json({ msg: err.message });
     }
@@ -276,9 +277,9 @@ router.put('/:id', auth, (req, res) => {
     if (deliveryTime) productFields.deliveryTime = deliveryTime;
     if (countryOfOrigin) productFields.countryOfOrigin = countryOfOrigin;
 
-    // Handle image updates
+    // Handle image updates - convert to public URLs for Nginx
     if (req.files && req.files.length > 0) {
-      productFields.images = req.files.map(file => file.path);
+      productFields.images = req.files.map(file => getPublicUrl(file.path));
     }
 
     try {

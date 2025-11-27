@@ -157,12 +157,13 @@ export default function ProductDetailPage() {
             {/* Main Image */}
             <Card className="overflow-hidden">
               <CardContent className="p-0">
-                <div className="relative aspect-square bg-muted">
+                <div className="relative w-full aspect-auto min-h-[300px] flex items-center justify-center bg-muted">
                   <Image
                     src={getImageUrl(product.images[selectedImage])}
                     alt={`${product.name} - Image ${selectedImage + 1}`}
-                    fill
-                    style={{ objectFit: 'cover' }}
+                    width={800}
+                    height={800}
+                    style={{ objectFit: 'contain', width: '100%', height: 'auto' }}
                     unoptimized={true}
                     priority
                     className="rounded-lg"
