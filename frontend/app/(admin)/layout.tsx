@@ -19,7 +19,8 @@ import {
   BarChart3,
   ShoppingCart,
   MessageSquare,
-  Shield
+  Shield,
+  ArrowLeft
 } from 'lucide-react';
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
@@ -112,6 +113,14 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
         {/* User Info & Logout */}
         <div className="border-t border-slate-800 p-4">
+          <Link
+            href="/"
+            className="flex items-center gap-3 px-4 py-3 w-full rounded-lg text-slate-400 hover:bg-indigo-900/30 hover:text-indigo-400 transition-all mb-2"
+            title={!sidebarOpen ? 'Back to Marketplace' : undefined}
+          >
+            <ArrowLeft className="w-5 h-5 flex-shrink-0" />
+            {sidebarOpen && <span className="font-medium">Marketplace</span>}
+          </Link>
           <button
             onClick={handleLogout}
             className="flex items-center gap-3 px-4 py-3 w-full rounded-lg text-slate-400 hover:bg-red-900/20 hover:text-red-400 transition-all"
@@ -142,6 +151,13 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           </button>
 
           <div className="flex items-center gap-4">
+            <Link
+              href="/"
+              className="flex items-center gap-2 px-4 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white transition-all font-medium"
+            >
+              <ShoppingBag className="w-4 h-4" />
+              <span>Marketplace</span>
+            </Link>
             <div className="text-right">
               <p className="text-sm font-medium text-white">{user.email}</p>
               <p className="text-xs text-slate-400">Administrator</p>

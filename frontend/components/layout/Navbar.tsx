@@ -42,7 +42,8 @@ import {
   Home as HomeIcon,
   Smartphone,
   Sparkles,
-  Package
+  Package,
+  Shield
 } from "lucide-react";
 
 const categories = [
@@ -268,12 +269,21 @@ export default function Navbar() {
                       </>
                     )}
 
-                    <Link href="/my-orders">
-                      <DropdownMenuItem>
-                        <ShoppingBag className="mr-2 h-4 w-4" />
-                        <span>My Orders</span>
-                      </DropdownMenuItem>
-                    </Link>
+                    {user.role === 'admin' ? (
+                      <Link href="/admin">
+                        <DropdownMenuItem>
+                          <Shield className="mr-2 h-4 w-4" />
+                          <span>Portal</span>
+                        </DropdownMenuItem>
+                      </Link>
+                    ) : (
+                      <Link href="/my-orders">
+                        <DropdownMenuItem>
+                          <ShoppingBag className="mr-2 h-4 w-4" />
+                          <span>My Orders</span>
+                        </DropdownMenuItem>
+                      </Link>
+                    )}
 
                     <DropdownMenuSeparator />
                     <DropdownMenuItem onClick={() => logout()}>

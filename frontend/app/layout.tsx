@@ -5,7 +5,7 @@ import "./globals.css";
 import { Toaster } from "sonner";
 import { AuthProvider } from "@/context/AuthContent";
 import { CartProvider } from "@/context/CartContext";
-import Navbar from "@/components/layout/Navbar"; // <-- 1. Import Navbar
+import ConditionalNavbar from "@/components/layout/ConditionalNavbar";
 import { ThemeProvider } from "@/components/theme-provider";
 
 const inter = Inter({ subsets: ["latin"] });
@@ -33,7 +33,7 @@ export default function RootLayout({
         >
           <AuthProvider>
             <CartProvider>
-              <Navbar />
+              <ConditionalNavbar />
               <main>{children}</main>
               <Toaster />
             </CartProvider>
