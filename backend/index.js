@@ -7,6 +7,10 @@ const path = require('path');
 const cookieParser = require('cookie-parser');
 require('dotenv').config(); // Load environment variables
 
+// ✨ Validate environment variables on startup (if envValidator exists)
+// const { validateOrExit } = require('./utils/envValidator');
+// validateOrExit(); // Will exit if validation fails
+
 // Security configuration
 const {
   helmetConfig,
@@ -16,6 +20,15 @@ const {
   hppConfig,
   securityHeaders
 } = require('./config/security');
+
+// ✨ NEW: Error handling middleware
+const {
+  errorHandler,
+  notFoundHandler
+} = require('./middleware/errorMiddleware');
+
+// ✨ NEW: CSRF protection
+const { attachCsrfToken } = require('./middleware/csrfProtection');
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -34,6 +47,9 @@ app.use(hppConfig); // Prevent HTTP Parameter Pollution
 app.use(express.json({ limit: '10mb' })); // Parse JSON bodies (with size limit)
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 app.use(cookieParser()); // Parse cookies
+
+// ✨ NEW: Attach CSRF token to all responses
+app.use(attachCsrfToken);
 
 // --- Static Files ---
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
@@ -54,6 +70,15 @@ app.get('/', (req, res) => {
   res.send('Welcome to the WyZar Backend API!');
 });
 
+// ✨ NEW: CSRF token endpoint for frontend
+app.get('/api/csrf-token', (req, res) => {
+  res.json({
+    success: true,
+    csrfToken: res.locals.csrfToken
+  });
+});
+
+// --- API Routes ---
 app.use('/api/auth', require('./routes/auth'));
 app.use('/api/otp', require('./routes/otp'));
 app.use('/api/seller', require('./routes/seller'));
@@ -69,6 +94,12 @@ app.use('/api/admin/sellers', require('./routes/adminSellers'));
 app.use('/api/admin/products', require('./routes/adminProducts'));
 app.use('/api/admin/orders', require('./routes/adminOrders'));
 app.use('/api/admin/access-control', require('./routes/adminAccessControl'));
+
+// ✨ NEW: 404 Handler (must be after all routes)
+app.use(notFoundHandler);
+
+// ✨ NEW: Global Error Handler (must be last)
+app.use(errorHandler);
 
 // --- Start the Server ---
 if (USE_HTTPS) {

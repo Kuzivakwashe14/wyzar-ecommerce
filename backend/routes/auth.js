@@ -1,5 +1,6 @@
 // In backend/routes/auth.js
-
+const { validateRegistration, validateLogin } = require('../middleware/validateInput');
+const { sanitizeRequestBody } = require('../utils/security/inputValidation');
 const express = require('express');
 const router = express.Router();
 const bcrypt = require('bcryptjs');
@@ -13,7 +14,7 @@ const { authLimiter } = require('../config/security');
 // @route   POST /api/auth/register
 // @desc    Register a new user (must verify email with OTP first)
 // @access  Public
-router.post('/register', authLimiter, async (req, res) => {
+router.post('/register', authLimiter, sanitizeRequestBody, validateRegistration, async (req, res) => {
   // 1. Get email and password from the request body
   const { email, password } = req.body;
 
@@ -105,7 +106,7 @@ router.post('/register', authLimiter, async (req, res) => {
 // @route   POST /api/auth/login
 // @desc    Authenticate user & get token (supports email)
 // @access  Public
-router.post('/login', authLimiter, async (req, res) => {
+router.post('/login', authLimiter, sanitizeRequestBody,  validateLogin,  async (req, res) => {
   // 1. Get credentials from request body
   const { email, password } = req.body;
 
