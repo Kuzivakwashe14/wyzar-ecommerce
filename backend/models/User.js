@@ -65,7 +65,58 @@ const UserSchema = new Schema({
       enum: ['individual', 'business', 'international'] // From your doc [cite: 3]
     },
     verificationDocument: {
-      type: String // We will store the file path here
+      type: String // Legacy single document support
+    },
+    verificationDocuments: [{
+      documentType: {
+        type: String,
+        enum: ['national_id', 'passport', 'business_registration', 'tax_certificate', 'proof_of_address', 'bank_statement', 'other'],
+        required: true
+      },
+      documentPath: {
+        type: String,
+        required: true
+      },
+      documentName: {
+        type: String
+      },
+      uploadedAt: {
+        type: Date,
+        default: Date.now
+      },
+      status: {
+        type: String,
+        enum: ['pending', 'approved', 'rejected'],
+        default: 'pending'
+      },
+      rejectionReason: {
+        type: String
+      }
+    }],
+    phoneNumber: {
+      type: String
+    },
+    address: {
+      street: String,
+      city: String,
+      state: String,
+      country: String,
+      postalCode: String
+    },
+    verificationStatus: {
+      type: String,
+      enum: ['pending', 'under_review', 'approved', 'rejected', 'incomplete'],
+      default: 'pending'
+    },
+    verificationNotes: {
+      type: String
+    },
+    verifiedAt: {
+      type: Date
+    },
+    verifiedBy: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'User'
     }
   },
   // Blocked users list

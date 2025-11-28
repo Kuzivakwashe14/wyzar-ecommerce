@@ -183,12 +183,30 @@ router.get('/:id', adminAuth, async (req, res) => {
       commission: (revenueData[0]?.totalRevenue || 0) * 0.10
     };
 
+    // Include verification documents information
+    const verificationDocuments = seller.sellerDetails?.verificationDocuments || [];
+    const documentSummary = {
+      totalDocuments: verificationDocuments.length,
+      approvedDocuments: verificationDocuments.filter(doc => doc.status === 'approved').length,
+      pendingDocuments: verificationDocuments.filter(doc => doc.status === 'pending').length,
+      rejectedDocuments: verificationDocuments.filter(doc => doc.status === 'rejected').length,
+      documents: verificationDocuments.map(doc => ({
+        _id: doc._id,
+        documentType: doc.documentType,
+        documentName: doc.documentName,
+        uploadedAt: doc.uploadedAt,
+        status: doc.status,
+        rejectionReason: doc.rejectionReason
+      }))
+    };
+
     res.json({
       success: true,
       seller,
       products,
       recentOrders: orders,
-      stats
+      stats,
+      verificationDocuments: documentSummary
     });
   } catch (error) {
     console.error('Error fetching seller details:', error);
@@ -365,6 +383,256 @@ router.put('/:id/suspend', adminAuth, async (req, res) => {
     });
   } catch (error) {
     console.error('Error suspending seller:', error);
+    res.status(500).json({
+      success: false,
+      msg: 'Server error',
+      error: error.message
+    });
+  }
+});
+
+// ==========================================
+// VERIFICATION DOCUMENT MANAGEMENT
+// ==========================================
+
+// @route   GET /api/admin/sellers/:id/documents
+// @desc    Get all verification documents for a seller
+// @access  Private (Admin only)
+router.get('/:id/documents', adminAuth, async (req, res) => {
+  try {
+    const seller = await User.findById(req.params.id).select('email sellerDetails');
+
+    if (!seller) {
+      return res.status(404).json({
+        success: false,
+        msg: 'Seller not found'
+      });
+    }
+
+    if (!seller.isSeller) {
+      return res.status(400).json({
+        success: false,
+        msg: 'User is not a seller'
+      });
+    }
+
+    const documents = seller.sellerDetails?.verificationDocuments || [];
+
+    res.json({
+      success: true,
+      sellerId: seller._id,
+      sellerEmail: seller.email,
+      businessName: seller.sellerDetails?.businessName,
+      verificationStatus: seller.sellerDetails?.verificationStatus,
+      documents,
+      totalDocuments: documents.length
+    });
+  } catch (error) {
+    console.error('Error fetching verification documents:', error);
+    res.status(500).json({
+      success: false,
+      msg: 'Server error',
+      error: error.message
+    });
+  }
+});
+
+// @route   GET /api/admin/sellers/:sellerId/documents/:documentId/view
+// @desc    View/download a specific verification document
+// @access  Private (Admin only)
+router.get('/:sellerId/documents/:documentId/view', adminAuth, async (req, res) => {
+  try {
+    const seller = await User.findById(req.params.sellerId);
+
+    if (!seller) {
+      return res.status(404).json({
+        success: false,
+        msg: 'Seller not found'
+      });
+    }
+
+    const document = seller.sellerDetails?.verificationDocuments?.id(req.params.documentId);
+
+    if (!document) {
+      return res.status(404).json({
+        success: false,
+        msg: 'Document not found'
+      });
+    }
+
+    const path = require('path');
+    const fs = require('fs');
+
+    // Resolve to absolute path
+    const filePath = path.resolve(document.documentPath);
+
+    // Check if file exists
+    if (!fs.existsSync(filePath)) {
+      return res.status(404).json({
+        success: false,
+        msg: 'Document file not found on server'
+      });
+    }
+
+    // Send file for viewing/downloading (no root option for absolute paths)
+    res.sendFile(filePath, (err) => {
+      if (err) {
+        console.error('Error sending file:', err);
+        if (!res.headersSent) {
+          res.status(500).json({
+            success: false,
+            msg: 'Error retrieving document'
+          });
+        }
+      }
+    });
+  } catch (error) {
+    console.error('Error viewing document:', error);
+    res.status(500).json({
+      success: false,
+      msg: 'Server error',
+      error: error.message
+    });
+  }
+});
+
+// @route   PUT /api/admin/sellers/:sellerId/documents/:documentId/status
+// @desc    Approve or reject a specific verification document
+// @access  Private (Admin only)
+router.put('/:sellerId/documents/:documentId/status', adminAuth, async (req, res) => {
+  try {
+    const { status, rejectionReason } = req.body;
+
+    if (!['approved', 'rejected'].includes(status)) {
+      return res.status(400).json({
+        success: false,
+        msg: 'Invalid status. Must be "approved" or "rejected"'
+      });
+    }
+
+    const seller = await User.findById(req.params.sellerId);
+
+    if (!seller) {
+      return res.status(404).json({
+        success: false,
+        msg: 'Seller not found'
+      });
+    }
+
+    const document = seller.sellerDetails?.verificationDocuments?.id(req.params.documentId);
+
+    if (!document) {
+      return res.status(404).json({
+        success: false,
+        msg: 'Document not found'
+      });
+    }
+
+    // Update document status
+    document.status = status;
+    if (status === 'rejected' && rejectionReason) {
+      document.rejectionReason = rejectionReason;
+    }
+
+    // Check if all documents are approved
+    const allDocuments = seller.sellerDetails.verificationDocuments;
+    const allApproved = allDocuments.every(doc => doc.status === 'approved');
+    const anyRejected = allDocuments.some(doc => doc.status === 'rejected');
+
+    // Update overall verification status
+    if (allApproved && allDocuments.length > 0) {
+      seller.sellerDetails.verificationStatus = 'approved';
+      seller.isVerified = true;
+      seller.sellerDetails.verifiedAt = new Date();
+      seller.sellerDetails.verifiedBy = req.user.id;
+    } else if (anyRejected) {
+      seller.sellerDetails.verificationStatus = 'rejected';
+      seller.isVerified = false;
+    } else {
+      seller.sellerDetails.verificationStatus = 'under_review';
+    }
+
+    await seller.save();
+
+    // Send email notification if verification status changed
+    if (allApproved) {
+      try {
+        await sendEmail({
+          to: seller.email,
+          subject: 'Seller Verification Approved - WyZar',
+          html: `
+            <h1>Congratulations! Your seller verification has been approved</h1>
+            <p>Hello ${seller.sellerDetails?.businessName || 'Seller'},</p>
+            <p>All your verification documents have been approved!</p>
+            <p>You can now start listing products on WyZar marketplace.</p>
+            <p>Thank you for joining WyZar!</p>
+            <p>Best regards,<br>WyZar Team</p>
+          `
+        });
+      } catch (emailError) {
+        console.error('Error sending approval email:', emailError);
+      }
+    } else if (status === 'rejected') {
+      try {
+        await sendEmail({
+          to: seller.email,
+          subject: 'Document Verification Update - WyZar',
+          html: `
+            <h1>Verification Document Requires Attention</h1>
+            <p>Hello ${seller.sellerDetails?.businessName || 'Seller'},</p>
+            <p>One of your verification documents (${document.documentType}) has been rejected.</p>
+            ${rejectionReason ? `<p><strong>Reason:</strong> ${rejectionReason}</p>` : ''}
+            <p>Please upload a new document to continue with your verification.</p>
+            <p>Best regards,<br>WyZar Team</p>
+          `
+        });
+      } catch (emailError) {
+        console.error('Error sending rejection email:', emailError);
+      }
+    }
+
+    res.json({
+      success: true,
+      msg: `Document ${status} successfully`,
+      document,
+      overallStatus: seller.sellerDetails.verificationStatus
+    });
+  } catch (error) {
+    console.error('Error updating document status:', error);
+    res.status(500).json({
+      success: false,
+      msg: 'Server error',
+      error: error.message
+    });
+  }
+});
+
+// @route   PUT /api/admin/sellers/:id/verification-notes
+// @desc    Add verification notes for a seller
+// @access  Private (Admin only)
+router.put('/:id/verification-notes', adminAuth, async (req, res) => {
+  try {
+    const { notes } = req.body;
+
+    const seller = await User.findById(req.params.id);
+
+    if (!seller) {
+      return res.status(404).json({
+        success: false,
+        msg: 'Seller not found'
+      });
+    }
+
+    seller.sellerDetails.verificationNotes = notes;
+    await seller.save();
+
+    res.json({
+      success: true,
+      msg: 'Verification notes updated successfully',
+      notes: seller.sellerDetails.verificationNotes
+    });
+  } catch (error) {
+    console.error('Error updating verification notes:', error);
     res.status(500).json({
       success: false,
       msg: 'Server error',

@@ -14,6 +14,16 @@ import {
   Loader2
 } from 'lucide-react';
 
+interface VerificationDocument {
+  _id: string;
+  documentType: string;
+  documentPath: string;
+  documentName?: string;
+  uploadedAt: string;
+  status: 'pending' | 'approved' | 'rejected';
+  rejectionReason?: string;
+}
+
 interface PendingSeller {
   _id: string;
   email: string;
@@ -25,7 +35,9 @@ interface PendingSeller {
   sellerDetails: {
     businessName: string;
     sellerType: string;
-    verificationDocument: string;
+    verificationDocument?: string;
+    verificationDocuments?: VerificationDocument[];
+    verificationStatus?: string;
   };
   createdAt: string;
 }
@@ -37,6 +49,8 @@ export default function PendingSellersPage() {
   const [selectedSeller, setSelectedSeller] = useState<PendingSeller | null>(null);
   const [processing, setProcessing] = useState<string | null>(null);
   const [rejectReason, setRejectReason] = useState('');
+  const [expandedDocuments, setExpandedDocuments] = useState<Set<string>>(new Set());
+  const [documentRejectReasons, setDocumentRejectReasons] = useState<{ [key: string]: string }>({});
 
   useEffect(() => {
     fetchPendingSellers();
@@ -97,6 +111,102 @@ export default function PendingSellersPage() {
     } finally {
       setProcessing(null);
     }
+  };
+
+  const handleDocumentApprove = async (sellerId: string, documentId: string) => {
+    if (!confirm('Are you sure you want to approve this document?')) return;
+
+    try {
+      setProcessing(`${sellerId}-${documentId}`);
+      await axiosInstance.put(`/admin/sellers/${sellerId}/documents/${documentId}/status`, {
+        status: 'approved'
+      });
+      alert('Document approved successfully!');
+      fetchPendingSellers();
+    } catch (error: any) {
+      console.error('Error approving document:', error);
+      alert(error.response?.data?.msg || 'Failed to approve document');
+    } finally {
+      setProcessing(null);
+    }
+  };
+
+  const handleDocumentReject = async (sellerId: string, documentId: string) => {
+    const reason = documentRejectReasons[documentId];
+    if (!reason?.trim()) {
+      alert('Please provide a reason for rejection');
+      return;
+    }
+
+    if (!confirm('Are you sure you want to reject this document?')) return;
+
+    try {
+      setProcessing(`${sellerId}-${documentId}`);
+      await axiosInstance.put(`/admin/sellers/${sellerId}/documents/${documentId}/status`, {
+        status: 'rejected',
+        rejectionReason: reason
+      });
+      alert('Document rejected');
+      fetchPendingSellers();
+      setDocumentRejectReasons(prev => {
+        const updated = { ...prev };
+        delete updated[documentId];
+        return updated;
+      });
+    } catch (error: any) {
+      console.error('Error rejecting document:', error);
+      alert(error.response?.data?.msg || 'Failed to reject document');
+    } finally {
+      setProcessing(null);
+    }
+  };
+
+  const toggleDocumentExpansion = (documentId: string) => {
+    setExpandedDocuments(prev => {
+      const updated = new Set(prev);
+      if (updated.has(documentId)) {
+        updated.delete(documentId);
+      } else {
+        updated.add(documentId);
+      }
+      return updated;
+    });
+  };
+
+  const handleViewDocument = async (sellerId: string, documentId: string) => {
+    try {
+      const response = await axiosInstance.get(
+        `/admin/sellers/${sellerId}/documents/${documentId}/view`,
+        { responseType: 'blob' }
+      );
+
+      // Get content type from response headers
+      const contentType = response.headers['content-type'] || 'application/octet-stream';
+
+      // Create a blob URL with the correct MIME type
+      const blob = new Blob([response.data], { type: contentType });
+      const url = window.URL.createObjectURL(blob);
+      window.open(url, '_blank');
+
+      // Clean up the blob URL after a short delay
+      setTimeout(() => window.URL.revokeObjectURL(url), 100);
+    } catch (error: any) {
+      console.error('Error viewing document:', error);
+      alert(error.response?.data?.msg || 'Failed to load document');
+    }
+  };
+
+  const getDocumentTypeLabel = (type: string) => {
+    const labels: { [key: string]: string } = {
+      national_id: 'National ID',
+      passport: 'Passport',
+      business_registration: 'Business Registration',
+      tax_certificate: 'Tax Certificate',
+      proof_of_address: 'Proof of Address',
+      bank_statement: 'Bank Statement',
+      other: 'Other Document'
+    };
+    return labels[type] || type;
   };
 
   if (loading) {
@@ -176,24 +286,158 @@ export default function PendingSellersPage() {
                       </span>
                     </div>
 
-                    {seller.sellerDetails?.verificationDocument && (
-                      <div className="flex items-center gap-2 text-slate-300">
-                        <FileText className="w-4 h-4 text-slate-500" />
-                        <a
-                          href={`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'}/${seller.sellerDetails.verificationDocument}`}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="text-sm text-indigo-400 hover:text-indigo-300 hover:underline"
-                        >
-                          View Verification Document →
-                        </a>
+                    {/* Verification Status Badge */}
+                    {seller.sellerDetails?.verificationStatus && (
+                      <div className="flex items-center gap-2">
+                        <span className={`px-3 py-1 text-xs rounded-full ${
+                          seller.sellerDetails.verificationStatus === 'approved' ? 'bg-green-500/10 text-green-400' :
+                          seller.sellerDetails.verificationStatus === 'rejected' ? 'bg-red-500/10 text-red-400' :
+                          seller.sellerDetails.verificationStatus === 'under_review' ? 'bg-amber-500/10 text-amber-400' :
+                          'bg-slate-500/10 text-slate-400'
+                        }`}>
+                          {seller.sellerDetails.verificationStatus.replace('_', ' ').toUpperCase()}
+                        </span>
                       </div>
                     )}
                   </div>
                 </div>
 
+                {/* Verification Documents Section */}
+                <div className="col-span-1 md:col-span-2 space-y-4">
+                  <h4 className="text-lg font-semibold text-white">Verification Documents</h4>
+
+                  {seller.sellerDetails?.verificationDocuments && seller.sellerDetails.verificationDocuments.length > 0 ? (
+                    <div className="space-y-3">
+                      {seller.sellerDetails.verificationDocuments.map((doc) => (
+                        <div
+                          key={doc._id}
+                          className="bg-slate-900 border border-slate-700 rounded-lg p-4"
+                        >
+                          <div className="flex items-start justify-between mb-3">
+                            <div className="flex items-center gap-3">
+                              <FileText className="w-5 h-5 text-indigo-400" />
+                              <div>
+                                <h5 className="font-medium text-white">
+                                  {getDocumentTypeLabel(doc.documentType)}
+                                </h5>
+                                <p className="text-xs text-slate-400">
+                                  Uploaded {new Date(doc.uploadedAt).toLocaleDateString()}
+                                </p>
+                              </div>
+                            </div>
+                            <span className={`px-3 py-1 text-xs rounded-full ${
+                              doc.status === 'approved' ? 'bg-green-500/10 text-green-400' :
+                              doc.status === 'rejected' ? 'bg-red-500/10 text-red-400' :
+                              'bg-amber-500/10 text-amber-400'
+                            }`}>
+                              {doc.status.toUpperCase()}
+                            </span>
+                          </div>
+
+                          <div className="flex items-center gap-3 mb-3">
+                            <button
+                              onClick={() => handleViewDocument(seller._id, doc._id)}
+                              className="text-sm text-indigo-400 hover:text-indigo-300 hover:underline cursor-pointer"
+                            >
+                              View Document →
+                            </button>
+                            {doc.documentName && (
+                              <span className="text-xs text-slate-500">
+                                {doc.documentName}
+                              </span>
+                            )}
+                          </div>
+
+                          {doc.rejectionReason && (
+                            <div className="bg-red-500/10 border border-red-500/20 rounded p-3 mb-3">
+                              <p className="text-sm text-red-300">
+                                <strong>Rejection Reason:</strong> {doc.rejectionReason}
+                              </p>
+                            </div>
+                          )}
+
+                          {doc.status === 'pending' && (
+                            <div className="space-y-3">
+                              {expandedDocuments.has(doc._id) && (
+                                <div>
+                                  <label className="block text-sm font-medium text-slate-300 mb-2">
+                                    Rejection Reason
+                                  </label>
+                                  <textarea
+                                    value={documentRejectReasons[doc._id] || ''}
+                                    onChange={(e) => setDocumentRejectReasons(prev => ({
+                                      ...prev,
+                                      [doc._id]: e.target.value
+                                    }))}
+                                    className="w-full px-3 py-2 bg-slate-800 border border-slate-600 rounded text-white placeholder-slate-500 focus:outline-none focus:border-indigo-500 text-sm"
+                                    rows={2}
+                                    placeholder="Provide a reason for rejection..."
+                                  />
+                                </div>
+                              )}
+
+                              <div className="flex gap-2">
+                                <button
+                                  onClick={() => handleDocumentApprove(seller._id, doc._id)}
+                                  disabled={processing === `${seller._id}-${doc._id}`}
+                                  className="flex-1 flex items-center justify-center gap-2 px-4 py-2 bg-green-600 hover:bg-green-700 disabled:bg-slate-700 text-white rounded text-sm font-medium transition-all"
+                                >
+                                  {processing === `${seller._id}-${doc._id}` ? (
+                                    <>
+                                      <Loader2 className="w-4 h-4 animate-spin" />
+                                      Processing...
+                                    </>
+                                  ) : (
+                                    <>
+                                      <CheckCircle className="w-4 h-4" />
+                                      Approve
+                                    </>
+                                  )}
+                                </button>
+
+                                {expandedDocuments.has(doc._id) ? (
+                                  <>
+                                    <button
+                                      onClick={() => handleDocumentReject(seller._id, doc._id)}
+                                      disabled={processing === `${seller._id}-${doc._id}`}
+                                      className="flex-1 flex items-center justify-center gap-2 px-4 py-2 bg-red-600 hover:bg-red-700 disabled:bg-slate-700 text-white rounded text-sm font-medium transition-all"
+                                    >
+                                      <XCircle className="w-4 h-4" />
+                                      Confirm Reject
+                                    </button>
+                                    <button
+                                      onClick={() => toggleDocumentExpansion(doc._id)}
+                                      className="px-4 py-2 bg-slate-700 hover:bg-slate-600 text-white rounded text-sm font-medium transition-all"
+                                    >
+                                      Cancel
+                                    </button>
+                                  </>
+                                ) : (
+                                  <button
+                                    onClick={() => toggleDocumentExpansion(doc._id)}
+                                    disabled={processing === `${seller._id}-${doc._id}`}
+                                    className="flex-1 flex items-center justify-center gap-2 px-4 py-2 bg-slate-700 hover:bg-slate-600 disabled:bg-slate-800 text-white rounded text-sm font-medium transition-all"
+                                  >
+                                    <XCircle className="w-4 h-4" />
+                                    Reject
+                                  </button>
+                                )}
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="bg-slate-900 border border-slate-700 rounded-lg p-6 text-center">
+                      <FileText className="w-12 h-12 text-slate-600 mx-auto mb-3" />
+                      <p className="text-slate-400">No verification documents uploaded</p>
+                    </div>
+                  )}
+                </div>
+
                 {/* Actions */}
-                <div className="space-y-4">
+                <div className="col-span-1 md:col-span-2 space-y-4">
                   {/* Reject Reason Input */}
                   {selectedSeller?._id === seller._id && (
                     <div>
@@ -284,12 +528,31 @@ export default function PendingSellersPage() {
                       )}
                     </div>
                     <div className="flex items-center justify-between">
-                      <span className="text-sm text-slate-300">Documents Uploaded</span>
-                      {seller.sellerDetails?.verificationDocument ? (
-                        <CheckCircle className="w-5 h-5 text-green-400" />
-                      ) : (
-                        <XCircle className="w-5 h-5 text-red-400" />
-                      )}
+                      <span className="text-sm text-slate-300">Documents</span>
+                      <div className="flex items-center gap-2">
+                        {(() => {
+                          const docs = seller.sellerDetails?.verificationDocuments || [];
+                          const approved = docs.filter(d => d.status === 'approved').length;
+                          const pending = docs.filter(d => d.status === 'pending').length;
+                          const rejected = docs.filter(d => d.status === 'rejected').length;
+                          return (
+                            <div className="flex items-center gap-2 text-xs">
+                              {approved > 0 && (
+                                <span className="text-green-400">{approved} ✓</span>
+                              )}
+                              {pending > 0 && (
+                                <span className="text-amber-400">{pending} ⏳</span>
+                              )}
+                              {rejected > 0 && (
+                                <span className="text-red-400">{rejected} ✗</span>
+                              )}
+                              {docs.length === 0 && (
+                                <span className="text-slate-500">None</span>
+                              )}
+                            </div>
+                          );
+                        })()}
+                      </div>
                     </div>
                   </div>
                 </div>
