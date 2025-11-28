@@ -37,6 +37,7 @@
     "papaparse": "^5.5.3",
     "parser": "^0.1.4",
     "paynow": "^2.2.2",
+    "socket.io": "^4.8.1",
     "validator": "^13.15.23",
     "xss-clean": "^0.1.4"
   },

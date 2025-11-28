@@ -5,6 +5,7 @@ import "./globals.css";
 import { Toaster } from "sonner";
 import { AuthProvider } from "@/context/AuthContent";
 import { CartProvider } from "@/context/CartContext";
+import { SocketProvider } from "@/context/SocketContext";
 import ConditionalNavbar from "@/components/layout/ConditionalNavbar";
 import { ThemeProvider } from "@/components/theme-provider";
 
@@ -32,11 +33,13 @@ export default function RootLayout({
           disableTransitionOnChange
         >
           <AuthProvider>
-            <CartProvider>
-              <ConditionalNavbar />
-              <main>{children}</main>
-              <Toaster />
-            </CartProvider>
+            <SocketProvider>
+              <CartProvider>
+                <ConditionalNavbar />
+                <main>{children}</main>
+                <Toaster />
+              </CartProvider>
+            </SocketProvider>
           </AuthProvider>
         </ThemeProvider>
       </body>

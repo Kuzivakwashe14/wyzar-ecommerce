@@ -1,9 +1,10 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { ThemeToggle } from "./ThemeToggle";
+import { api } from "@/context/AuthContent";
 import {
   NavigationMenu,
   NavigationMenuContent,
@@ -43,7 +44,8 @@ import {
   Smartphone,
   Sparkles,
   Package,
-  Shield
+  Shield,
+  MessageCircle
 } from "lucide-react";
 
 const categories = [
@@ -59,6 +61,26 @@ export default function Navbar() {
   const router = useRouter();
   const [searchQuery, setSearchQuery] = useState("");
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [unreadMessages, setUnreadMessages] = useState(0);
+
+  // Fetch unread message count
+  useEffect(() => {
+    if (isAuthenticated && user) {
+      fetchUnreadCount();
+      // Poll for updates every 30 seconds
+      const interval = setInterval(fetchUnreadCount, 30000);
+      return () => clearInterval(interval);
+    }
+  }, [isAuthenticated, user]);
+
+  const fetchUnreadCount = async () => {
+    try {
+      const response = await api.get('/messages/unread-count');
+      setUnreadMessages(response.data.unreadCount);
+    } catch (error) {
+      console.error('Error fetching unread count:', error);
+    }
+  };
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
@@ -308,6 +330,23 @@ export default function Navbar() {
             )}
 
             <ThemeToggle />
+
+            {/* Messages with Badge */}
+            {isAuthenticated && user && (
+              <Link href="/messages">
+                <Button variant="ghost" size="icon" className="relative">
+                  <MessageCircle className="h-5 w-5" />
+                  {unreadMessages > 0 && (
+                    <Badge
+                      variant="destructive"
+                      className="absolute -top-2 -right-2 h-5 w-5 flex items-center justify-center p-0 text-xs"
+                    >
+                      {unreadMessages > 9 ? '9+' : unreadMessages}
+                    </Badge>
+                  )}
+                </Button>
+              </Link>
+            )}
 
             {/* Cart with Badge */}
             <div className="relative">

@@ -27,7 +27,8 @@ import {
   MinusIcon,
   PlusIcon,
   MapPin,
-  Clock
+  Clock,
+  MessageCircle
 } from "lucide-react";
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
@@ -39,6 +40,7 @@ export default function ProductDetailPage() {
   const [error, setError] = useState<string | null>(null);
   const [selectedImage, setSelectedImage] = useState(0);
   const [quantity, setQuantity] = useState(1);
+  const [startingChat, setStartingChat] = useState(false);
 
   const params = useParams();
   const router = useRouter();
@@ -77,6 +79,28 @@ export default function ProductDetailPage() {
       for (let i = 0; i < quantity; i++) {
         addToCart(product);
       }
+    }
+  };
+
+  const handleAskSeller = async () => {
+    if (!product || !product.seller) return;
+
+    try {
+      setStartingChat(true);
+
+      // Create or get conversation
+      const response = await api.post('/messages/send', {
+        receiverId: product.seller._id,
+        productId: product._id,
+        message: `Hi, I'm interested in ${product.name}. Is this still available?`
+      });
+
+      // Redirect to messages page
+      router.push('/messages');
+    } catch (error) {
+      console.error('Error starting chat:', error);
+    } finally {
+      setStartingChat(false);
     }
   };
 
@@ -323,7 +347,11 @@ export default function ProductDetailPage() {
                     <ShoppingCart className="mr-2 h-5 w-5" />
                     {product.quantity > 0 ? 'Add to Cart' : 'Out of Stock'}
                   </Button>
-                  <div className="grid grid-cols-2 gap-2">
+                  <div className="grid grid-cols-3 gap-2">
+                    <Button variant="outline" size="lg" onClick={handleAskSeller} disabled={startingChat}>
+                      <MessageCircle className="mr-2 h-4 w-4" />
+                      Ask Seller
+                    </Button>
                     <Button variant="outline" size="lg">
                       <Heart className="mr-2 h-4 w-4" />
                       Wishlist

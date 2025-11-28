@@ -539,6 +539,72 @@ const sendSellerOrderNotification = async (order, seller) => {
   }
 };
 
+/**
+ * Send new message notification email when receiver is offline
+ * @param {Object} receiver - Receiver user object
+ * @param {Object} sender - Sender user object
+ * @param {string} messagePreview - Preview of the message
+ */
+const sendMessageNotificationEmail = async (receiver, sender, messagePreview) => {
+  try {
+    const senderName = sender.sellerDetails?.businessName || sender.email.split('@')[0];
+    const messageText = messagePreview || 'sent you a message';
+
+    const html = `
+      <!DOCTYPE html>
+      <html>
+        <head>
+          <style>
+            body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+            .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+            .header { background-color: #6366f1; color: white; padding: 20px; text-align: center; border-radius: 5px 5px 0 0; }
+            .content { background-color: #f9f9f9; padding: 30px; border: 1px solid #ddd; }
+            .message-box { background-color: #fff; border-left: 4px solid #6366f1; padding: 20px; margin: 20px 0; border-radius: 5px; }
+            .button { display: inline-block; padding: 12px 30px; background-color: #6366f1; color: white; text-decoration: none; border-radius: 5px; margin: 10px 0; }
+            .footer { background-color: #f1f1f1; padding: 15px; text-align: center; font-size: 12px; color: #666; border-radius: 0 0 5px 5px; }
+            .sender-name { font-weight: bold; color: #6366f1; font-size: 18px; }
+          </style>
+        </head>
+        <body>
+          <div class="container">
+            <div class="header">
+              <h1>💬 New Message from ${senderName}</h1>
+            </div>
+            <div class="content">
+              <p>Hello,</p>
+              <p>You have received a new message on WyZar!</p>
+
+              <div class="message-box">
+                <p class="sender-name">${senderName}</p>
+                <p style="color: #666; font-style: italic;">"${messageText.substring(0, 100)}${messageText.length > 100 ? '...' : ''}"</p>
+              </div>
+
+              <p style="text-align: center;">
+                <a href="${process.env.FRONTEND_URL || 'http://localhost:3000'}/messages" class="button">View Message</a>
+              </p>
+
+              <p>Don't keep them waiting! Reply to continue the conversation.</p>
+            </div>
+            <div class="footer">
+              <p>&copy; ${new Date().getFullYear()} WyZar. All rights reserved.</p>
+              <p>To manage your notification preferences, log in to your account.</p>
+            </div>
+          </div>
+        </body>
+      </html>
+    `;
+
+    return await sendEmail({
+      to: receiver.email,
+      subject: `New message from ${senderName} on WyZar`,
+      html
+    });
+  } catch (error) {
+    console.error('Error sending message notification email:', error);
+    return { success: false, error: error.message };
+  }
+};
+
 module.exports = {
   sendEmail,
   sendOTP,
@@ -548,5 +614,6 @@ module.exports = {
   sendLoginAlertEmail,
   sendOrderConfirmationEmail,
   sendSellerOrderNotification,
+  sendMessageNotificationEmail,
   transporter,
 };

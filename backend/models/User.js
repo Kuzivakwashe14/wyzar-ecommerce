@@ -68,6 +68,11 @@ const UserSchema = new Schema({
       type: String // We will store the file path here
     }
   },
+  // Blocked users list
+  blockedUsers: [{
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User'
+  }],
   // --- END OF NEW FIELDS ---
 
   createdAt: {

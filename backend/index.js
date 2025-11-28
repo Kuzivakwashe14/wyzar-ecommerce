@@ -5,6 +5,7 @@ const http = require('http');
 const fs = require('fs');
 const path = require('path');
 const cookieParser = require('cookie-parser');
+const socketIO = require('socket.io');
 require('dotenv').config(); // Load environment variables
 
 // ✨ Validate environment variables on startup (if envValidator exists)
@@ -86,6 +87,7 @@ app.use('/api/products', require('./routes/product'));
 app.use('/api/orders', require('./routes/order'));
 app.use('/api/reviews', require('./routes/review'));
 app.use('/api/search', require('./routes/search'));
+app.use('/api/messages', require('./routes/messages'));
 
 // Admin routes
 app.use('/api/admin', require('./routes/admin'));
@@ -102,6 +104,9 @@ app.use(notFoundHandler);
 app.use(errorHandler);
 
 // --- Start the Server ---
+let server;
+let io;
+
 if (USE_HTTPS) {
   // Load SSL certificates
   const sslOptions = {
@@ -110,9 +115,9 @@ if (USE_HTTPS) {
   };
 
   // Create HTTPS server
-  const httpsServer = https.createServer(sslOptions, app);
+  server = https.createServer(sslOptions, app);
 
-  httpsServer.listen(HTTPS_PORT, () => {
+  server.listen(HTTPS_PORT, () => {
     console.log(`🔒 HTTPS Server running on https://localhost:${HTTPS_PORT}`);
     console.log(`🔐 SSL/TLS encryption enabled`);
   });
@@ -129,12 +134,80 @@ if (USE_HTTPS) {
   }
 } else {
   // Regular HTTP server (for development without SSL)
-  app.listen(PORT, () => {
+  server = http.createServer(app);
+  server.listen(PORT, () => {
     console.log(`📡 HTTP Server running on http://localhost:${PORT}`);
     console.log(`⚠️  Warning: Running without SSL/TLS encryption`);
     console.log(`   Set USE_HTTPS=true in .env to enable HTTPS`);
   });
 }
+
+// --- Socket.IO Setup ---
+io = socketIO(server, {
+  cors: {
+    origin: process.env.FRONTEND_URL || 'http://localhost:3000',
+    methods: ['GET', 'POST'],
+    credentials: true
+  }
+});
+
+// Store connected users
+const connectedUsers = new Map();
+
+io.on('connection', (socket) => {
+  console.log('New client connected:', socket.id);
+
+  // User joins with their user ID
+  socket.on('join', (userId) => {
+    connectedUsers.set(userId, socket.id);
+    socket.userId = userId;
+    console.log(`User ${userId} joined with socket ${socket.id}`);
+  });
+
+  // User sends a message
+  socket.on('send_message', (data) => {
+    const receiverSocketId = connectedUsers.get(data.receiverId);
+    if (receiverSocketId) {
+      io.to(receiverSocketId).emit('new_message', data);
+    }
+  });
+
+  // Typing indicator
+  socket.on('typing', (data) => {
+    const receiverSocketId = connectedUsers.get(data.receiverId);
+    if (receiverSocketId) {
+      io.to(receiverSocketId).emit('user_typing', {
+        conversationId: data.conversationId,
+        userId: socket.userId
+      });
+    }
+  });
+
+  // Stop typing indicator
+  socket.on('stop_typing', (data) => {
+    const receiverSocketId = connectedUsers.get(data.receiverId);
+    if (receiverSocketId) {
+      io.to(receiverSocketId).emit('user_stop_typing', {
+        conversationId: data.conversationId,
+        userId: socket.userId
+      });
+    }
+  });
+
+  // User disconnects
+  socket.on('disconnect', () => {
+    if (socket.userId) {
+      connectedUsers.delete(socket.userId);
+      console.log(`User ${socket.userId} disconnected`);
+    }
+  });
+});
+
+// Make io and connectedUsers accessible in routes
+app.set('io', io);
+app.set('connectedUsers', connectedUsers);
+
+console.log('💬 Socket.IO initialized for real-time messaging');
 
 // Graceful shutdown
 process.on('SIGTERM', () => {
