@@ -1,14 +1,21 @@
-// In backend/routes/product.js
+// backend/routes/product.js
 
 const express = require('express');
 const router = express.Router();
-const auth = require('../middleware/auth'); // Auth middleware
-const productUploadOptimized = require('../middleware/productUploadOptimized'); // Optimized upload middleware
-const csvUpload = require('../middleware/csvUpload'); // CSV upload middleware
-const papa = require('papaparse'); // CSV parser
-const Product = require('../models/Product'); // Product model
-const User = require('../models/User'); // We need User model to check if seller is verified
-const { getPublicUrl } = require('../config/localStorage'); // Import helper function
+const auth = require('../middleware/auth');
+const productUploadOptimized = require('../middleware/productUploadOptimized');
+const csvUpload = require('../middleware/csvUpload');
+const papa = require('papaparse');
+const Product = require('../models/Product');
+const User = require('../models/User');
+const { getPublicUrl } = require('../config/localStorage');
+
+// ===== Input Validation =====
+const {
+  validateProductCreation,
+  validateProductUpdate,
+  validateObjectIdParam
+} = require('../middleware/validateInput');
 
 // @route   POST /api/products/bulk-upload
 // @desc    Bulk upload products from CSV
@@ -148,15 +155,11 @@ router.post('/', auth, (req, res) => {
       return res.status(400).json({ msg: 'No product images uploaded. At least one is required.' });
     }
 
-    // 3. Get form data
-    const { name, description, price, category, quantity, deliveryTime, countryOfOrigin } = req.body;
+    // 3. Validate product input
+    return validateProductCreation(req, res, async () => {
+      const { name, description, price, category, quantity, deliveryTime, countryOfOrigin } = req.body;
 
-    // 4. Basic validation
-    if (!name || !description || !price || !category || !quantity) {
-      return res.status(400).json({ msg: 'Please fill in all required fields (name, description, price, category, quantity).' });
-    }
-
-    try {
+      try {
       // 5. Check if user is a verified seller (we'll add verification later)
       // For now, we just check if they are a seller 
       const seller = await User.findById(req.user.id);
@@ -186,10 +189,11 @@ router.post('/', auth, (req, res) => {
       const product = await newProduct.save();
       res.status(201).json(product); // Send back the created product
 
-    } catch (err) {
-      console.error(err.message);
-      res.status(500).send('Server Error');
-    }
+      } catch (err) {
+        console.error(err.message);
+        res.status(500).send('Server Error');
+      }
+    });
   });
 });
 
@@ -214,7 +218,7 @@ router.get('/', async (req, res) => {
 // @route   GET /api/products/:id
 // @desc    Get a single product by ID (with view tracking)
 // @access  Public
-router.get('/:id', async (req, res) => {
+router.get('/:id', validateObjectIdParam('id'), async (req, res) => {
   try {
     const product = await Product.findById(req.params.id)
       .populate('seller', ['sellerDetails.businessName', 'email']); // Get seller's info
@@ -259,30 +263,32 @@ router.get('/seller/me', auth, async (req, res) => {
 // @route   PUT /api/products/:id
 // @desc    Update a product
 // @access  Private (Sellers Only)
-router.put('/:id', auth, (req, res) => {
+router.put('/:id', auth, validateObjectIdParam('id'), (req, res) => {
   productUploadOptimized(req, res, async (err) => {
     if (err) {
       return res.status(400).json({ msg: err.message });
     }
 
-    const { name, description, price, category, quantity, deliveryTime, countryOfOrigin } = req.body;
+    // Validate product update input
+    return validateProductUpdate(req, res, async () => {
+      const { name, description, price, category, quantity, deliveryTime, countryOfOrigin } = req.body;
 
-    // Build product object
-    const productFields = {};
-    if (name) productFields.name = name;
-    if (description) productFields.description = description;
-    if (price) productFields.price = price;
-    if (category) productFields.category = category;
-    if (quantity) productFields.quantity = quantity;
-    if (deliveryTime) productFields.deliveryTime = deliveryTime;
-    if (countryOfOrigin) productFields.countryOfOrigin = countryOfOrigin;
+      // Build product object
+      const productFields = {};
+      if (name) productFields.name = name;
+      if (description) productFields.description = description;
+      if (price) productFields.price = price;
+      if (category) productFields.category = category;
+      if (quantity) productFields.quantity = quantity;
+      if (deliveryTime) productFields.deliveryTime = deliveryTime;
+      if (countryOfOrigin) productFields.countryOfOrigin = countryOfOrigin;
 
-    // Handle image updates - convert to public URLs for Nginx
-    if (req.files && req.files.length > 0) {
-      productFields.images = req.files.map(file => getPublicUrl(file.path));
-    }
+      // Handle image updates - convert to public URLs for Nginx
+      if (req.files && req.files.length > 0) {
+        productFields.images = req.files.map(file => getPublicUrl(file.path));
+      }
 
-    try {
+      try {
       let product = await Product.findById(req.params.id);
 
       if (!product) {
@@ -301,17 +307,18 @@ router.put('/:id', auth, (req, res) => {
       );
 
       res.json(product);
-    } catch (err) {
-      console.error(err.message);
-      res.status(500).send('Server Error');
-    }
+      } catch (err) {
+        console.error(err.message);
+        res.status(500).send('Server Error');
+      }
+    });
   });
 });
 
 // @route   DELETE /api/products/:id
 // @desc    Delete a product
 // @access  Private (Sellers Only)
-router.delete('/:id', auth, async (req, res) => {
+router.delete('/:id', auth, validateObjectIdParam('id'), async (req, res) => {
   try {
     let product = await Product.findById(req.params.id);
 

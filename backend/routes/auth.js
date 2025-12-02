@@ -1,20 +1,23 @@
-// In backend/routes/auth.js
-const { validateRegistration, validateLogin } = require('../middleware/validateInput');
-const { sanitizeRequestBody } = require('../utils/security/inputValidation');
+// backend/routes/auth.js
 const express = require('express');
 const router = express.Router();
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const auth = require('../middleware/auth');
-const User = require('../models/User'); // Import our User model
+const User = require('../models/User');
 const { sendWelcomeNotification, sendLoginAlert } = require('../services/notificationService');
 const { authLimiter } = require('../config/security');
+
+// ===== Input Validation & Sanitization =====
+const { validateRegistration, validateLogin } = require('../middleware/validateInput');
+const { sanitizeRequestBody } = require('../utils/security/inputValidation');
+const { validatePasswordMiddleware } = require('../utils/passwordSecurity');
 
 // --- Registration Route ---
 // @route   POST /api/auth/register
 // @desc    Register a new user (must verify email with OTP first)
 // @access  Public
-router.post('/register', authLimiter, sanitizeRequestBody, validateRegistration, async (req, res) => {
+router.post('/register', authLimiter, sanitizeRequestBody, validateRegistration, validatePasswordMiddleware, async (req, res) => {
   // 1. Get email and password from the request body
   const { email, password } = req.body;
 

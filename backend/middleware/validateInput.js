@@ -5,10 +5,12 @@ const {
   validatePhone,
   validatePrice,
   validateQuantity,
+  validateObjectId,
   validateProductName,
   validateDescription,
   validateCategory,
-  validateAddress
+  validateAddress,
+  sanitizeString
 } = require('../utils/security/inputValidation');
 
 /**
@@ -103,6 +105,54 @@ const validateProductCreation = (req, res, next) => {
     req.body.price = validatePrice(price);
     req.body.quantity = validateQuantity(quantity);
     req.body.category = validateCategory(category);
+
+    // Optional fields
+    if (req.body.brand) {
+      req.body.brand = sanitizeString(req.body.brand, { maxLength: 100 });
+    }
+    if (req.body.deliveryTime) {
+      req.body.deliveryTime = sanitizeString(req.body.deliveryTime, { maxLength: 100 });
+    }
+    if (req.body.countryOfOrigin) {
+      req.body.countryOfOrigin = sanitizeString(req.body.countryOfOrigin, { maxLength: 100 });
+    }
+
+    next();
+  } catch (error) {
+    if (error instanceof ValidationError) {
+      return res.status(400).json({
+        success: false,
+        msg: error.message,
+        field: error.field
+      });
+    }
+    next(error);
+  }
+};
+
+/**
+ * Validate product update input
+ */
+const validateProductUpdate = (req, res, next) => {
+  try {
+    const { name, description, price, category, quantity } = req.body;
+
+    // Validate and sanitize each field (all optional for updates)
+    if (name) {
+      req.body.name = validateProductName(name);
+    }
+    if (description) {
+      req.body.description = validateDescription(description);
+    }
+    if (price) {
+      req.body.price = validatePrice(price);
+    }
+    if (quantity) {
+      req.body.quantity = validateQuantity(quantity);
+    }
+    if (category) {
+      req.body.category = validateCategory(category);
+    }
 
     // Optional fields
     if (req.body.brand) {
@@ -225,10 +275,34 @@ const validateReviewCreation = (req, res, next) => {
   }
 };
 
+/**
+ * Validate MongoDB ObjectId parameter
+ */
+const validateObjectIdParam = (paramName = 'id') => {
+  return (req, res, next) => {
+    try {
+      const id = req.params[paramName];
+      req.params[paramName] = validateObjectId(id, paramName);
+      next();
+    } catch (error) {
+      if (error instanceof ValidationError) {
+        return res.status(400).json({
+          success: false,
+          msg: error.message,
+          field: error.field
+        });
+      }
+      next(error);
+    }
+  };
+};
+
 module.exports = {
   validateRegistration,
   validateLogin,
   validateProductCreation,
+  validateProductUpdate,
   validateOrderCreation,
-  validateReviewCreation
+  validateReviewCreation,
+  validateObjectIdParam
 };

@@ -1,4 +1,4 @@
-// In backend/routes/review.js
+// backend/routes/review.js
 
 const express = require('express');
 const mongoose = require('mongoose');
@@ -10,6 +10,9 @@ const Product = require('../models/Product');
 const Order = require('../models/Order');
 const User = require('../models/User');
 
+// ===== Input Validation =====
+const { validateReviewCreation, validateObjectIdParam } = require('../middleware/validateInput');
+
 // ==========================================
 // PUBLIC ROUTES
 // ==========================================
@@ -17,7 +20,7 @@ const User = require('../models/User');
 // @route   GET /api/reviews/product/:productId
 // @desc    Get all approved reviews for a product
 // @access  Public
-router.get('/product/:productId', async (req, res) => {
+router.get('/product/:productId', validateObjectIdParam('productId'), async (req, res) => {
   try {
     const { page = 1, limit = 10, sort = 'newest' } = req.query;
     const skip = (parseInt(page) - 1) * parseInt(limit);
@@ -108,7 +111,7 @@ router.get('/product/:productId', async (req, res) => {
 // @route   POST /api/reviews
 // @desc    Create a new review
 // @access  Private
-router.post('/', auth, async (req, res) => {
+router.post('/', auth, validateReviewCreation, async (req, res) => {
   try {
     const { productId, rating, title, comment, orderId } = req.body;
 
@@ -220,7 +223,7 @@ router.post('/', auth, async (req, res) => {
 // @route   PUT /api/reviews/:id
 // @desc    Update a review
 // @access  Private (Review owner only)
-router.put('/:id', auth, async (req, res) => {
+router.put('/:id', auth, validateObjectIdParam('id'), async (req, res) => {
   try {
     const { rating, title, comment } = req.body;
 
@@ -280,7 +283,7 @@ router.put('/:id', auth, async (req, res) => {
 // @route   DELETE /api/reviews/:id
 // @desc    Delete a review
 // @access  Private (Review owner only)
-router.delete('/:id', auth, async (req, res) => {
+router.delete('/:id', auth, validateObjectIdParam('id'), async (req, res) => {
   try {
     const review = await Review.findById(req.params.id);
     if (!review) {
@@ -344,7 +347,7 @@ router.get('/user/me', auth, async (req, res) => {
 // @route   POST /api/reviews/:id/helpful
 // @desc    Mark a review as helpful
 // @access  Private
-router.post('/:id/helpful', auth, async (req, res) => {
+router.post('/:id/helpful', auth, validateObjectIdParam('id'), async (req, res) => {
   try {
     const review = await Review.findById(req.params.id);
     if (!review) {
@@ -421,7 +424,7 @@ router.get('/admin/all', adminAuth, async (req, res) => {
 // @route   PUT /api/reviews/admin/:id/approve
 // @desc    Approve or reject a review
 // @access  Private (Admin only)
-router.put('/admin/:id/approve', adminAuth, async (req, res) => {
+router.put('/admin/:id/approve', adminAuth, validateObjectIdParam('id'), async (req, res) => {
   try {
     const { approve } = req.body;
     const review = await Review.findById(req.params.id);
@@ -459,7 +462,7 @@ router.put('/admin/:id/approve', adminAuth, async (req, res) => {
 // @route   DELETE /api/reviews/admin/:id
 // @desc    Delete a review (admin)
 // @access  Private (Admin only)
-router.delete('/admin/:id', adminAuth, async (req, res) => {
+router.delete('/admin/:id', adminAuth, validateObjectIdParam('id'), async (req, res) => {
   try {
     const review = await Review.findById(req.params.id);
     if (!review) {

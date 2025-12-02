@@ -28,8 +28,15 @@ const {
   notFoundHandler
 } = require('./middleware/errorMiddleware');
 
+// ✨ NEW: Input validation and sanitization
+const { sanitizeRequestBody, sanitizeQueryParams } = require('./utils/security/inputValidation');
+
 // ✨ NEW: CSRF protection
-const { attachCsrfToken } = require('./middleware/csrfProtection');
+const {
+  csrfProtection,
+  attachCsrfToken,
+  csrfErrorHandler
+} = require('./middleware/csrfProtection');
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -49,8 +56,17 @@ app.use(express.json({ limit: '10mb' })); // Parse JSON bodies (with size limit)
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 app.use(cookieParser()); // Parse cookies
 
-// ✨ NEW: Attach CSRF token to all responses
-app.use(attachCsrfToken);
+// ✨ NEW: Apply sanitization to all routes
+app.use(sanitizeRequestBody);
+app.use(sanitizeQueryParams);
+
+// ✨ NEW: Apply CSRF protection to state-changing routes
+app.use([
+  '/api/orders',
+  '/api/products',
+  '/api/seller',
+  '/api/reviews'
+], csrfProtection, attachCsrfToken);
 
 // --- Static Files ---
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
@@ -72,10 +88,10 @@ app.get('/', (req, res) => {
 });
 
 // ✨ NEW: CSRF token endpoint for frontend
-app.get('/api/csrf-token', (req, res) => {
+app.get('/api/csrf-token', csrfProtection, (req, res) => {
   res.json({
     success: true,
-    csrfToken: res.locals.csrfToken
+    csrfToken: req.csrfToken()
   });
 });
 
@@ -99,6 +115,9 @@ app.use('/api/admin/access-control', require('./routes/adminAccessControl'));
 
 // ✨ NEW: 404 Handler (must be after all routes)
 app.use(notFoundHandler);
+
+// ✨ NEW: CSRF Error Handler (before general error handler)
+app.use(csrfErrorHandler);
 
 // ✨ NEW: Global Error Handler (must be last)
 app.use(errorHandler);

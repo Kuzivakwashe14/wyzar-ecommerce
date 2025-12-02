@@ -1,9 +1,9 @@
-// In backend/routes/order.js
+// backend/routes/order.js
 
 const express = require('express');
 const router = express.Router();
 const auth = require('../middleware/auth');
-const { Paynow } = require('paynow'); // Correct: require('paynow')
+const { Paynow } = require('paynow');
 
 // Import our models
 const Order = require('../models/Order');
@@ -16,6 +16,9 @@ const {
   sendOrderStatusUpdate,
   notifySellerOfOrder,
 } = require('../services/notificationService');
+
+// ===== Input Validation =====
+const { validateOrderCreation, validateObjectIdParam } = require('../middleware/validateInput');
 
 // --- 1. Initialize Paynow ---
 // Check if Paynow is configured (for production) or if we're in development mode
@@ -43,7 +46,7 @@ if (isPaynowConfigured) {
 // @route   POST /api/orders/create
 // @desc    Create a new order and get Paynow redirect URL
 // @access  Private
-router.post('/create', auth, async (req, res) => {
+router.post('/create', auth, validateOrderCreation, async (req, res) => {
   try {
     const { shippingAddress, cartItems, paymentMethod = 'Paynow' } = req.body;
     
@@ -297,7 +300,7 @@ router.post('/paynow/callback', async (req, res) => {
 // @route   POST /api/orders/:id/verify-payment
 // @desc    Manually verify payment status with Paynow (for when callbacks fail)
 // @access  Private (Seller only)
-router.post('/:id/verify-payment', auth, async (req, res) => {
+router.post('/:id/verify-payment', auth, validateObjectIdParam('id'), async (req, res) => {
   try {
     const order = await Order.findById(req.params.id);
     
@@ -375,7 +378,7 @@ router.post('/:id/verify-payment', auth, async (req, res) => {
 // @route   POST /api/orders/:id/confirm-payment
 // @desc    Manually confirm payment was received (for when Paynow callbacks fail)
 // @access  Private (Seller only)
-router.post('/:id/confirm-payment', auth, async (req, res) => {
+router.post('/:id/confirm-payment', auth, validateObjectIdParam('id'), async (req, res) => {
   try {
     const order = await Order.findById(req.params.id);
     
@@ -454,7 +457,7 @@ router.get('/myorders', auth, async (req, res) => {
 // @route   GET /api/orders/:id
 // @desc    Get a single order by its ID
 // @access  Private
-router.get('/:id', auth, async (req, res) => {
+router.get('/:id', auth, validateObjectIdParam('id'), async (req, res) => {
   try {
     const order = await Order.findById(req.params.id);
 
@@ -481,7 +484,7 @@ router.get('/:id', auth, async (req, res) => {
 // @route   PUT /api/orders/:id/status
 // @desc    Update order status (Shipped, Delivered, etc.)
 // @access  Private (Seller only)
-router.put('/:id/status', auth, async (req, res) => {
+router.put('/:id/status', auth, validateObjectIdParam('id'), async (req, res) => {
   try {
     const { status, trackingNumber } = req.body;
 
