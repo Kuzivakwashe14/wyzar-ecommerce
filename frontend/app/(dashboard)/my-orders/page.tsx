@@ -67,7 +67,14 @@ export default function MyOrdersPage() {
   }, [isAuthenticated]);
 
   if (authLoading || loading) {
-    return <div className="flex justify-center items-center min-h-screen"><p>Loading orders...</p></div>;
+    return (
+      <div className="flex justify-center items-center min-h-screen">
+        <div className="text-center">
+          <div className="h-12 w-12 animate-spin rounded-full border-4 border-shop_dark_green border-t-transparent mx-auto mb-4"></div>
+          <p className="text-gray-600">Loading orders...</p>
+        </div>
+      </div>
+    );
   }
 
   // Helper to format date
@@ -83,11 +90,11 @@ export default function MyOrdersPage() {
   const getStatusBadge = (status: string) => {
     switch (status) {
       case 'Paid':
-        return <Badge className="bg-green-500 text-white">{status}</Badge>;
+        return <Badge className="bg-shop_light_green text-white">{status}</Badge>;
       case 'Pending':
-        return <Badge variant="secondary">{status}</Badge>;
+        return <Badge className="bg-shop_orange/20 text-shop_orange border-shop_orange">{status}</Badge>;
       case 'Shipped':
-        return <Badge className="bg-blue-500 text-white">{status}</Badge>;
+        return <Badge className="bg-shop_dark_green text-white">{status}</Badge>;
       case 'Delivered':
         return <Badge className="bg-gray-700 text-white">{status}</Badge>;
       case 'Cancelled':
@@ -99,38 +106,40 @@ export default function MyOrdersPage() {
 
   return (
     <div className="container mx-auto max-w-3xl py-12">
-      <h1 className="text-3xl font-bold mb-8">My Orders</h1>
+      <h1 className="text-3xl font-bold mb-8 text-shop_dark_green">My Orders</h1>
 
       {orders.length === 0 ? (
-        <p className="text-center text-gray-600">You have not placed any orders yet.</p>
+        <div className="text-center py-12 bg-white rounded-xl border border-gray-200">
+          <p className="text-gray-600">You have not placed any orders yet.</p>
+        </div>
       ) : (
-        <Accordion type="single" collapsible className="w-full">
+        <Accordion type="single" collapsible className="w-full space-y-4">
           {orders.map((order) => (
-            <AccordionItem value={order._id} key={order._id}>
+            <AccordionItem value={order._id} key={order._id} className="bg-white rounded-xl border border-gray-200 px-4">
               
-              <AccordionTrigger>
+              <AccordionTrigger className="hover:no-underline">
                 <div className="flex justify-between w-full pr-4">
-                  <div>
-                    <p className="font-semibold">Order ID: {order._id.substring(0, 8)}...</p>
+                  <div className="text-left">
+                    <p className="font-semibold text-shop_dark_green">Order ID: {order._id.substring(0, 8)}...</p>
                     <p className="text-sm text-gray-500">
                       Placed on {formatDate(order.createdAt)}
                     </p>
                   </div>
                   <div className="flex flex-col items-end">
                     {getStatusBadge(order.status)}
-                    <p className="font-semibold text-lg">
+                    <p className="font-semibold text-lg text-shop_orange">
                       ${order.totalPrice.toFixed(2)}
                     </p>
                   </div>
                 </div>
               </AccordionTrigger>
               
-              <AccordionContent className="border-t">
+              <AccordionContent className="border-t border-gray-200">
                 <div className="pt-4 space-y-4">
                   {/* Order Items */}
                   {order.orderItems.map((item) => (
                     <div key={item._id} className="flex items-center space-x-4">
-                      <div className="relative h-16 w-16 rounded-md overflow-hidden border">
+                      <div className="relative h-16 w-16 rounded-md overflow-hidden border border-gray-200">
                         <Image
                           src={`${API_BASE_URL}/${item.image.replace(/\\/g, '/')}`}
                           alt={item.name}
@@ -145,17 +154,17 @@ export default function MyOrdersPage() {
                           Qty: {item.quantity}
                         </p>
                       </div>
-                      <p className="text-sm">
+                      <p className="text-sm font-medium text-shop_dark_green">
                         ${(item.price * item.quantity).toFixed(2)}
                       </p>
                     </div>
                   ))}
                   {/* Shipping Details */}
-                  <div className="border-t pt-4">
-                    <h4 className="font-semibold mb-2">Shipping To:</h4>
-                    <p className="text-sm">{order.shippingAddress.fullName}</p>
-                    <p className="text-sm">{order.shippingAddress.address}</p>
-                    <p className="text-sm">{order.shippingAddress.city}</p>
+                  <div className="border-t border-gray-200 pt-4">
+                    <h4 className="font-semibold mb-2 text-shop_dark_green">Shipping To:</h4>
+                    <p className="text-sm text-gray-600">{order.shippingAddress.fullName}</p>
+                    <p className="text-sm text-gray-600">{order.shippingAddress.address}</p>
+                    <p className="text-sm text-gray-600">{order.shippingAddress.city}</p>
                   </div>
                 </div>
               </AccordionContent>

@@ -297,7 +297,7 @@ export default function AccessControlPage() {
                     <div>
                       <div className="font-medium flex items-center gap-2">
                         {admin.email}
-                        {admin._id === user?.id && (
+                        {admin._id === user?._id && (
                           <Badge variant="secondary" className="text-xs">
                             You
                           </Badge>
@@ -310,11 +310,11 @@ export default function AccessControlPage() {
                   </div>
 
                   <div className="flex items-center gap-2">
-                    <Badge variant={admin.isEmailVerified ? "success" : "secondary"}>
+                    <Badge variant={admin.isEmailVerified ? "default" : "secondary"} className={admin.isEmailVerified ? "bg-green-500" : ""}>
                       {admin.isEmailVerified ? "Verified" : "Unverified"}
                     </Badge>
 
-                    {admin._id !== user?.id && (
+                    {admin._id !== user?._id && (
                       <Button
                         variant="ghost"
                         size="sm"

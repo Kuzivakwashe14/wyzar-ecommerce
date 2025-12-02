@@ -220,7 +220,7 @@ export default function ProductReviews({ productId }: ProductReviewsProps) {
 
       {/* User's Existing Review */}
       {userReview && !showForm && (
-        <Card className="border-blue-200 bg-blue-50 dark:bg-blue-950 dark:border-blue-800">
+        <Card className="border-blue-200 bg-blue-50">
           <CardHeader>
             <CardTitle className="text-lg">Your Review</CardTitle>
           </CardHeader>

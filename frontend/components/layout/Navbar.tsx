@@ -3,7 +3,6 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { ThemeToggle } from "./ThemeToggle";
 import { api } from "@/context/AuthContent";
 import {
   NavigationMenu,
@@ -328,8 +327,6 @@ export default function Navbar() {
                 </Link>
               </>
             )}
-
-            <ThemeToggle />
 
             {/* Messages with Badge */}
             {isAuthenticated && user && (

@@ -5,57 +5,76 @@ import Link from "next/link";
 import Image from "next/image";
 import { api } from "@/context/AuthContent";
 import ProductCard, { Product } from "@/components/ProductCard";
+import Container from "@/components/Container";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Card, CardContent } from "@/components/ui/card";
 import {
   ShoppingBag,
   TruckIcon,
   ShieldCheck,
   CreditCard,
-  Zap,
+  Headphones,
   Star,
   ArrowRight,
-  Smartphone,
-  Home,
-  Shirt,
-  Laptop
+  Sparkles,
+  ChevronRight,
 } from "lucide-react";
 
-// Featured categories
+// Featured categories with images
 const categories = [
-  { name: "Electronics", icon: Laptop, color: "bg-blue-500", href: "/products?category=Electronics" },
-  { name: "Fashion", icon: Shirt, color: "bg-pink-500", href: "/products?category=Fashion" },
-  { name: "Home & Living", icon: Home, color: "bg-green-500", href: "/products?category=Home" },
-  { name: "Mobile & Accessories", icon: Smartphone, color: "bg-purple-500", href: "/products?category=Mobile" },
+  { 
+    name: "Electronics", 
+    href: "/products?category=Electronics",
+    image: "https://images.unsplash.com/photo-1498049794561-7780e7231661?w=400&q=80",
+    description: "Latest gadgets & devices"
+  },
+  { 
+    name: "Fashion", 
+    href: "/products?category=Fashion",
+    image: "https://images.unsplash.com/photo-1445205170230-053b83016050?w=400&q=80",
+    description: "Trendy styles for all"
+  },
+  { 
+    name: "Home & Living", 
+    href: "/products?category=Home",
+    image: "https://images.unsplash.com/photo-1556909114-f6e7ad7d3136?w=400&q=80",
+    description: "Beautify your space"
+  },
+  { 
+    name: "Mobile & Accessories", 
+    href: "/products?category=Mobile",
+    image: "https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?w=400&q=80",
+    description: "Phones & accessories"
+  },
 ];
 
 // Trust features
 const features = [
   {
     icon: TruckIcon,
-    title: "Fast Delivery",
-    description: "Quick delivery across Zimbabwe"
+    title: "Free Delivery",
+    description: "On orders over $50"
   },
   {
     icon: ShieldCheck,
     title: "Secure Shopping",
-    description: "100% secure payment"
+    description: "100% protected payments"
   },
   {
     icon: CreditCard,
     title: "Flexible Payment",
-    description: "Paynow, Ecocash & Cash on Delivery"
+    description: "Multiple payment options"
   },
   {
-    icon: Zap,
+    icon: Headphones,
     title: "24/7 Support",
-    description: "Dedicated customer support"
+    description: "Dedicated assistance"
   },
 ];
 
 export default function HomePage() {
   const [products, setProducts] = useState<Product[]>([]);
+  const [featuredProducts, setFeaturedProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -63,7 +82,8 @@ export default function HomePage() {
       setLoading(true);
       try {
         const response = await api.get("/products");
-        setProducts(response.data.slice(0, 4));
+        setProducts(response.data.slice(0, 8));
+        setFeaturedProducts(response.data.slice(0, 4));
       } catch (err) {
         console.error("Failed to fetch products:", err);
       } finally {
@@ -75,227 +95,311 @@ export default function HomePage() {
   }, []);
 
   return (
-    <div className="flex flex-col min-h-screen">
-      {/* Hero Section */}
-      <section className="relative w-full min-h-[600px] text-white overflow-hidden">
-        {/* Background Image */}
-        <div className="absolute inset-0">
-          <Image
-            src="/hero-bg.jpg"
-            alt="Shopping Background"
-            fill
-            className="object-cover"
-            priority
-          />
-          <div className="absolute inset-0 bg-black/60" />
-        </div>
-
-        <div className="container mx-auto px-4 py-20 relative z-10">
-          <div className="max-w-3xl mx-auto text-center space-y-8">
-            <div className="animate-in fade-in slide-in-from-bottom-4 duration-700">
-              <Badge className="bg-white/20 text-white border-white/30 hover:bg-white/30 text-sm px-4 py-1 backdrop-blur-sm">
-                Zimbabwe&apos;s Premier Online Marketplace
+    <div className="flex flex-col">
+      {/* Hero Banner Section */}
+      <section className="relative bg-shop_light_pink overflow-hidden">
+        <Container>
+          <div className="grid md:grid-cols-2 gap-8 py-12 md:py-20">
+            {/* Hero Content */}
+            <div className="flex flex-col justify-center space-y-6 z-10">
+              <Badge className="w-fit bg-shop_orange/10 text-shop_orange border-shop_orange/20 hover:bg-shop_orange/20">
+                <Sparkles className="h-3 w-3 mr-1" />
+                Zimbabwe&apos;s Premier Marketplace
               </Badge>
+              
+              <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold text-gray-900 leading-tight">
+                Shop Smart,
+                <br />
+                <span className="text-shop_dark_green">Live Better</span>
+              </h1>
+              
+              <p className="text-lg text-gray-600 max-w-lg">
+                Discover thousands of products from trusted local and international sellers. 
+                Quality guaranteed, delivered right to your doorstep.
+              </p>
+              
+              <div className="flex flex-wrap gap-4">
+                <Link href="/products">
+                  <Button 
+                    size="lg" 
+                    className="bg-shop_dark_green hover:bg-shop_light_green text-white px-8 h-12"
+                  >
+                    <ShoppingBag className="mr-2 h-5 w-5" />
+                    Shop Now
+                  </Button>
+                </Link>
+                <Link href="/become-a-seller">
+                  <Button 
+                    size="lg" 
+                    variant="outline" 
+                    className="border-shop_dark_green text-shop_dark_green hover:bg-shop_dark_green hover:text-white px-8 h-12"
+                  >
+                    Start Selling
+                    <ArrowRight className="ml-2 h-5 w-5" />
+                  </Button>
+                </Link>
+              </div>
+
+              {/* Stats */}
+              <div className="flex gap-8 pt-6">
+                <div>
+                  <div className="text-2xl md:text-3xl font-bold text-shop_dark_green">10K+</div>
+                  <div className="text-sm text-gray-500">Products</div>
+                </div>
+                <div>
+                  <div className="text-2xl md:text-3xl font-bold text-shop_dark_green">5K+</div>
+                  <div className="text-sm text-gray-500">Happy Customers</div>
+                </div>
+                <div>
+                  <div className="text-2xl md:text-3xl font-bold text-shop_dark_green">500+</div>
+                  <div className="text-sm text-gray-500">Sellers</div>
+                </div>
+              </div>
             </div>
 
-            <h1 className="text-5xl md:text-7xl font-bold leading-tight animate-in fade-in slide-in-from-bottom-8 duration-700 delay-100">
-              Shop Smarter,
-              <br />
-              <span className="text-transparent bg-clip-text bg-linear-to-r from-yellow-200 to-pink-200">
-                Live Better
-              </span>
-            </h1>
-
-            <p className="text-xl md:text-2xl text-purple-100 max-w-2xl mx-auto animate-in fade-in slide-in-from-bottom-8 duration-700 delay-200">
-              Discover thousands of products from local and international sellers. Quality guaranteed, delivered to your door.
-            </p>
-
-            <div className="flex flex-col sm:flex-row gap-4 justify-center items-center pt-4 animate-in fade-in slide-in-from-bottom-8 duration-700 delay-300">
-              <Link href="/products">
-                <Button size="lg" className="bg-white text-purple-700 hover:bg-gray-100 text-lg px-8 py-6 h-auto transition-transform hover:scale-105">
-                  <ShoppingBag className="mr-2 h-5 w-5" />
-                  Start Shopping
-                </Button>
-              </Link>
-              <Link href="/become-a-seller">
-                <Button size="lg" variant="outline" className="border-white/30 text-purple-700 hover:bg-gray-100 text-lg px-8 py-6 h-auto transition-transform hover:scale-105">
-                  Become a Seller
-                  <ArrowRight className="ml-2 h-5 w-5" />
-                </Button>
-              </Link>
-            </div>
-
-            {/* Stats */}
-            <div className="grid grid-cols-3 gap-8 pt-12 max-w-2xl mx-auto animate-in fade-in slide-in-from-bottom-8 duration-700 delay-500">
-              <div className="text-center">
-                <div className="text-3xl md:text-4xl font-bold">10K+</div>
-                <div className="text-purple-200 text-sm mt-1">Products</div>
+            {/* Hero Image */}
+            <div className="relative hidden md:flex items-center justify-center">
+              <div className="relative w-full h-[400px] lg:h-[500px]">
+                <div className="absolute inset-0 bg-shop_dark_green/10 rounded-full blur-3xl" />
+                <Image
+                  src="https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=500&q=80"
+                  alt="Shopping illustration"
+                  fill
+                  className="object-contain"
+                  priority
+                />
               </div>
-              <div className="text-center">
-                <div className="text-3xl md:text-4xl font-bold">5K+</div>
-                <div className="text-purple-200 text-sm mt-1">Customers</div>
+              {/* Floating Elements */}
+              <div className="absolute top-10 right-10 bg-white rounded-lg p-3 shadow-lg animate-bounce-slow z-20">
+                <div className="flex items-center gap-2">
+                  <div className="h-10 w-10 rounded-full bg-shop_light_green/20 flex items-center justify-center">
+                    <TruckIcon className="h-5 w-5 text-shop_light_green" />
+                  </div>
+                  <div>
+                    <p className="text-xs text-gray-500">Free Shipping</p>
+                    <p className="text-sm font-semibold">Orders $50+</p>
+                  </div>
+                </div>
               </div>
-              <div className="text-center">
-                <div className="text-3xl md:text-4xl font-bold">500+</div>
-                <div className="text-purple-200 text-sm mt-1">Sellers</div>
+              <div className="absolute bottom-20 left-0 bg-white rounded-lg p-3 shadow-lg animate-bounce-slow z-20" style={{ animationDelay: '0.5s' }}>
+                <div className="flex items-center gap-2">
+                  <div className="h-10 w-10 rounded-full bg-shop_orange/20 flex items-center justify-center">
+                    <Star className="h-5 w-5 text-shop_orange fill-shop_orange" />
+                  </div>
+                  <div>
+                    <p className="text-xs text-gray-500">Rated</p>
+                    <p className="text-sm font-semibold">4.9/5 Stars</p>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
-        </div>
+        </Container>
       </section>
 
-      {/* Features Section */}
-      <section className="py-12 bg-muted/30 dark:bg-transparent">
-        <div className="container mx-auto px-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+      {/* Features Bar */}
+      <section className="bg-white border-b py-6">
+        <Container>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
             {features.map((feature, index) => (
-              <Card
-                key={index}
-                className="border-none shadow-none bg-transparent animate-in fade-in slide-in-from-bottom-4 duration-500"
-                style={{ animationDelay: `${index * 100}ms` }}
-              >
-                <CardContent className="flex items-start gap-4 p-6">
-                  <div className="p-3 bg-primary/10 rounded-lg transition-transform hover:scale-110 duration-300">
-                    <feature.icon className="h-6 w-6 text-primary" />
-                  </div>
-                  <div className="space-y-1">
-                    <h3 className="font-semibold">{feature.title}</h3>
-                    <p className="text-sm text-muted-foreground">{feature.description}</p>
-                  </div>
-                </CardContent>
-              </Card>
+              <div key={index} className="flex items-center gap-3 group">
+                <div className="h-12 w-12 rounded-full bg-shop_light_pink flex items-center justify-center group-hover:bg-shop_dark_green transition-colors">
+                  <feature.icon className="h-6 w-6 text-shop_dark_green group-hover:text-white transition-colors" />
+                </div>
+                <div>
+                  <h3 className="font-semibold text-sm">{feature.title}</h3>
+                  <p className="text-xs text-gray-500">{feature.description}</p>
+                </div>
+              </div>
             ))}
           </div>
-        </div>
+        </Container>
       </section>
 
       {/* Categories Section */}
-      <section className="py-16 container mx-auto px-4">
-        <div className="text-center mb-12 animate-in fade-in slide-in-from-bottom-4 duration-700 view-animate">
-          <h2 className="text-3xl md:text-4xl font-bold mb-4">Shop by Category</h2>
-          <p className="text-muted-foreground text-lg">Find exactly what you&apos;re looking for</p>
-        </div>
-
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
-          {categories.map((category, index) => (
-            <Link key={index} href={category.href}>
-              <Card
-                className="group hover:shadow-lg transition-all duration-300 cursor-pointer border-2 hover:border-primary animate-in fade-in zoom-in-95 duration-500"
-                style={{ animationDelay: `${index * 100}ms` }}
-              >
-                <CardContent className="p-8 text-center space-y-4">
-                  <div className={`mx-auto w-16 h-16 ${category.color} rounded-2xl flex items-center justify-center group-hover:scale-110 transition-transform duration-300 shadow-md`}>
-                    <category.icon className="h-8 w-8 text-white" />
-                  </div>
-                  <h3 className="font-semibold text-lg">{category.name}</h3>
-                </CardContent>
-              </Card>
+      <section className="py-16 bg-gray-50">
+        <Container>
+          <div className="flex items-center justify-between mb-8">
+            <div>
+              <h2 className="text-2xl md:text-3xl font-bold text-gray-900">
+                Shop by Category
+              </h2>
+              <p className="text-gray-500 mt-1">Find exactly what you&apos;re looking for</p>
+            </div>
+            <Link href="/products" className="hidden md:flex items-center gap-1 text-shop_dark_green hover:text-shop_light_green font-medium">
+              View All
+              <ChevronRight className="h-4 w-4" />
             </Link>
-          ))}
-        </div>
+          </div>
+
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6">
+            {categories.map((category, index) => (
+              <Link key={index} href={category.href}>
+                <div className="group relative bg-white rounded-2xl overflow-hidden border border-gray-200 hover:shadow-xl transition-all duration-300 hover:-translate-y-1">
+                  <div className="aspect-square relative overflow-hidden">
+                    <Image
+                      src={category.image}
+                      alt={category.name}
+                      fill
+                      className="object-cover group-hover:scale-110 transition-transform duration-500"
+                      sizes="(max-width: 768px) 50vw, 25vw"
+                    />
+                    {/* Overlay */}
+                    <div className="absolute inset-0 bg-linear-to-t from-black/60 via-black/20 to-transparent" />
+                  </div>
+                  <div className="absolute bottom-0 left-0 right-0 p-4 text-center text-white">
+                    <h3 className="font-semibold text-lg drop-shadow-lg">
+                      {category.name}
+                    </h3>
+                    <p className="text-sm text-white/80 mt-1 drop-shadow-md">{category.description}</p>
+                  </div>
+                </div>
+              </Link>
+            ))}
+          </div>
+        </Container>
       </section>
 
       {/* Featured Products Section */}
-      <section className="py-16 bg-muted/30 dark:bg-transparent">
-        <div className="container mx-auto px-4">
-          <div className="flex justify-between items-center mb-12 animate-in fade-in slide-in-from-bottom-4 duration-700">
+      <section className="py-16 bg-white">
+        <Container>
+          <div className="flex items-center justify-between mb-8">
             <div>
-              <h2 className="text-3xl md:text-4xl font-bold mb-2">Featured Products</h2>
-              <p className="text-muted-foreground">Handpicked items just for you</p>
+              <Badge className="mb-2 bg-shop_orange/10 text-shop_orange border-shop_orange/20">
+                Featured
+              </Badge>
+              <h2 className="text-2xl md:text-3xl font-bold text-gray-900">
+                Handpicked Just for You
+              </h2>
             </div>
-            <Link href="/products">
-              <Button variant="outline" className="hidden md:flex transition-transform hover:translate-x-1">
-                View All
-                <ArrowRight className="ml-2 h-4 w-4" />
-              </Button>
+            <Link href="/products" className="hidden md:flex items-center gap-1 text-shop_dark_green hover:text-shop_light_green font-medium">
+              View All
+              <ChevronRight className="h-4 w-4" />
             </Link>
           </div>
 
           {loading ? (
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
               {[...Array(4)].map((_, i) => (
-                <Card key={i} className="overflow-hidden">
-                  <div className="aspect-square bg-muted animate-pulse" />
-                  <CardContent className="p-4 space-y-2">
-                    <div className="h-4 bg-muted rounded animate-pulse" />
-                    <div className="h-4 bg-muted rounded w-2/3 animate-pulse" />
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-          ) : products.length > 0 ? (
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-              {products.map((product, index) => (
-                <div
-                  key={product._id}
-                  className="animate-in fade-in slide-in-from-bottom-4 duration-500"
-                  style={{ animationDelay: `${index * 100}ms` }}
-                >
-                  <ProductCard product={product} />
+                <div key={i} className="bg-gray-100 rounded-lg overflow-hidden">
+                  <div className="aspect-square bg-gray-200 animate-pulse" />
+                  <div className="p-4 space-y-2">
+                    <div className="h-4 bg-gray-200 rounded animate-pulse" />
+                    <div className="h-4 bg-gray-200 rounded w-2/3 animate-pulse" />
+                  </div>
                 </div>
               ))}
             </div>
+          ) : featuredProducts.length > 0 ? (
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+              {featuredProducts.map((product) => (
+                <ProductCard key={product._id} product={product} />
+              ))}
+            </div>
           ) : (
-            <div className="text-center py-16 animate-in fade-in zoom-in-95 duration-500">
-              <ShoppingBag className="mx-auto h-16 w-16 text-muted-foreground mb-4" />
+            <div className="text-center py-16">
+              <ShoppingBag className="mx-auto h-16 w-16 text-gray-300 mb-4" />
               <h3 className="text-xl font-semibold mb-2">No products yet</h3>
-              <p className="text-muted-foreground">Check back soon for amazing deals!</p>
+              <p className="text-gray-500">Check back soon for amazing deals!</p>
             </div>
           )}
 
-          <div className="text-center mt-12 md:hidden">
+          <div className="text-center mt-8 md:hidden">
             <Link href="/products">
-              <Button variant="outline" className="w-full sm:w-auto">
+              <Button variant="outline" className="border-shop_dark_green text-shop_dark_green hover:bg-shop_dark_green hover:text-white">
                 View All Products
                 <ArrowRight className="ml-2 h-4 w-4" />
               </Button>
             </Link>
           </div>
-        </div>
+        </Container>
       </section>
 
-      {/* CTA Section */}
-      <section className="relative py-20 text-white overflow-hidden">
-        {/* Background Image */}
-        <div className="absolute inset-0">
-          <Image
-            src="/hero-bg.jpg"
-            alt="CTA Background"
-            fill
-            className="object-cover"
-          />
-          <div className="absolute inset-0 bg-black/60" />
-        </div>
-
-        <div className="container mx-auto px-4 text-center relative z-10">
-          <div className="max-w-3xl mx-auto space-y-6">
-            <div className="animate-in fade-in slide-in-from-bottom-4 duration-700 delay-100">
-              <Badge className="bg-white/20 text-white border-white/30 hover:bg-white/30 backdrop-blur-sm">
-                Start Selling Today
-              </Badge>
+      {/* All Products Section */}
+      <section className="py-16 bg-gray-50">
+        <Container>
+          <div className="flex items-center justify-between mb-8">
+            <div>
+              <h2 className="text-2xl md:text-3xl font-bold text-gray-900">
+                New Arrivals
+              </h2>
+              <p className="text-gray-500 mt-1">Latest products added to our store</p>
             </div>
-            <h2 className="text-4xl md:text-5xl font-bold animate-in fade-in slide-in-from-bottom-4 duration-700 delay-200">
-              Turn Your Products Into Profit
-            </h2>
-            <p className="text-xl text-purple-100 animate-in fade-in slide-in-from-bottom-4 duration-700 delay-300">
-              Join thousands of successful sellers on Zimbabwe&apos;s fastest-growing marketplace.
-              Start your business journey with zero upfront costs.
-            </p>
-            <div className="flex flex-col sm:flex-row gap-4 justify-center pt-4 animate-in fade-in slide-in-from-bottom-4 duration-700 delay-400">
-              <Link href="/become-a-seller">
-                <Button size="lg" className="bg-white text-purple-700 hover:bg-gray-100 text-lg px-8 py-6 h-auto transition-transform hover:scale-105 shadow-lg">
-                  <Star className="mr-2 h-5 w-5" />
-                  Become a Seller
-                </Button>
-              </Link>
-              <Link href="/products">
-                <Button size="lg" variant="outline" className="border-white/30 text-purple-700 hover:bg-gray-100 text-lg px-8 py-6 h-auto transition-transform hover:scale-105">
-                  Learn More
-                </Button>
-              </Link>
+            <Link href="/products?sort=newest" className="hidden md:flex items-center gap-1 text-shop_dark_green hover:text-shop_light_green font-medium">
+              See More
+              <ChevronRight className="h-4 w-4" />
+            </Link>
+          </div>
+
+          {!loading && products.length > 0 && (
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+              {products.map((product) => (
+                <ProductCard key={product._id} product={product} />
+              ))}
+            </div>
+          )}
+        </Container>
+      </section>
+
+      {/* CTA Banner */}
+      <section className="py-16 bg-shop_dark_green text-white">
+        <Container>
+          <div className="grid md:grid-cols-2 gap-8 items-center">
+            <div className="space-y-6">
+              <Badge className="bg-white/20 text-white border-white/30">
+                <Star className="h-3 w-3 mr-1 fill-white" />
+                Start Your Business
+              </Badge>
+              <h2 className="text-3xl md:text-4xl font-bold">
+                Turn Your Products Into Profit
+              </h2>
+              <p className="text-lg text-white/80">
+                Join thousands of successful sellers on Zimbabwe&apos;s fastest-growing marketplace. 
+                Start your business journey with zero upfront costs.
+              </p>
+              <div className="flex flex-wrap gap-4">
+                <Link href="/become-a-seller">
+                  <Button 
+                    size="lg" 
+                    className="bg-shop_orange hover:bg-shop_orange/90 text-white px-8 h-12"
+                  >
+                    Become a Seller
+                    <ArrowRight className="ml-2 h-5 w-5" />
+                  </Button>
+                </Link>
+                <Link href="/help/seller">
+                  <Button 
+                    size="lg" 
+                    variant="outline" 
+                    className="border-white/50 text-white bg-transparent hover:bg-white/10 hover:text-white px-8 h-12"
+                  >
+                    Learn More
+                  </Button>
+                </Link>
+              </div>
+            </div>
+            <div className="hidden md:flex justify-center">
+              <div className="grid grid-cols-2 gap-4">
+                <div className="bg-white/10 rounded-xl p-6 text-center">
+                  <div className="text-4xl font-bold">0%</div>
+                  <div className="text-white/70 text-sm mt-1">Upfront Fees</div>
+                </div>
+                <div className="bg-white/10 rounded-xl p-6 text-center">
+                  <div className="text-4xl font-bold">24/7</div>
+                  <div className="text-white/70 text-sm mt-1">Support</div>
+                </div>
+                <div className="bg-white/10 rounded-xl p-6 text-center">
+                  <div className="text-4xl font-bold">5K+</div>
+                  <div className="text-white/70 text-sm mt-1">Active Sellers</div>
+                </div>
+                <div className="bg-white/10 rounded-xl p-6 text-center">
+                  <div className="text-4xl font-bold">Fast</div>
+                  <div className="text-white/70 text-sm mt-1">Payouts</div>
+                </div>
+              </div>
             </div>
           </div>
-        </div>
+        </Container>
       </section>
     </div>
   );

@@ -109,18 +109,18 @@ export default function MessagesPage() {
           <div>
             <div className="flex items-center gap-4">
               <div>
-                <h1 className="text-3xl font-bold flex items-center gap-2">
+                <h1 className="text-3xl font-bold flex items-center gap-2 text-shop_dark_green">
                   <MessageCircle className="h-8 w-8" />
                   Messages
                 </h1>
-                <p className="text-muted-foreground mt-2">
+                <p className="text-gray-600 mt-2">
                   Chat with buyers and sellers
                 </p>
               </div>
               <Button
                 variant="outline"
                 onClick={() => router.push('/messages/blocked')}
-                className="mt-1"
+                className="mt-1 border-shop_dark_green text-shop_dark_green hover:bg-shop_dark_green hover:text-white"
               >
                 <Ban className="h-4 w-4 mr-2" />
                 Blocked Users
@@ -134,13 +134,13 @@ export default function MessagesPage() {
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder="Search messages..."
-              className="w-64"
+              className="w-64 border-gray-300 focus:border-shop_dark_green"
             />
-            <Button type="submit" disabled={isSearching || searchQuery.length < 2}>
+            <Button type="submit" disabled={isSearching || searchQuery.length < 2} className="bg-shop_dark_green hover:bg-shop_light_green">
               <Search className="h-4 w-4" />
             </Button>
             {searchQuery && (
-              <Button type="button" variant="outline" onClick={clearSearch}>
+              <Button type="button" variant="outline" onClick={clearSearch} className="border-gray-300">
                 <X className="h-4 w-4" />
               </Button>
             )}
@@ -149,8 +149,8 @@ export default function MessagesPage() {
 
         {/* Search Results */}
         {searchResults.length > 0 && (
-          <div className="mt-4 p-4 bg-muted rounded-lg">
-            <h3 className="font-semibold mb-3">Search Results ({searchResults.length})</h3>
+          <div className="mt-4 p-4 bg-shop_dark_green/5 border border-shop_dark_green/20 rounded-lg">
+            <h3 className="font-semibold mb-3 text-shop_dark_green">Search Results ({searchResults.length})</h3>
             <div className="space-y-2 max-h-60 overflow-y-auto">
               {searchResults.map((msg: any) => (
                 <button
@@ -159,13 +159,13 @@ export default function MessagesPage() {
                     setSelectedConversation(msg.conversation._id);
                     clearSearch();
                   }}
-                  className="w-full text-left p-3 hover:bg-background rounded-lg transition-colors"
+                  className="w-full text-left p-3 hover:bg-white rounded-lg transition-colors"
                 >
-                  <p className="text-sm font-medium">
+                  <p className="text-sm font-medium text-shop_dark_green">
                     {msg.sender._id === user?._id ? 'You' : msg.sender.sellerDetails?.businessName || msg.sender.email}
                   </p>
-                  <p className="text-sm text-muted-foreground truncate">{msg.message}</p>
-                  <p className="text-xs text-muted-foreground mt-1">
+                  <p className="text-sm text-gray-600 truncate">{msg.message}</p>
+                  <p className="text-xs text-gray-500 mt-1">
                     {new Date(msg.createdAt).toLocaleDateString()}
                   </p>
                 </button>
@@ -195,11 +195,11 @@ export default function MessagesPage() {
               currentUserId={user._id}
             />
           ) : (
-            <Card className="h-[600px] flex items-center justify-center">
+            <Card className="h-[600px] flex items-center justify-center border-gray-200">
               <CardContent className="text-center">
-                <MessageCircle className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
-                <h3 className="text-xl font-semibold mb-2">Select a conversation</h3>
-                <p className="text-muted-foreground">
+                <MessageCircle className="h-16 w-16 text-shop_dark_green/50 mx-auto mb-4" />
+                <h3 className="text-xl font-semibold mb-2 text-shop_dark_green">Select a conversation</h3>
+                <p className="text-gray-600">
                   Choose a conversation from the list to start chatting
                 </p>
               </CardContent>

@@ -110,7 +110,7 @@ export default function SignUpPage() {
 
       if (otpResponse.data.success) {
         // OTP verified, now register the user
-        await register(formData.email, formData.password, formData.email);
+        await register(formData.email, formData.password);
 
         toast.success("Account Created", {
           description: "Your account has been created successfully!",
@@ -176,9 +176,9 @@ export default function SignUpPage() {
   };
 
   return (
-    <div className="w-full max-w-md p-8 space-y-6 bg-card rounded-lg shadow-lg border">
+    <div className="w-full max-w-md p-8 space-y-6 bg-white rounded-2xl shadow-xl border border-gray-100">
       <div className="space-y-2 text-center">
-        <h2 className="text-3xl font-bold tracking-tight">Create Account</h2>
+        <h2 className="text-3xl font-bold tracking-tight text-shop_dark_green">Create Account</h2>
         <p className="text-sm text-muted-foreground">
           {step === 1
             ? "Enter your details to get started"
@@ -246,7 +246,7 @@ export default function SignUpPage() {
               )}
             />
 
-            <Button type="submit" className="w-full" disabled={isLoading}>
+            <Button type="submit" className="w-full bg-shop_dark_green hover:bg-shop_light_green text-white" disabled={isLoading}>
               {isLoading ? "Sending OTP..." : "Continue"}
             </Button>
           </form>
@@ -268,7 +268,7 @@ export default function SignUpPage() {
 
             <Button
               onClick={onSubmitOTP}
-              className="w-full"
+              className="w-full bg-shop_dark_green hover:bg-shop_light_green text-white"
               disabled={isLoading || otp.length !== 6}
             >
               {isLoading ? "Verifying..." : "Verify & Create Account"}
@@ -279,7 +279,7 @@ export default function SignUpPage() {
                 type="button"
                 onClick={handleResendOTP}
                 disabled={!canResend || isLoading}
-                className="text-sm text-primary hover:underline disabled:opacity-50 disabled:cursor-not-allowed disabled:no-underline"
+                className="text-sm text-shop_dark_green hover:text-shop_light_green hover:underline disabled:opacity-50 disabled:cursor-not-allowed disabled:no-underline"
               >
                 {canResend ? "Resend Code" : `Resend in ${countdown}s`}
               </button>
@@ -303,7 +303,7 @@ export default function SignUpPage() {
 
       <div className="text-center text-sm">
         Already have an account?{" "}
-        <Link href="/login" className="text-primary hover:underline font-medium">
+        <Link href="/login" className="text-shop_dark_green hover:text-shop_light_green hover:underline font-medium">
           Sign in
         </Link>
       </div>

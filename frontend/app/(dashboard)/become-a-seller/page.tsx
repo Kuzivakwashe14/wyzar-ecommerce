@@ -122,8 +122,10 @@ export default function BecomeASellerPage() {
   if (loading || (!loading && (!isAuthenticated || user?.isSeller))) {
     return (
       <div className="flex justify-center items-center min-h-screen">
-        {/* You can replace this with a nice spinner component */}
-        <p>Loading...</p>
+        <div className="text-center">
+          <div className="h-12 w-12 animate-spin rounded-full border-4 border-shop_dark_green border-t-transparent mx-auto mb-4"></div>
+          <p className="text-gray-600">Loading...</p>
+        </div>
       </div>
     );
   }
@@ -131,13 +133,13 @@ export default function BecomeASellerPage() {
   // 6. Build the form component
   return (
     <div className="container mx-auto max-w-2xl py-12">
-      <h2 className="text-3xl font-bold text-center mb-8">Become a Seller</h2>
+      <h2 className="text-3xl font-bold text-center mb-8 text-shop_dark_green">Become a Seller</h2>
       <p className="text-center text-gray-600 mb-8">
         Apply to sell on WyZar by filling out the form below. 
         Your application will be reviewed within 3-5 business days.
       </p>
       <Form {...form}>
-        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
+        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8 bg-white p-8 rounded-xl border border-gray-200 shadow-sm">
           
           <FormField
             control={form.control}
@@ -161,34 +163,34 @@ export default function BecomeASellerPage() {
             name="sellerType"
             render={({ field }) => (
               <FormItem className="space-y-3">
-                <FormLabel>Seller Type</FormLabel>
+                <FormLabel className="text-shop_dark_green font-medium">Seller Type</FormLabel>
                 <FormControl>
                   <RadioGroup
                     onValueChange={field.onChange}
                     defaultValue={field.value}
-                    className="flex flex-col space-y-1"
+                    className="flex flex-col space-y-2"
                   >
-                    <FormItem className="flex items-center space-x-3 space-y-0">
+                    <FormItem className={`flex items-center space-x-3 space-y-0 p-4 rounded-lg border-2 transition-all cursor-pointer ${field.value === 'individual' ? 'border-shop_dark_green bg-shop_dark_green/5' : 'border-gray-200 hover:border-shop_light_green'}`}>
                       <FormControl>
-                        <RadioGroupItem value="individual" />
+                        <RadioGroupItem value="individual" className="border-shop_dark_green text-shop_dark_green" />
                       </FormControl>
-                      <FormLabel className="font-normal">
+                      <FormLabel className="font-normal cursor-pointer">
                         Individual / Informal Trader
                       </FormLabel>
                     </FormItem>
-                    <FormItem className="flex items-center space-x-3 space-y-0">
+                    <FormItem className={`flex items-center space-x-3 space-y-0 p-4 rounded-lg border-2 transition-all cursor-pointer ${field.value === 'business' ? 'border-shop_dark_green bg-shop_dark_green/5' : 'border-gray-200 hover:border-shop_light_green'}`}>
                       <FormControl>
-                        <RadioGroupItem value="business" />
+                        <RadioGroupItem value="business" className="border-shop_dark_green text-shop_dark_green" />
                       </FormControl>
-                      <FormLabel className="font-normal">
+                      <FormLabel className="font-normal cursor-pointer">
                         Registered Local Business (Pvt Ltd)
                       </FormLabel>
                     </FormItem>
-                    <FormItem className="flex items-center space-x-3 space-y-0">
+                    <FormItem className={`flex items-center space-x-3 space-y-0 p-4 rounded-lg border-2 transition-all cursor-pointer ${field.value === 'international' ? 'border-shop_dark_green bg-shop_dark_green/5' : 'border-gray-200 hover:border-shop_light_green'}`}>
                       <FormControl>
-                        <RadioGroupItem value="international" />
+                        <RadioGroupItem value="international" className="border-shop_dark_green text-shop_dark_green" />
                       </FormControl>
-                      <FormLabel className="font-normal">
+                      <FormLabel className="font-normal cursor-pointer">
                         International Seller
                       </FormLabel>
                     </FormItem>
@@ -217,7 +219,7 @@ export default function BecomeASellerPage() {
             )}
           />
 
-          <Button type="submit" className="w-full" disabled={isSubmitting}>
+          <Button type="submit" className="w-full bg-shop_dark_green hover:bg-shop_light_green" disabled={isSubmitting}>
             {isSubmitting ? "Submitting..." : "Submit Application"}
           </Button>
         </form>

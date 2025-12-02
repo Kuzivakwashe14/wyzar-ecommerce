@@ -94,9 +94,9 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="w-full max-w-md p-8 space-y-6 bg-card rounded-lg shadow-lg border">
+    <div className="w-full max-w-md p-8 space-y-6 bg-white rounded-2xl shadow-xl border border-gray-100">
       <div className="space-y-2 text-center">
-        <h2 className="text-3xl font-bold tracking-tight">Welcome Back</h2>
+        <h2 className="text-3xl font-bold tracking-tight text-shop_dark_green">Welcome Back</h2>
         <p className="text-sm text-muted-foreground">
           Sign in to your WyZar account
         </p>
@@ -151,7 +151,7 @@ export default function LoginPage() {
             </Link>
           </div>
 
-          <Button type="submit" className="w-full" disabled={isLoading}>
+          <Button type="submit" className="w-full bg-shop_dark_green hover:bg-shop_light_green text-white" disabled={isLoading}>
             {isLoading ? "Signing in..." : "Sign In"}
           </Button>
         </form>
@@ -170,7 +170,7 @@ export default function LoginPage() {
 
       <div className="text-center text-sm">
         Don&apos;t have an account?{" "}
-        <Link href="/sign-up" className="text-primary hover:underline font-medium">
+        <Link href="/sign-up" className="text-shop_dark_green hover:text-shop_light_green hover:underline font-medium">
           Create account
         </Link>
       </div>

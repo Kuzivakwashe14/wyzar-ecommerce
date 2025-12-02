@@ -37,10 +37,10 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
   if (loading) {
     return (
-      <div className="flex h-screen items-center justify-center bg-slate-900">
+      <div className="flex h-screen items-center justify-center bg-shop_dark_green">
         <div className="text-center">
-          <div className="h-12 w-12 animate-spin rounded-full border-4 border-indigo-500 border-t-transparent mx-auto mb-4"></div>
-          <p className="text-slate-400">Loading admin panel...</p>
+          <div className="h-12 w-12 animate-spin rounded-full border-4 border-shop_light_green border-t-transparent mx-auto mb-4"></div>
+          <p className="text-shop_light_pink">Loading admin panel...</p>
         </div>
       </div>
     );
@@ -69,27 +69,27 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   };
 
   return (
-    <div className="flex h-screen bg-slate-900 overflow-hidden">
+    <div className="flex h-screen bg-gray-100 overflow-hidden text-sm">
       {/* Sidebar */}
       <aside
         className={`${
-          sidebarOpen ? 'w-64' : 'w-20'
-        } bg-slate-950 border-r border-slate-800 transition-all duration-300 flex flex-col`}
+          sidebarOpen ? 'w-52' : 'w-14'
+        } bg-shop_dark_green border-r border-shop_light_green/20 transition-all duration-300 flex flex-col`}
       >
         {/* Logo */}
-        <div className="h-16 flex items-center justify-between px-4 border-b border-slate-800">
+        <div className="h-12 flex items-center justify-between px-3 border-b border-shop_light_green/20">
           {sidebarOpen ? (
             <div>
-              <h1 className="text-xl font-bold text-white">WyZar</h1>
-              <p className="text-xs text-indigo-400">Admin Portal</p>
+              <h1 className="text-base font-bold text-white">WyZar</h1>
+              <p className="text-[10px] text-shop_light_green">Admin Portal</p>
             </div>
           ) : (
-            <div className="text-2xl font-bold text-white">W</div>
+            <div className="text-lg font-bold text-white mx-auto">W</div>
           )}
         </div>
 
         {/* Navigation */}
-        <nav className="flex-1 overflow-y-auto py-4">
+        <nav className="flex-1 overflow-y-auto py-2">
           {navigation.map((item) => {
             const Icon = item.icon;
             const isActive = pathname === item.href;
@@ -97,14 +97,14 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
               <Link
                 key={item.name}
                 href={item.href}
-                className={`flex items-center gap-3 px-4 py-3 mx-2 rounded-lg transition-all ${
+                className={`flex items-center gap-2 px-3 py-2 mx-1.5 rounded-md transition-all text-xs ${
                   isActive
-                    ? 'bg-indigo-600 text-white'
-                    : 'text-slate-400 hover:bg-slate-800 hover:text-white'
+                    ? 'bg-shop_light_green text-white'
+                    : 'text-shop_light_pink/80 hover:bg-shop_light_green/20 hover:text-white'
                 }`}
                 title={!sidebarOpen ? item.name : undefined}
               >
-                <Icon className="w-5 h-5 flex-shrink-0" />
+                <Icon className="w-4 h-4 shrink-0" />
                 {sidebarOpen && <span className="font-medium">{item.name}</span>}
               </Link>
             );
@@ -112,28 +112,28 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         </nav>
 
         {/* User Info & Logout */}
-        <div className="border-t border-slate-800 p-4">
+        <div className="border-t border-shop_light_green/20 p-2">
           <Link
             href="/"
-            className="flex items-center gap-3 px-4 py-3 w-full rounded-lg text-slate-400 hover:bg-indigo-900/30 hover:text-indigo-400 transition-all mb-2"
+            className="flex items-center gap-2 px-3 py-2 w-full rounded-md text-shop_light_pink/80 hover:bg-shop_light_green/20 hover:text-shop_light_green transition-all mb-1 text-xs"
             title={!sidebarOpen ? 'Back to Marketplace' : undefined}
           >
-            <ArrowLeft className="w-5 h-5 flex-shrink-0" />
+            <ArrowLeft className="w-4 h-4 shrink-0" />
             {sidebarOpen && <span className="font-medium">Marketplace</span>}
           </Link>
           <button
             onClick={handleLogout}
-            className="flex items-center gap-3 px-4 py-3 w-full rounded-lg text-slate-400 hover:bg-red-900/20 hover:text-red-400 transition-all"
+            className="flex items-center gap-2 px-3 py-2 w-full rounded-md text-shop_light_pink/80 hover:bg-red-900/20 hover:text-red-400 transition-all text-xs"
             title={!sidebarOpen ? 'Logout' : undefined}
           >
-            <LogOut className="w-5 h-5 flex-shrink-0" />
+            <LogOut className="w-4 h-4 shrink-0" />
             {sidebarOpen && <span className="font-medium">Logout</span>}
           </button>
           {sidebarOpen && (
-            <div className="mt-4 px-4 py-3 bg-slate-900 rounded-lg">
-              <p className="text-xs text-slate-500 mb-1">Logged in as</p>
-              <p className="text-sm text-white font-medium truncate">{user.email}</p>
-              <p className="text-xs text-indigo-400 mt-1">Admin</p>
+            <div className="mt-2 px-3 py-2 bg-shop_light_green/10 rounded-md">
+              <p className="text-[10px] text-shop_light_pink/60">Logged in as</p>
+              <p className="text-xs text-white font-medium truncate">{user.email}</p>
+              <p className="text-[10px] text-shop_light_green">Admin</p>
             </div>
           )}
         </div>
@@ -142,34 +142,34 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       {/* Main Content */}
       <div className="flex-1 flex flex-col overflow-hidden">
         {/* Header */}
-        <header className="h-16 bg-slate-950 border-b border-slate-800 flex items-center justify-between px-6">
+        <header className="h-12 bg-white border-b border-gray-200 flex items-center justify-between px-4 shadow-sm">
           <button
             onClick={() => setSidebarOpen(!sidebarOpen)}
-            className="p-2 rounded-lg hover:bg-slate-800 text-slate-400 hover:text-white transition-all"
+            className="p-1.5 rounded-md hover:bg-gray-100 text-gray-600 hover:text-shop_dark_green transition-all"
           >
-            {sidebarOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+            {sidebarOpen ? <X className="w-4 h-4" /> : <Menu className="w-4 h-4" />}
           </button>
 
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-3">
             <Link
               href="/"
-              className="flex items-center gap-2 px-4 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white transition-all font-medium"
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-shop_dark_green hover:bg-shop_light_green text-white transition-all text-xs font-medium"
             >
-              <ShoppingBag className="w-4 h-4" />
+              <ShoppingBag className="w-3.5 h-3.5" />
               <span>Marketplace</span>
             </Link>
             <div className="text-right">
-              <p className="text-sm font-medium text-white">{user.email}</p>
-              <p className="text-xs text-slate-400">Administrator</p>
+              <p className="text-xs font-medium text-gray-800">{user.email}</p>
+              <p className="text-[10px] text-gray-500">Administrator</p>
             </div>
-            <div className="w-10 h-10 rounded-full bg-indigo-600 flex items-center justify-center text-white font-bold">
+            <div className="w-7 h-7 rounded-full bg-shop_dark_green flex items-center justify-center text-white text-xs font-bold">
               {user.email?.charAt(0).toUpperCase()}
             </div>
           </div>
         </header>
 
         {/* Page Content */}
-        <main className="flex-1 overflow-y-auto bg-slate-900 p-6">
+        <main className="flex-1 overflow-y-auto bg-gray-50 p-4">
           {children}
         </main>
       </div>

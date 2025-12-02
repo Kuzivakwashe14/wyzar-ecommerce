@@ -6,9 +6,9 @@ import { Toaster } from "sonner";
 import { AuthProvider } from "@/context/AuthContent";
 import { CartProvider } from "@/context/CartContext";
 import { SocketProvider } from "@/context/SocketContext";
+import { WishlistProvider } from "@/context/WishlistContext";
 import ConditionalNavbar from "@/components/layout/ConditionalNavbar";
 import { ThemeProvider } from "@/components/theme-provider";
-import CsrfInitializer from "@/components/CsrfInitializer";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -33,17 +33,17 @@ export default function RootLayout({
           enableSystem
           disableTransitionOnChange
         >
-          <CsrfInitializer />
           <AuthProvider>
             <SocketProvider>
               <CartProvider>
                 <ConditionalNavbar />
-                <main>{children}</main>
-                <Toaster />
-              </CartProvider>
-            </SocketProvider>
-          </AuthProvider>
-        </ThemeProvider>
+                <main className="flex-1">{children}</main>
+                <ConditionalFooter />
+                <Toaster richColors position="bottom-right" />
+              </WishlistProvider>
+            </CartProvider>
+          </SocketProvider>
+        </AuthProvider>
       </body>
     </html>
   );

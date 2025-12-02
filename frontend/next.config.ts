@@ -9,6 +9,11 @@ const nextConfig: NextConfig = {
         port: '5001', // Your backend port
         pathname: '/uploads/**', // Allow all paths in the uploads folder
       },
+      {
+        protocol: 'https',
+        hostname: 'images.unsplash.com',
+        pathname: '/**',
+      },
     ],
   },
 };

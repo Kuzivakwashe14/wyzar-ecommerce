@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Image from "next/image";
 import Link from "next/link";
+import { toast } from "sonner";
 import { api } from "@/context/AuthContent";
 import { Product } from "@/components/ProductCard";
 import ProductCard from "@/components/ProductCard";
@@ -11,6 +12,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useCart } from "@/context/CartContext";
+import { useWishlist } from "@/context/WishlistContext";
 import { Separator } from "@/components/ui/separator";
 import ProductReviews from "@/components/ProductReviews";
 import { getImageUrl } from "@/lib/utils";
@@ -28,7 +30,9 @@ import {
   PlusIcon,
   MapPin,
   Clock,
-  MessageCircle
+  MessageCircle,
+  Check,
+  Copy
 } from "lucide-react";
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
@@ -46,6 +50,56 @@ export default function ProductDetailPage() {
   const router = useRouter();
   const { id } = params;
   const { addToCart } = useCart();
+  const { isInWishlist, toggleWishlist } = useWishlist();
+
+  // Check if product is in wishlist
+  const isWishlisted = product ? isInWishlist(product._id) : false;
+
+  const handleWishlist = () => {
+    if (!product) return;
+    toggleWishlist(product);
+    if (isWishlisted) {
+      toast.info(`${product.name} removed from wishlist`);
+    } else {
+      toast.success(`${product.name} added to wishlist`);
+    }
+  };
+
+  const handleShare = async () => {
+    if (!product) return;
+    
+    const shareData = {
+      title: product.name,
+      text: `Check out ${product.name} on WyZar!`,
+      url: window.location.href,
+    };
+
+    try {
+      // Try native Web Share API first (works on mobile and some browsers)
+      if (navigator.share && navigator.canShare?.(shareData)) {
+        await navigator.share(shareData);
+        toast.success("Shared successfully!");
+      } else {
+        // Fallback to clipboard
+        await navigator.clipboard.writeText(window.location.href);
+        toast.success("Link copied to clipboard!", {
+          icon: <Copy className="h-4 w-4" />,
+        });
+      }
+    } catch (error) {
+      // If share was cancelled, don't show error
+      if (error instanceof Error && error.name === "AbortError") {
+        return;
+      }
+      // Fallback to clipboard
+      try {
+        await navigator.clipboard.writeText(window.location.href);
+        toast.success("Link copied to clipboard!");
+      } catch {
+        toast.error("Failed to share. Please copy the URL manually.");
+      }
+    }
+  };
 
   useEffect(() => {
     const fetchProduct = async () => {
@@ -122,18 +176,18 @@ export default function ProductDetailPage() {
       <div className="container mx-auto py-12">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
           <div className="space-y-4">
-            <div className="aspect-square bg-muted rounded-lg animate-pulse" />
+            <div className="aspect-square bg-gray-200 dark:bg-gray-700 rounded-lg animate-pulse" />
             <div className="grid grid-cols-4 gap-2">
               {[...Array(4)].map((_, i) => (
-                <div key={i} className="aspect-square bg-muted rounded animate-pulse" />
+                <div key={i} className="aspect-square bg-gray-200 dark:bg-gray-700 rounded animate-pulse" />
               ))}
             </div>
           </div>
           <div className="space-y-4">
-            <div className="h-8 bg-muted rounded w-3/4 animate-pulse" />
-            <div className="h-6 bg-muted rounded w-1/2 animate-pulse" />
-            <div className="h-10 bg-muted rounded w-1/4 animate-pulse" />
-            <div className="h-32 bg-muted rounded animate-pulse" />
+            <div className="h-8 bg-gray-200 dark:bg-gray-700 rounded w-3/4 animate-pulse" />
+            <div className="h-6 bg-gray-200 dark:bg-gray-700 rounded w-1/2 animate-pulse" />
+            <div className="h-10 bg-gray-200 dark:bg-gray-700 rounded w-1/4 animate-pulse" />
+            <div className="h-32 bg-gray-200 dark:bg-gray-700 rounded animate-pulse" />
           </div>
         </div>
       </div>
@@ -143,12 +197,12 @@ export default function ProductDetailPage() {
   if (error || !product) {
     return (
       <div className="container mx-auto py-12 text-center">
-        <Card className="max-w-md mx-auto">
+        <Card className="max-w-md mx-auto border-gray-200 dark:border-gray-700">
           <CardContent className="p-12">
-            <Package className="mx-auto h-16 w-16 text-muted-foreground mb-4" />
-            <h3 className="text-xl font-semibold mb-2">Product Not Found</h3>
-            <p className="text-muted-foreground mb-6">{error || "The product you're looking for doesn't exist."}</p>
-            <Button onClick={() => router.push("/products")}>Browse Products</Button>
+            <Package className="mx-auto h-16 w-16 text-shop_dark_green/50 mb-4" />
+            <h3 className="text-xl font-semibold mb-2 text-shop_dark_green">Product Not Found</h3>
+            <p className="text-gray-600 dark:text-gray-400 mb-6">{error || "The product you're looking for doesn't exist."}</p>
+            <Button onClick={() => router.push("/products")} className="bg-shop_dark_green hover:bg-shop_light_green">Browse Products</Button>
           </CardContent>
         </Card>
       </div>
@@ -156,20 +210,20 @@ export default function ProductDetailPage() {
   }
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
       {/* Breadcrumb */}
-      <div className="border-b bg-muted/30 dark:bg-transparent">
+      <div className="border-b border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800">
         <div className="container mx-auto px-4 py-4">
-          <nav className="flex items-center space-x-2 text-sm text-muted-foreground">
-            <Link href="/" className="hover:text-foreground transition-colors">Home</Link>
+          <nav className="flex items-center space-x-2 text-sm text-gray-600 dark:text-gray-400">
+            <Link href="/" className="hover:text-shop_dark_green transition-colors">Home</Link>
             <ChevronRight className="h-4 w-4" />
-            <Link href="/products" className="hover:text-foreground transition-colors">Products</Link>
+            <Link href="/products" className="hover:text-shop_dark_green transition-colors">Products</Link>
             <ChevronRight className="h-4 w-4" />
-            <Link href={`/products?category=${product.category}`} className="hover:text-foreground transition-colors">
+            <Link href={`/products?category=${product.category}`} className="hover:text-shop_dark_green transition-colors">
               {product.category}
             </Link>
             <ChevronRight className="h-4 w-4" />
-            <span className="text-foreground font-medium truncate max-w-[200px]">{product.name}</span>
+            <span className="text-shop_dark_green font-medium truncate max-w-[200px]">{product.name}</span>
           </nav>
         </div>
       </div>
@@ -179,9 +233,9 @@ export default function ProductDetailPage() {
           {/* Left Column - Images */}
           <div className="lg:col-span-1 space-y-4">
             {/* Main Image */}
-            <Card className="overflow-hidden">
+            <Card className="overflow-hidden border-gray-200 dark:border-gray-700">
               <CardContent className="p-0">
-                <div className="relative w-full aspect-auto min-h-[300px] flex items-center justify-center bg-muted">
+                <div className="relative w-full aspect-auto min-h-[300px] flex items-center justify-center bg-gray-100 dark:bg-gray-800">
                   <Image
                     src={getImageUrl(product.images[selectedImage])}
                     alt={`${product.name} - Image ${selectedImage + 1}`}
@@ -203,8 +257,8 @@ export default function ProductDetailPage() {
                   key={index}
                   onClick={() => setSelectedImage(index)}
                   className={`relative aspect-square rounded-lg overflow-hidden border-2 transition-all ${selectedImage === index
-                    ? 'border-primary ring-2 ring-primary/20'
-                    : 'border-border hover:border-primary/50'
+                    ? 'border-shop_dark_green ring-2 ring-shop_dark_green/20'
+                    : 'border-gray-200 dark:border-gray-700 hover:border-shop_light_green'
                     }`}
                 >
                   <Image
@@ -219,36 +273,36 @@ export default function ProductDetailPage() {
             </div>
 
             {/* Product Details Card */}
-            <Card>
+            <Card className="border-gray-200 dark:border-gray-700">
               <CardHeader>
-                <CardTitle>Product Details</CardTitle>
+                <CardTitle className="text-shop_dark_green">Product Details</CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <p className="text-sm text-muted-foreground">Category</p>
+                    <p className="text-sm text-gray-500 dark:text-gray-400">Category</p>
                     <p className="font-medium">{product.category}</p>
                   </div>
                   <div>
-                    <p className="text-sm text-muted-foreground">Stock</p>
-                    <p className={`font-medium ${product.quantity > 0 ? 'text-green-600' : 'text-red-600'}`}>
+                    <p className="text-sm text-gray-500 dark:text-gray-400">Stock</p>
+                    <p className={`font-medium ${product.quantity > 0 ? 'text-shop_light_green' : 'text-red-600'}`}>
                       {product.quantity > 0 ? `${product.quantity} available` : 'Out of Stock'}
                     </p>
                   </div>
                   {product.deliveryTime && (
                     <div>
-                      <p className="text-sm text-muted-foreground">Delivery Time</p>
+                      <p className="text-sm text-gray-500 dark:text-gray-400">Delivery Time</p>
                       <p className="font-medium flex items-center gap-1">
-                        <Clock className="h-4 w-4" />
+                        <Clock className="h-4 w-4 text-shop_orange" />
                         {product.deliveryTime}
                       </p>
                     </div>
                   )}
                   {product.countryOfOrigin && (
                     <div>
-                      <p className="text-sm text-muted-foreground">Origin</p>
+                      <p className="text-sm text-gray-500 dark:text-gray-400">Origin</p>
                       <p className="font-medium flex items-center gap-1">
-                        <MapPin className="h-4 w-4" />
+                        <MapPin className="h-4 w-4 text-shop_dark_green" />
                         {product.countryOfOrigin}
                       </p>
                     </div>
@@ -258,8 +312,8 @@ export default function ProductDetailPage() {
                 <Separator />
 
                 <div>
-                  <h4 className="font-semibold mb-2">Description</h4>
-                  <p className="text-muted-foreground whitespace-pre-line leading-relaxed">
+                  <h4 className="font-semibold mb-2 text-shop_dark_green">Description</h4>
+                  <p className="text-gray-600 dark:text-gray-400 whitespace-pre-line leading-relaxed">
                     {product.description}
                   </p>
                 </div>
@@ -270,22 +324,22 @@ export default function ProductDetailPage() {
           {/* Right Column - Purchase Info */}
           <div className="lg:col-span-2 space-y-4">
             {/* Product Title & Price Card */}
-            <Card>
+            <Card className="border-gray-200 dark:border-gray-700">
               <CardContent className="p-6 space-y-4">
                 <div>
-                  <h1 className="text-2xl md:text-3xl font-bold mb-2">{product.name}</h1>
+                  <h1 className="text-2xl md:text-3xl font-bold mb-2 text-shop_dark_green">{product.name}</h1>
                   <div className="flex items-center gap-2">
-                    <Badge variant="outline">{product.category}</Badge>
+                    <Badge className="bg-shop_dark_green/10 text-shop_dark_green hover:bg-shop_dark_green/20">{product.category}</Badge>
                     {product.rating && product.rating.count > 0 ? (
-                      <div className="flex items-center gap-1 text-sm text-muted-foreground">
-                        <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
+                      <div className="flex items-center gap-1 text-sm text-gray-600 dark:text-gray-400">
+                        <Star className="h-4 w-4 fill-shop_orange text-shop_orange" />
                         <span>{product.rating.average.toFixed(1)}</span>
-                        <span className="text-muted-foreground">
+                        <span className="text-gray-500 dark:text-gray-500">
                           ({product.rating.count} review{product.rating.count !== 1 ? 's' : ''})
                         </span>
                       </div>
                     ) : (
-                      <div className="flex items-center gap-1 text-sm text-muted-foreground">
+                      <div className="flex items-center gap-1 text-sm text-gray-500 dark:text-gray-500">
                         <Star className="h-4 w-4 text-gray-300" />
                         <span>No reviews yet</span>
                       </div>
@@ -296,8 +350,8 @@ export default function ProductDetailPage() {
                 <Separator />
 
                 <div>
-                  <p className="text-sm text-muted-foreground mb-1">Price</p>
-                  <p className="text-4xl font-bold text-primary">
+                  <p className="text-sm text-gray-500 dark:text-gray-400 mb-1">Price</p>
+                  <p className="text-4xl font-bold text-shop_orange">
                     ${product.price.toFixed(2)}
                   </p>
                 </div>
@@ -314,6 +368,7 @@ export default function ProductDetailPage() {
                           size="icon"
                           onClick={decrementQuantity}
                           disabled={quantity <= 1}
+                          className="border-shop_dark_green text-shop_dark_green hover:bg-shop_dark_green hover:text-white"
                         >
                           <MinusIcon className="h-4 w-4" />
                         </Button>
@@ -323,10 +378,11 @@ export default function ProductDetailPage() {
                           size="icon"
                           onClick={incrementQuantity}
                           disabled={quantity >= product.quantity}
+                          className="border-shop_dark_green text-shop_dark_green hover:bg-shop_dark_green hover:text-white"
                         >
                           <PlusIcon className="h-4 w-4" />
                         </Button>
-                        <span className="text-sm text-muted-foreground">
+                        <span className="text-sm text-gray-500 dark:text-gray-400">
                           {product.quantity} available
                         </span>
                       </div>
@@ -340,7 +396,7 @@ export default function ProductDetailPage() {
                 <div className="space-y-2">
                   <Button
                     size="lg"
-                    className="w-full text-lg"
+                    className="w-full text-lg bg-shop_dark_green hover:bg-shop_light_green"
                     disabled={product.quantity === 0}
                     onClick={handleAddToCart}
                   >
@@ -348,15 +404,28 @@ export default function ProductDetailPage() {
                     {product.quantity > 0 ? 'Add to Cart' : 'Out of Stock'}
                   </Button>
                   <div className="grid grid-cols-3 gap-2">
-                    <Button variant="outline" size="lg" onClick={handleAskSeller} disabled={startingChat}>
+                    <Button variant="outline" size="lg" onClick={handleAskSeller} disabled={startingChat} className="border-shop_dark_green text-shop_dark_green hover:bg-shop_dark_green hover:text-white">
                       <MessageCircle className="mr-2 h-4 w-4" />
                       Ask Seller
                     </Button>
-                    <Button variant="outline" size="lg">
-                      <Heart className="mr-2 h-4 w-4" />
-                      Wishlist
+                    <Button 
+                      variant="outline" 
+                      size="lg" 
+                      onClick={handleWishlist}
+                      className={isWishlisted 
+                        ? "bg-shop_orange text-white border-shop_orange hover:bg-shop_orange/90" 
+                        : "border-shop_orange text-shop_orange hover:bg-shop_orange hover:text-white"
+                      }
+                    >
+                      <Heart className={`mr-2 h-4 w-4 ${isWishlisted ? "fill-current" : ""}`} />
+                      {isWishlisted ? "Wishlisted" : "Wishlist"}
                     </Button>
-                    <Button variant="outline" size="lg">
+                    <Button 
+                      variant="outline" 
+                      size="lg" 
+                      onClick={handleShare}
+                      className="border-gray-300 dark:border-gray-600 hover:bg-gray-100 dark:hover:bg-gray-700"
+                    >
                       <Share2 className="mr-2 h-4 w-4" />
                       Share
                     </Button>
@@ -368,18 +437,18 @@ export default function ProductDetailPage() {
 
 
             {/* Trust Badges */}
-            <Card>
+            <Card className="border-gray-200 dark:border-gray-700">
               <CardContent className="p-4 space-y-3">
                 <div className="flex items-center gap-3 text-sm">
-                  <Shield className="h-5 w-5 text-green-600" />
+                  <Shield className="h-5 w-5 text-shop_light_green" />
                   <span>Secure Payment</span>
                 </div>
                 <div className="flex items-center gap-3 text-sm">
-                  <Truck className="h-5 w-5 text-blue-600" />
+                  <Truck className="h-5 w-5 text-shop_dark_green" />
                   <span>Fast Delivery</span>
                 </div>
                 <div className="flex items-center gap-3 text-sm">
-                  <Package className="h-5 w-5 text-purple-600" />
+                  <Package className="h-5 w-5 text-shop_orange" />
                   <span>7 Day Returns</span>
                 </div>
               </CardContent>
@@ -396,9 +465,9 @@ export default function ProductDetailPage() {
         {relatedProducts.length > 0 && (
           <div className="mt-16">
             <div className="flex justify-between items-center mb-6">
-              <h2 className="text-2xl md:text-3xl font-bold">Related Products</h2>
+              <h2 className="text-2xl md:text-3xl font-bold text-shop_dark_green">Related Products</h2>
               <Link href={`/products?category=${product.category}`}>
-                <Button variant="outline">
+                <Button variant="outline" className="border-shop_dark_green text-shop_dark_green hover:bg-shop_dark_green hover:text-white">
                   View All
                   <ChevronRight className="ml-2 h-4 w-4" />
                 </Button>
