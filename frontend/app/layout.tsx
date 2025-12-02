@@ -1,5 +1,4 @@
 // frontend/app/layout.tsx
-import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
 import { Toaster } from "sonner";
@@ -8,7 +7,7 @@ import { CartProvider } from "@/context/CartContext";
 import { SocketProvider } from "@/context/SocketContext";
 import { WishlistProvider } from "@/context/WishlistContext";
 import ConditionalNavbar from "@/components/layout/ConditionalNavbar";
-import { ThemeProvider } from "@/components/theme-provider";
+import ConditionalFooter from "@/components/layout/ConditionalFooter";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -23,19 +22,12 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    // 2. Add suppressHydrationWarning
-    <html lang="en" suppressHydrationWarning>
-      <body className={inter.className}>
-        {/* 3. Wrap everything with ThemeProvider */}
-        <ThemeProvider
-          attribute="class"
-          defaultTheme="system"
-          enableSystem
-          disableTransitionOnChange
-        >
-          <AuthProvider>
-            <SocketProvider>
-              <CartProvider>
+    <html lang="en">
+      <body className={`${inter.className} min-h-screen flex flex-col bg-white`}>
+        <AuthProvider>
+          <SocketProvider>
+            <CartProvider>
+              <WishlistProvider>
                 <ConditionalNavbar />
                 <main className="flex-1">{children}</main>
                 <ConditionalFooter />
