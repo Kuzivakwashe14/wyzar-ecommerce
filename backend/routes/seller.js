@@ -2,7 +2,12 @@
 
 const express = require('express');
 const router = express.Router();
-const auth = require('../middleware/auth');
+// OLD: const auth = require('../middleware/auth');
+// NEW: Better Auth middleware
+const {
+  requireAuth,
+  requireEmailVerified
+} = require('../middleware/betterAuth');
 const verificationUploadOptimized = require('../middleware/verificationUploadOptimized');
 const User = require('../models/User');
 const multer = require('multer');
@@ -43,7 +48,7 @@ const flexibleUpload = multer({
 // @route   POST /api/seller/apply
 // @desc    Apply to become a seller (supports both single and multiple documents)
 // @access  Private (only logged-in users)
-router.post('/apply', auth, flexibleUpload, async (req, res) => {
+router.post('/apply', requireAuth, requireEmailVerified, flexibleUpload, async (req, res) => {
   try {
     // Get form data from the request body
     const { businessName, sellerType, phoneNumber, address, documentTypes } = req.body;
@@ -155,7 +160,7 @@ router.post('/apply', auth, flexibleUpload, async (req, res) => {
 // @route   POST /api/seller/upload-document
 // @desc    Upload additional verification document for existing seller
 // @access  Private (seller only)
-router.post('/upload-document', auth, (req, res) => {
+router.post('/upload-document', requireAuth, (req, res) => {
   // Use single file upload
   verificationUploadOptimized(req, res, async (err) => {
     if (err) {
@@ -217,7 +222,7 @@ router.post('/upload-document', auth, (req, res) => {
 // @route   PUT /api/seller/profile
 // @desc    Update seller profile
 // @access  Private (seller only)
-router.put('/profile', auth, async (req, res) => {
+router.put('/profile', requireAuth, async (req, res) => {
   const { businessName, phoneNumber, address } = req.body;
 
   if (!businessName) {

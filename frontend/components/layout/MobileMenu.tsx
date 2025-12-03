@@ -2,7 +2,9 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { useAuth } from "@/context/AuthContent";
+import { useRouter } from "next/navigation";
+import { useBetterAuth } from "@/context/BetterAuthContext";
+import { signOut } from "@/lib/auth-client";
 import Logo from "@/components/Logo";
 import { Button } from "@/components/ui/button";
 import {
@@ -47,7 +49,8 @@ interface MobileMenuProps {
 
 export default function MobileMenu({ categories }: MobileMenuProps) {
   const [isOpen, setIsOpen] = useState(false);
-  const { isAuthenticated, user, logout } = useAuth();
+  const { isAuthenticated, user, isPending } = useBetterAuth();
+  const router = useRouter();
 
   const handleClose = () => setIsOpen(false);
 
@@ -238,9 +241,10 @@ export default function MobileMenu({ categories }: MobileMenuProps) {
                 <Button 
                   variant="ghost" 
                   className="w-full justify-start gap-3 h-12 text-red-600 hover:text-red-700 hover:bg-red-50"
-                  onClick={() => {
-                    logout();
+                  onClick={async () => {
+                    await signOut();
                     handleClose();
+                    router.push('/login');
                   }}
                 >
                   <LogOut className="h-5 w-5" />

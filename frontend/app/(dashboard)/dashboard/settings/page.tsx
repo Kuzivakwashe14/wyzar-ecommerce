@@ -4,7 +4,8 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import * as z from "zod";
-import { api, useAuth } from "@/context/AuthContent";
+import { api } from "@/context/AuthContent";
+import { useBetterAuth } from "@/context/BetterAuthContext";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
@@ -33,7 +34,7 @@ const formSchema = z.object({
 export default function SettingsPage() {
   const router = useRouter();
   // We need 'login' to refresh the user state
-  const { user, isAuthenticated, loading, login } = useAuth(); 
+  const { user, isAuthenticated, isPending } = useBetterAuth(); 
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   // 2. Define the form
@@ -58,7 +59,7 @@ export default function SettingsPage() {
         });
       }
     }
-  }, [isAuthenticated, user, loading, router, form]);
+  }, [isAuthenticated, user, isPending, router, form]);
 
 
   // 4. Define the submit handler

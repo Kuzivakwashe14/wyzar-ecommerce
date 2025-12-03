@@ -18,7 +18,9 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
+import { signIn } from "@/lib/auth-client";
 import { api, useAuth } from "@/context/AuthContent";
+import SocialLoginButtons from "@/components/auth/SocialLoginButtons";
 
 // Login schema - supports email
 const loginSchema = z.object({
@@ -48,40 +50,32 @@ export default function LoginPage() {
   const onSubmit = async (values: LoginFormValues) => {
     setIsLoading(true);
     try {
-      const loginData = {
+      // Use Better Auth for login
+      const { data, error } = await signIn.email({
         email: values.identifier,
-        password: values.password
-      };
+        password: values.password,
+      });
 
-      const response = await api.post('/auth/login', loginData);
-      const { token, user } = response.data;
-
-      // Call the context login function
-      await login(token);
+      if (error) {
+        throw new Error(error.message || 'Login failed');
+      }
 
       toast.success("Welcome Back!", {
         description: "You have successfully logged in.",
       });
 
       // Redirect based on user role
-      // If user is admin, redirect to admin portal
-      if (user?.role === 'admin') {
+      if (data?.user?.role === 'admin') {
         router.push('/admin');
       } else {
-        // Regular users and sellers go to homepage
         router.push('/');
       }
 
     } catch (error: any) {
       console.error("Login failed:", error);
-      console.error("Response data:", error.response?.data);
 
       let errorMessage = "Login failed. Please check your credentials.";
-      if (error.response?.data?.msg) {
-        errorMessage = error.response.data.msg;
-      } else if (error.response?.data?.message) {
-        errorMessage = error.response.data.message;
-      } else if (error.message) {
+      if (error.message) {
         errorMessage = error.message;
       }
 
@@ -163,10 +157,12 @@ export default function LoginPage() {
         </div>
         <div className="relative flex justify-center text-xs uppercase">
           <span className="bg-card px-2 text-muted-foreground">
-            Or
+            Or continue with
           </span>
         </div>
       </div>
+
+      <SocialLoginButtons mode="login" />
 
       <div className="text-center text-sm">
         Don&apos;t have an account?{" "}

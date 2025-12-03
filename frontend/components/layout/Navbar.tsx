@@ -26,7 +26,8 @@ import { Input } from "@/components/ui/input";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Sheet, SheetContent, SheetTrigger, SheetTitle, SheetHeader } from "@/components/ui/sheet";
-import { useAuth } from "@/context/AuthContent";
+import { useBetterAuth } from "@/context/BetterAuthContext";
+import { signOut } from "@/lib/auth-client";
 import { useCart } from "@/context/CartContext";
 import CartSheet from "./CartSheet";
 import {
@@ -55,7 +56,7 @@ const categories = [
 ];
 
 export default function Navbar() {
-  const { isAuthenticated, user, logout } = useAuth();
+  const { isAuthenticated, user, isPending } = useBetterAuth();
   const { itemCount } = useCart();
   const router = useRouter();
   const [searchQuery, setSearchQuery] = useState("");
@@ -307,7 +308,10 @@ export default function Navbar() {
                     )}
 
                     <DropdownMenuSeparator />
-                    <DropdownMenuItem onClick={() => logout()}>
+                    <DropdownMenuItem onClick={async () => {
+                      await signOut();
+                      router.push('/login');
+                    }}>
                       <LogOut className="mr-2 h-4 w-4" />
                       <span>Logout</span>
                     </DropdownMenuItem>

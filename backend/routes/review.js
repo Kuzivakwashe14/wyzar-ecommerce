@@ -3,8 +3,13 @@
 const express = require('express');
 const mongoose = require('mongoose');
 const router = express.Router();
-const auth = require('../middleware/auth');
-const adminAuth = require('../middleware/adminAuth');
+// OLD: const auth = require('../middleware/auth');
+// OLD: const adminAuth = require('../middleware/adminAuth');
+// NEW: Better Auth middleware
+const {
+  requireAuth,
+  requireAdmin
+} = require('../middleware/betterAuth');
 const Review = require('../models/Review');
 const Product = require('../models/Product');
 const Order = require('../models/Order');
@@ -111,7 +116,7 @@ router.get('/product/:productId', validateObjectIdParam('productId'), async (req
 // @route   POST /api/reviews
 // @desc    Create a new review
 // @access  Private
-router.post('/', auth, validateReviewCreation, async (req, res) => {
+router.post('/', requireAuth, validateReviewCreation, async (req, res) => {
   try {
     const { productId, rating, title, comment, orderId } = req.body;
 
@@ -223,7 +228,7 @@ router.post('/', auth, validateReviewCreation, async (req, res) => {
 // @route   PUT /api/reviews/:id
 // @desc    Update a review
 // @access  Private (Review owner only)
-router.put('/:id', auth, validateObjectIdParam('id'), async (req, res) => {
+router.put('/:id', requireAuth, validateObjectIdParam('id'), async (req, res) => {
   try {
     const { rating, title, comment } = req.body;
 
@@ -283,7 +288,7 @@ router.put('/:id', auth, validateObjectIdParam('id'), async (req, res) => {
 // @route   DELETE /api/reviews/:id
 // @desc    Delete a review
 // @access  Private (Review owner only)
-router.delete('/:id', auth, validateObjectIdParam('id'), async (req, res) => {
+router.delete('/:id', requireAuth, validateObjectIdParam('id'), async (req, res) => {
   try {
     const review = await Review.findById(req.params.id);
     if (!review) {
@@ -324,7 +329,7 @@ router.delete('/:id', auth, validateObjectIdParam('id'), async (req, res) => {
 // @route   GET /api/reviews/user/me
 // @desc    Get current user's reviews
 // @access  Private
-router.get('/user/me', auth, async (req, res) => {
+router.get('/user/me', requireAuth, async (req, res) => {
   try {
     const reviews = await Review.find({ user: req.user.id })
       .populate('product', '_id name images price')
@@ -347,7 +352,7 @@ router.get('/user/me', auth, async (req, res) => {
 // @route   POST /api/reviews/:id/helpful
 // @desc    Mark a review as helpful
 // @access  Private
-router.post('/:id/helpful', auth, validateObjectIdParam('id'), async (req, res) => {
+router.post('/:id/helpful', requireAuth, validateObjectIdParam('id'), async (req, res) => {
   try {
     const review = await Review.findById(req.params.id);
     if (!review) {
@@ -383,7 +388,7 @@ router.post('/:id/helpful', auth, validateObjectIdParam('id'), async (req, res) 
 // @route   GET /api/reviews/admin/all
 // @desc    Get all reviews (for admin)
 // @access  Private (Admin only)
-router.get('/admin/all', adminAuth, async (req, res) => {
+router.get('/admin/all', requireAuth, requireAdmin, async (req, res) => {
   try {
     const { page = 1, limit = 20, status = '', productId = '' } = req.query;
     const skip = (parseInt(page) - 1) * parseInt(limit);
@@ -424,7 +429,7 @@ router.get('/admin/all', adminAuth, async (req, res) => {
 // @route   PUT /api/reviews/admin/:id/approve
 // @desc    Approve or reject a review
 // @access  Private (Admin only)
-router.put('/admin/:id/approve', adminAuth, validateObjectIdParam('id'), async (req, res) => {
+router.put('/admin/:id/approve', requireAuth, requireAdmin, validateObjectIdParam('id'), async (req, res) => {
   try {
     const { approve } = req.body;
     const review = await Review.findById(req.params.id);
@@ -462,7 +467,7 @@ router.put('/admin/:id/approve', adminAuth, validateObjectIdParam('id'), async (
 // @route   DELETE /api/reviews/admin/:id
 // @desc    Delete a review (admin)
 // @access  Private (Admin only)
-router.delete('/admin/:id', adminAuth, validateObjectIdParam('id'), async (req, res) => {
+router.delete('/admin/:id', requireAuth, requireAdmin, validateObjectIdParam('id'), async (req, res) => {
   try {
     const review = await Review.findById(req.params.id);
     if (!review) {
