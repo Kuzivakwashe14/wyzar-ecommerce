@@ -6,9 +6,7 @@ const Conversation = require('../models/Conversation');
 const Product = require('../models/Product');
 const User = require('../models/User');
 const Report = require('../models/Report');
-// OLD: const auth = require('../middleware/auth');
-// NEW: Better Auth middleware
-const { requireAuth } = require('../middleware/betterAuth');
+const auth = require('../middleware/auth');
 const multer = require('multer');
 const path = require('path');
 const { getStoragePath, getPublicUrl } = require('../config/localStorage');
@@ -17,7 +15,7 @@ const { sendMessageNotificationEmail } = require('../services/emailService');
 // @route   GET /api/messages/conversations
 // @desc    Get all conversations for the logged-in user
 // @access  Private
-router.get('/conversations', requireAuth, async (req, res) => {
+router.get('/conversations', auth, async (req, res) => {
   try {
     const conversations = await Conversation.find({
       participants: req.user.id
@@ -54,7 +52,7 @@ router.get('/conversations', requireAuth, async (req, res) => {
 // @route   GET /api/messages/conversation/:conversationId
 // @desc    Get all messages in a conversation
 // @access  Private
-router.get('/conversation/:conversationId', requireAuth, async (req, res) => {
+router.get('/conversation/:conversationId', auth, async (req, res) => {
   try {
     const conversation = await Conversation.findById(req.params.conversationId);
 
@@ -100,7 +98,7 @@ router.get('/conversation/:conversationId', requireAuth, async (req, res) => {
 // @route   POST /api/messages/send
 // @desc    Send a message
 // @access  Private
-router.post('/send', requireAuth, async (req, res) => {
+router.post('/send', auth, async (req, res) => {
   try {
     const { receiverId, productId, message } = req.body;
 
@@ -197,7 +195,7 @@ router.post('/send', requireAuth, async (req, res) => {
 // @route   GET /api/messages/unread-count
 // @desc    Get total unread message count
 // @access  Private
-router.get('/unread-count', requireAuth, async (req, res) => {
+router.get('/unread-count', auth, async (req, res) => {
   try {
     const conversations = await Conversation.find({
       participants: req.user.id
@@ -218,7 +216,7 @@ router.get('/unread-count', requireAuth, async (req, res) => {
 // @route   POST /api/messages/mark-read/:conversationId
 // @desc    Mark all messages in a conversation as read
 // @access  Private
-router.post('/mark-read/:conversationId', requireAuth, async (req, res) => {
+router.post('/mark-read/:conversationId', auth, async (req, res) => {
   try {
     const conversation = await Conversation.findById(req.params.conversationId);
 
@@ -255,7 +253,7 @@ router.post('/mark-read/:conversationId', requireAuth, async (req, res) => {
 // @route   GET /api/messages/templates
 // @desc    Get pre-set message templates for sellers
 // @access  Private (Seller only)
-router.get('/templates', requireAuth, async (req, res) => {
+router.get('/templates', auth, async (req, res) => {
   try {
     const templates = [
       {
@@ -312,7 +310,7 @@ router.get('/templates', requireAuth, async (req, res) => {
 // @route   POST /api/messages/block/:userId
 // @desc    Block a user
 // @access  Private
-router.post('/block/:userId', requireAuth, async (req, res) => {
+router.post('/block/:userId', auth, async (req, res) => {
   try {
     const userIdToBlock = req.params.userId;
 
@@ -336,7 +334,7 @@ router.post('/block/:userId', requireAuth, async (req, res) => {
 // @route   POST /api/messages/unblock/:userId
 // @desc    Unblock a user
 // @access  Private
-router.post('/unblock/:userId', requireAuth, async (req, res) => {
+router.post('/unblock/:userId', auth, async (req, res) => {
   try {
     const userIdToUnblock = req.params.userId;
 
@@ -356,7 +354,7 @@ router.post('/unblock/:userId', requireAuth, async (req, res) => {
 // @route   GET /api/messages/blocked-users
 // @desc    Get list of blocked users
 // @access  Private
-router.get('/blocked-users', requireAuth, async (req, res) => {
+router.get('/blocked-users', auth, async (req, res) => {
   try {
     const user = await User.findById(req.user.id).populate('blockedUsers', 'email sellerDetails');
     res.json(user.blockedUsers || []);
@@ -369,7 +367,7 @@ router.get('/blocked-users', requireAuth, async (req, res) => {
 // @route   GET /api/messages/is-blocked/:userId
 // @desc    Check if a user is blocked
 // @access  Private
-router.get('/is-blocked/:userId', requireAuth, async (req, res) => {
+router.get('/is-blocked/:userId', auth, async (req, res) => {
   try {
     const user = await User.findById(req.user.id);
     const isBlocked = user.blockedUsers.includes(req.params.userId);
@@ -385,7 +383,7 @@ router.get('/is-blocked/:userId', requireAuth, async (req, res) => {
 // @route   POST /api/messages/report
 // @desc    Report a user
 // @access  Private
-router.post('/report', requireAuth, async (req, res) => {
+router.post('/report', auth, async (req, res) => {
   try {
     const { reportedUserId, reason, description, messageId, conversationId } = req.body;
 
@@ -418,7 +416,7 @@ router.post('/report', requireAuth, async (req, res) => {
 // @route   GET /api/messages/my-reports
 // @desc    Get user's submitted reports
 // @access  Private
-router.get('/my-reports', requireAuth, async (req, res) => {
+router.get('/my-reports', auth, async (req, res) => {
   try {
     const reports = await Report.find({ reporter: req.user.id })
       .populate('reportedUser', 'email sellerDetails')
@@ -436,7 +434,7 @@ router.get('/my-reports', requireAuth, async (req, res) => {
 // @route   GET /api/messages/search
 // @desc    Search messages in all conversations
 // @access  Private
-router.get('/search', requireAuth, async (req, res) => {
+router.get('/search', auth, async (req, res) => {
   try {
     const { query, conversationId } = req.query;
 
@@ -502,7 +500,7 @@ const messageImageUpload = multer({
 // @route   POST /api/messages/send-with-images
 // @desc    Send a message with image attachments
 // @access  Private
-router.post('/send-with-images', requireAuth, (req, res) => {
+router.post('/send-with-images', auth, (req, res) => {
   messageImageUpload(req, res, async (err) => {
     if (err instanceof multer.MulterError) {
       if (err.code === 'LIMIT_FILE_SIZE') {

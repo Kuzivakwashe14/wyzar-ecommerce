@@ -3,7 +3,6 @@ import { Inter } from "next/font/google";
 import "./globals.css";
 import { Toaster } from "sonner";
 import { AuthProvider } from "@/context/AuthContent";
-import { BetterAuthProvider } from "@/context/BetterAuthContext";
 import { CartProvider } from "@/context/CartContext";
 import { SocketProvider } from "@/context/SocketContext";
 import { WishlistProvider } from "@/context/WishlistContext";
@@ -25,20 +24,18 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className={`${inter.className} min-h-screen flex flex-col bg-white`}>
-        <BetterAuthProvider>
-          <AuthProvider>
-            <SocketProvider>
-              <CartProvider>
-                <WishlistProvider>
-                  <ConditionalNavbar />
-                  <main className="flex-1">{children}</main>
-                  <ConditionalFooter />
-                  <Toaster richColors position="bottom-right" />
-                </WishlistProvider>
-              </CartProvider>
-            </SocketProvider>
-          </AuthProvider>
-        </BetterAuthProvider>
+        <AuthProvider>
+          <SocketProvider>
+            <CartProvider>
+              <WishlistProvider>
+                <ConditionalNavbar />
+                <main className="flex-1">{children}</main>
+                <ConditionalFooter />
+                <Toaster richColors position="bottom-right" />
+              </WishlistProvider>
+            </CartProvider>
+          </SocketProvider>
+        </AuthProvider>
       </body>
     </html>
   );

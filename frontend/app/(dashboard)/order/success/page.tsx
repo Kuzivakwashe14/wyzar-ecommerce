@@ -2,7 +2,7 @@
 "use client";
 
 import Link from "next/link";
-import { useBetterAuth } from "@/context/BetterAuthContext";
+import { useAuth } from "@/context/AuthContent";
 import { CheckCircle2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
@@ -11,9 +11,9 @@ import { Button } from "@/components/ui/button";
 // We'll show a link to their "My Orders" page.
 
 export default function OrderSuccessPage() {
-  const { user, isPending } = useBetterAuth();
+  const { user, loading } = useAuth();
 
-  if (isPending) {
+  if (loading) {
     return <div className="flex justify-center items-center min-h-screen"><p>Loading...</p></div>;
   }
   

@@ -4,7 +4,7 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import * as z from "zod";
-import { useBetterAuth } from "@/context/BetterAuthContext";
+import { useAuth } from "@/context/AuthContent";
 import { useCart } from "@/context/CartContext";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
@@ -44,7 +44,7 @@ const shippingSchema = z.object({
 
 export default function CheckoutPage() {
   const router = useRouter();
-  const { isAuthenticated, isPending: authLoading } = useBetterAuth();
+  const { isAuthenticated, loading: authLoading } = useAuth();
   const { cartItems, cartTotal, itemCount, clearCart } = useCart();
   const [isSubmitting, setIsSubmitting] = useState(false);
 

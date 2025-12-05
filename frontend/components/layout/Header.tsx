@@ -18,8 +18,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { useBetterAuth } from "@/context/BetterAuthContext";
-import { signOut } from "@/lib/auth-client";
+import { useAuth } from "@/context/AuthContent";
 import { useCart } from "@/context/CartContext";
 import { useWishlist } from "@/context/WishlistContext";
 import CartSheet from "./CartSheet";
@@ -47,7 +46,7 @@ const categories = [
 ];
 
 export default function Header() {
-  const { isAuthenticated, user, isPending } = useBetterAuth();
+  const { isAuthenticated, user, logout } = useAuth();
   const { itemCount } = useCart();
   const { wishlistCount } = useWishlist();
   const router = useRouter();
@@ -233,10 +232,7 @@ export default function Header() {
                     )}
 
                     <DropdownMenuSeparator />
-                    <DropdownMenuItem onClick={async () => {
-                      await signOut();
-                      router.push('/login');
-                    }} className="cursor-pointer text-red-600">
+                    <DropdownMenuItem onClick={() => logout()} className="cursor-pointer text-red-600">
                       <LogOut className="mr-2 h-4 w-4" />
                       Logout
                     </DropdownMenuItem>

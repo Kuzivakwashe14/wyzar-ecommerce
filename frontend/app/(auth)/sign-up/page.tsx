@@ -20,9 +20,7 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { OTPInput } from "@/components/ui/otp-input";
-import { signUp } from "@/lib/auth-client";
 import { api, useAuth } from "@/context/AuthContent";
-import SocialLoginButtons from "@/components/auth/SocialLoginButtons";
 
 // Step 1: Registration details schema
 const registrationSchema = z.object({
@@ -111,16 +109,8 @@ export default function SignUpPage() {
       });
 
       if (otpResponse.data.success) {
-        // OTP verified, now register the user with Better Auth
-        const { data, error } = await signUp.email({
-          email: formData.email,
-          password: formData.password,
-          name: formData.email.split('@')[0], // Use email prefix as default name
-        });
-
-        if (error) {
-          throw new Error(error.message || 'Registration failed');
-        }
+        // OTP verified, now register the user
+        await register(formData.email, formData.password);
 
         toast.success("Account Created", {
           description: "Your account has been created successfully!",
@@ -131,7 +121,7 @@ export default function SignUpPage() {
       }
     } catch (error: any) {
       console.error("Verification failed:", error);
-      const errorMessage = error.message || error.response?.data?.msg || "Verification failed. Please try again.";
+      const errorMessage = error.response?.data?.msg || "Verification failed. Please try again.";
       toast.error("Verification Failed", {
         description: errorMessage,
       });
@@ -259,19 +249,6 @@ export default function SignUpPage() {
             <Button type="submit" className="w-full bg-shop_dark_green hover:bg-shop_light_green text-white" disabled={isLoading}>
               {isLoading ? "Sending OTP..." : "Continue"}
             </Button>
-
-            <div className="relative my-4">
-              <div className="absolute inset-0 flex items-center">
-                <span className="w-full border-t" />
-              </div>
-              <div className="relative flex justify-center text-xs uppercase">
-                <span className="bg-white px-2 text-muted-foreground">
-                  Or sign up with
-                </span>
-              </div>
-            </div>
-
-            <SocialLoginButtons mode="signup" />
           </form>
         </Form>
       ) : (

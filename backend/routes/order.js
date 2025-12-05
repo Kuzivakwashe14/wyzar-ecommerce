@@ -2,13 +2,7 @@
 
 const express = require('express');
 const router = express.Router();
-// OLD: const auth = require('../middleware/auth');
-// NEW: Better Auth middleware
-const {
-  requireAuth,
-  requireSeller,
-  optionalAuth
-} = require('../middleware/betterAuth');
+const auth = require('../middleware/auth');
 const { Paynow } = require('paynow');
 
 // Import our models
@@ -52,7 +46,7 @@ if (isPaynowConfigured) {
 // @route   POST /api/orders/create
 // @desc    Create a new order and get Paynow redirect URL
 // @access  Private
-router.post('/create', requireAuth, validateOrderCreation, async (req, res) => {
+router.post('/create', auth, validateOrderCreation, async (req, res) => {
   try {
     const { shippingAddress, cartItems, paymentMethod = 'Paynow' } = req.body;
     
@@ -306,7 +300,7 @@ router.post('/paynow/callback', async (req, res) => {
 // @route   POST /api/orders/:id/verify-payment
 // @desc    Manually verify payment status with Paynow (for when callbacks fail)
 // @access  Private (Seller only)
-router.post('/:id/verify-payment', requireAuth, validateObjectIdParam('id'), async (req, res) => {
+router.post('/:id/verify-payment', auth, validateObjectIdParam('id'), async (req, res) => {
   try {
     const order = await Order.findById(req.params.id);
     
@@ -384,7 +378,7 @@ router.post('/:id/verify-payment', requireAuth, validateObjectIdParam('id'), asy
 // @route   POST /api/orders/:id/confirm-payment
 // @desc    Manually confirm payment was received (for when Paynow callbacks fail)
 // @access  Private (Seller only)
-router.post('/:id/confirm-payment', requireAuth, validateObjectIdParam('id'), async (req, res) => {
+router.post('/:id/confirm-payment', auth, validateObjectIdParam('id'), async (req, res) => {
   try {
     const order = await Order.findById(req.params.id);
     
@@ -449,7 +443,7 @@ router.post('/:id/confirm-payment', requireAuth, validateObjectIdParam('id'), as
 // @route   GET /api/orders/myorders
 // @desc    Get all orders for the logged-in user
 // @access  Private
-router.get('/myorders', requireAuth, async (req, res) => {
+router.get('/myorders', auth, async (req, res) => {
   try {
     const orders = await Order.find({ user: req.user.id }).sort({ createdAt: -1 });
     res.json(orders);
@@ -463,7 +457,7 @@ router.get('/myorders', requireAuth, async (req, res) => {
 // @route   GET /api/orders/:id
 // @desc    Get a single order by its ID
 // @access  Private
-router.get('/:id', requireAuth, validateObjectIdParam('id'), async (req, res) => {
+router.get('/:id', auth, validateObjectIdParam('id'), async (req, res) => {
   try {
     const order = await Order.findById(req.params.id);
 
@@ -490,7 +484,7 @@ router.get('/:id', requireAuth, validateObjectIdParam('id'), async (req, res) =>
 // @route   PUT /api/orders/:id/status
 // @desc    Update order status (Shipped, Delivered, etc.)
 // @access  Private (Seller only)
-router.put('/:id/status', requireAuth, validateObjectIdParam('id'), async (req, res) => {
+router.put('/:id/status', auth, validateObjectIdParam('id'), async (req, res) => {
   try {
     const { status, trackingNumber } = req.body;
 
@@ -621,9 +615,15 @@ router.put('/:id/status', requireAuth, validateObjectIdParam('id'), async (req, 
 // @route   GET /api/orders/seller/orders
 // @desc    Get all orders containing seller's products
 // @access  Private (Seller only)
-router.get('/seller/orders', requireAuth, requireSeller, async (req, res) => {
+router.get('/seller/orders', auth, async (req, res) => {
   try {
-    // No need to check seller status - middleware already verified!
+    const user = await User.findById(req.user.id);
+    if (!user.isSeller) {
+      return res.status(403).json({ 
+        success: false,
+        msg: 'Only sellers can access this route' 
+      });
+    }
 
     // Find all products by this seller
     const sellerProducts = await Product.find({ seller: req.user.id });
@@ -684,9 +684,15 @@ router.get('/seller/orders', requireAuth, requireSeller, async (req, res) => {
 // @route   GET /api/orders/seller/stats
 // @desc    Get seller earnings and order statistics
 // @access  Private (Seller only)
-router.get('/seller/stats', requireAuth, requireSeller, async (req, res) => {
+router.get('/seller/stats', auth, async (req, res) => {
   try {
-    // No need to check seller status - middleware already verified!
+    const user = await User.findById(req.user.id);
+    if (!user.isSeller) {
+      return res.status(403).json({ 
+        success: false,
+        msg: 'Only sellers can access this route' 
+      });
+    }
 
     // Find all products by this seller
     const sellerProducts = await Product.find({ seller: req.user.id });

@@ -2,14 +2,7 @@
 
 const express = require('express');
 const router = express.Router();
-// OLD: const auth = require('../middleware/auth');
-// NEW: Better Auth middleware
-const {
-  requireAuth,
-  requireSeller,
-  requireEmailVerified,
-  optionalAuth
-} = require('../middleware/betterAuth');
+const auth = require('../middleware/auth');
 const productUploadOptimized = require('../middleware/productUploadOptimized');
 const csvUpload = require('../middleware/csvUpload');
 const papa = require('papaparse');
@@ -27,19 +20,18 @@ const {
 // @route   POST /api/products/bulk-upload
 // @desc    Bulk upload products from CSV
 // @access  Private (Sellers Only)
-router.post('/bulk-upload',
-  requireAuth,          // Must be authenticated
-  requireEmailVerified, // Email must be verified
-  requireSeller,        // Must be a seller (no manual check needed!)
-  csvUpload,            // Process CSV upload
-  async (req, res) => {
-    if (!req.file) {
-      return res.status(400).json({ msg: 'No file uploaded. Please upload a CSV file.' });
+router.post('/bulk-upload', auth, csvUpload, async (req, res) => {
+  if (!req.file) {
+    return res.status(400).json({ msg: 'No file uploaded. Please upload a CSV file.' });
+  }
+
+  try {
+    const seller = await User.findById(req.user.id);
+    if (!seller.isSeller) {
+      return res.status(401).json({ msg: 'Not authorized. Only sellers can upload products.' });
     }
 
-    try {
-      // No need to check seller status - middleware already did it!
-      const csvFile = req.file.buffer.toString('utf8');
+    const csvFile = req.file.buffer.toString('utf8');
 
     // Wrap papa.parse in a promise to handle async operations properly
     try {
@@ -151,30 +143,33 @@ router.post('/bulk-upload',
 // @route   POST /api/products
 // @desc    Create a new product
 // @access  Private (Sellers Only)
-router.post('/',
-  requireAuth,          // Must be authenticated
-  requireEmailVerified, // Email must be verified
-  requireSeller,        // Must be a seller
-  (req, res) => {
-    // 1. Run the productUploadOptimized middleware
-    productUploadOptimized(req, res, async (err) => {
-      if (err) {
-        return res.status(400).json({ msg: err.message });
+router.post('/', auth, (req, res) => {
+  // 1. Run the productUploadOptimized middleware
+  productUploadOptimized(req, res, async (err) => {
+    if (err) {
+      return res.status(400).json({ msg: err.message });
+    }
+
+    // 2. Check if files were uploaded
+    if (req.files === undefined || req.files.length === 0) {
+      return res.status(400).json({ msg: 'No product images uploaded. At least one is required.' });
+    }
+
+    // 3. Validate product input
+    return validateProductCreation(req, res, async () => {
+      const { name, description, price, category, quantity, deliveryTime, countryOfOrigin } = req.body;
+
+      try {
+      // 5. Check if user is a verified seller (we'll add verification later)
+      // For now, we just check if they are a seller 
+      const seller = await User.findById(req.user.id);
+      if (!seller.isSeller) {
+        return res.status(401).json({ msg: 'Not authorized. Only sellers can create products.' });
       }
 
-      // 2. Check if files were uploaded
-      if (req.files === undefined || req.files.length === 0) {
-        return res.status(400).json({ msg: 'No product images uploaded. At least one is required.' });
-      }
+      // (Later, we'll add: if (!seller.isVerified) ... )
 
-      // 3. Validate product input
-      return validateProductCreation(req, res, async () => {
-        const { name, description, price, category, quantity, deliveryTime, countryOfOrigin } = req.body;
-
-        try {
-          // No need to check seller status - middleware already verified!
-
-          // Get image paths - convert to public URLs for Nginx
+      // 6. Get image paths - convert to public URLs for Nginx
       const images = req.files.map(file => getPublicUrl(file.path));
 
       // 7. Create new product instance
@@ -249,29 +244,26 @@ router.get('/:id', validateObjectIdParam('id'), async (req, res) => {
 // @route   GET /api/products/seller/me
 // @desc    Get all products for the logged-in seller
 // @access  Private (Sellers Only)
-router.get('/seller/me',
-  requireAuth,
-  requireSeller,
-  async (req, res) => {
-    try {
-      // No need to check seller status - middleware already verified!
-      const products = await Product.find({ seller: req.user.id }).sort({ createdAt: -1 });
-      res.json(products);
-
-    } catch (err) {
-      console.error(err.message);
-      res.status(500).send('Server Error');
+router.get('/seller/me', auth, async (req, res) => {
+  try {
+    const seller = await User.findById(req.user.id);
+    if (!seller.isSeller) {
+      return res.status(401).json({ msg: 'Not authorized.' });
     }
-  });
+
+    const products = await Product.find({ seller: req.user.id }).sort({ createdAt: -1 });
+    res.json(products);
+
+  } catch (err) {
+    console.error(err.message);
+    res.status(500).send('Server Error');
+  }
+});
 
 // @route   PUT /api/products/:id
 // @desc    Update a product
 // @access  Private (Sellers Only)
-router.put('/:id',
-  requireAuth,
-  requireSeller,
-  validateObjectIdParam('id'),
-  (req, res) => {
+router.put('/:id', auth, validateObjectIdParam('id'), (req, res) => {
   productUploadOptimized(req, res, async (err) => {
     if (err) {
       return res.status(400).json({ msg: err.message });
@@ -326,11 +318,7 @@ router.put('/:id',
 // @route   DELETE /api/products/:id
 // @desc    Delete a product
 // @access  Private (Sellers Only)
-router.delete('/:id',
-  requireAuth,
-  requireSeller,
-  validateObjectIdParam('id'),
-  async (req, res) => {
+router.delete('/:id', auth, validateObjectIdParam('id'), async (req, res) => {
   try {
     let product = await Product.findById(req.params.id);
 

@@ -8,10 +8,6 @@ const cookieParser = require('cookie-parser');
 const socketIO = require('socket.io');
 require('dotenv').config(); // Load environment variables
 
-// Better Auth imports
-const { toNodeHandler } = require('better-auth/node');
-const { auth } = require('./lib/auth');
-
 // ✨ Validate environment variables on startup (if envValidator exists)
 // const { validateOrExit } = require('./utils/envValidator');
 // validateOrExit(); // Will exit if validation fails
@@ -54,10 +50,6 @@ app.use(getCorsConfig()); // CORS with proper configuration
 app.use(generalLimiter); // Rate limiting
 // app.use(mongoSanitizeConfig); // TODO: Temporarily disabled - incompatible with Express 5
 app.use(hppConfig); // Prevent HTTP Parameter Pollution
-
-// --- Better Auth Handler (MUST come BEFORE express.json) ---
-// Better Auth needs to parse the request body itself
-app.all(/^\/api\/better-auth/, toNodeHandler(auth));
 
 // --- Body Parsing Middleware ---
 app.use(express.json({ limit: '10mb' })); // Parse JSON bodies (with size limit)
@@ -146,7 +138,6 @@ if (USE_HTTPS) {
 
   server.listen(HTTPS_PORT, () => {
     console.log(`🔒 HTTPS Server running on https://localhost:${HTTPS_PORT}`);
-    console.log(`🔐 Better Auth mounted at https://localhost:${HTTPS_PORT}/api/better-auth/*`);
     console.log(`🔐 SSL/TLS encryption enabled`);
   });
 
@@ -165,7 +156,6 @@ if (USE_HTTPS) {
   server = http.createServer(app);
   server.listen(PORT, () => {
     console.log(`📡 HTTP Server running on http://localhost:${PORT}`);
-    console.log(`🔐 Better Auth mounted at http://localhost:${PORT}/api/better-auth/*`);
     console.log(`⚠️  Warning: Running without SSL/TLS encryption`);
     console.log(`   Set USE_HTTPS=true in .env to enable HTTPS`);
   });

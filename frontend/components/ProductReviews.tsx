@@ -1,8 +1,7 @@
 "use client";
 
 import { useState, useEffect } from 'react';
-import { api } from '@/context/AuthContent';
-import { useBetterAuth } from '@/context/BetterAuthContext';
+import { api, useAuth } from '@/context/AuthContent';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -44,7 +43,7 @@ interface ProductReviewsProps {
 }
 
 export default function ProductReviews({ productId }: ProductReviewsProps) {
-  const { isAuthenticated, user } = useBetterAuth();
+  const { isAuthenticated, user } = useAuth();
   const [reviews, setReviews] = useState<Review[]>([]);
   const [ratingStats, setRatingStats] = useState<RatingStats | null>(null);
   const [loading, setLoading] = useState(true);
