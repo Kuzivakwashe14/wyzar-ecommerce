@@ -63,7 +63,7 @@ export default function CartSheet() {
               Looks like you haven&apos;t added anything to your cart yet.
             </p>
             <SheetClose asChild>
-              <Button asChild className="bg-shop_dark_green hover:bg-shop_light_green text-gray-900">
+              <Button asChild className="bg-shop_dark_green hover:bg-shop_light_green text-white">
                 <Link href="/products">
                   Start Shopping
                 </Link>
@@ -153,7 +153,7 @@ export default function CartSheet() {
                 <SheetClose asChild>
                   <Button 
                     asChild
-                    className="w-full bg-shop_dark_green hover:bg-shop_light_green text-gray-900 h-12"
+                    className="w-full bg-shop_dark_green hover:bg-shop_light_green text-white h-12"
                     size="lg"
                   >
                     <Link href="/checkout">
@@ -165,7 +165,7 @@ export default function CartSheet() {
                   <Button 
                     asChild
                     variant="outline" 
-                    className="w-full h-11 border-shop_dark_green text-shop_dark_green hover:bg-shop_dark_green hover:text-gray-900"
+                    className="w-full h-11 border-shop_dark_green text-shop_dark_green hover:bg-shop_dark_green hover:text-white"
                   >
                     <Link href="/products">
                       Continue Shopping

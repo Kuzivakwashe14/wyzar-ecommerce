@@ -59,14 +59,14 @@ export default function MobileMenu({ categories }: MobileMenuProps) {
         </Button>
       </SheetTrigger>
       <SheetContent side="left" className="w-80 p-0 overflow-y-auto">
-        <SheetHeader className="p-4 bg-shop_dark_green text-gray-900">
+        <SheetHeader className="p-4 bg-shop_dark_green text-white">
           <div className="flex items-center justify-between">
             <Logo variant="sm" />
             <Button 
               variant="ghost" 
               size="icon" 
               onClick={handleClose}
-              className="text-gray-900 hover:bg-white/10"
+              className="text-white hover:bg-white/10"
             >
               <X className="h-5 w-5" />
             </Button>
@@ -79,7 +79,7 @@ export default function MobileMenu({ categories }: MobileMenuProps) {
           {isAuthenticated && user ? (
             <div className="px-4 pb-4 border-b">
               <div className="flex items-center gap-3">
-                <div className="h-12 w-12 rounded-full bg-shop_dark_green text-gray-900 flex items-center justify-center text-lg font-semibold">
+                <div className="h-12 w-12 rounded-full bg-shop_dark_green text-white flex items-center justify-center text-lg font-semibold">
                   {user.email ? user.email.charAt(0).toUpperCase() : 'U'}
                 </div>
                 <div>
@@ -101,7 +101,7 @@ export default function MobileMenu({ categories }: MobileMenuProps) {
                 </Button>
               </Link>
               <Link href="/sign-up" onClick={handleClose}>
-                <Button className="w-full justify-start gap-2 bg-shop_dark_green hover:bg-shop_light_green">
+                <Button className="w-full justify-start gap-2 bg-shop_dark_green hover:bg-shop_light_green text-white">
                   <UserPlus className="h-4 w-4" />
                   Create Account
                 </Button>

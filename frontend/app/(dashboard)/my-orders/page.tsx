@@ -90,13 +90,13 @@ export default function MyOrdersPage() {
   const getStatusBadge = (status: string) => {
     switch (status) {
       case 'Paid':
-        return <Badge className="bg-shop_light_green text-gray-900">{status}</Badge>;
+        return <Badge className="bg-shop_light_green text-white">{status}</Badge>;
       case 'Pending':
         return <Badge className="bg-shop_orange/20 text-shop_orange border-shop_orange">{status}</Badge>;
       case 'Shipped':
-        return <Badge className="bg-shop_dark_green text-gray-900">{status}</Badge>;
+        return <Badge className="bg-shop_dark_green text-white">{status}</Badge>;
       case 'Delivered':
-        return <Badge className="bg-gray-700 text-gray-900">{status}</Badge>;
+        return <Badge className="bg-gray-700 text-white">{status}</Badge>;
       case 'Cancelled':
         return <Badge variant="destructive">{status}</Badge>;
       default:

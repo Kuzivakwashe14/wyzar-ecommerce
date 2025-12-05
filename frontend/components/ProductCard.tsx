@@ -113,7 +113,7 @@ export default function ProductCard({ product }: ProductCardProps) {
           )}
           {/* Check if product is new (created within last 7 days) */}
           {new Date(product.createdAt) > new Date(Date.now() - 7 * 24 * 60 * 60 * 1000) && (
-            <Badge className="bg-shop_light_green text-gray-900 text-xs">
+            <Badge className="bg-shop_light_green text-white text-xs">
               New
             </Badge>
           )}
@@ -140,7 +140,7 @@ export default function ProductCard({ product }: ProductCardProps) {
           <Button
             onClick={handleAddToCart}
             size="sm"
-            className="bg-shop_dark_green hover:bg-shop_light_green text-gray-900 shadow-lg"
+            className="bg-shop_dark_green hover:bg-shop_light_green text-white shadow-lg"
             disabled={product.quantity === 0}
           >
             <ShoppingCart className="h-4 w-4 mr-1" />
@@ -215,7 +215,7 @@ export default function ProductCard({ product }: ProductCardProps) {
             onClick={handleAddToCart}
             size="icon"
             variant="outline"
-            className="md:hidden border-shop_dark_green text-shop_dark_green hover:bg-shop_dark_green hover:text-gray-900"
+            className="md:hidden border-shop_dark_green text-shop_dark_green hover:bg-shop_dark_green hover:text-white"
             disabled={product.quantity === 0}
           >
             <ShoppingCart className="h-4 w-4" />

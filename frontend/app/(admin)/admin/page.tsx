@@ -300,7 +300,7 @@ export default function AdminDashboard() {
                 className="flex items-center justify-between p-2 bg-gray-50 rounded-md hover:bg-gray-100 transition-all"
               >
                 <div className="flex items-center gap-2">
-                  <div className="w-6 h-6 rounded-full bg-shop_dark_green flex items-center justify-center text-gray-900 text-[10px] font-bold">
+                  <div className="w-6 h-6 rounded-full bg-shop_dark_green flex items-center justify-center text-white text-[10px] font-bold">
                     {user.email.charAt(0).toUpperCase()}
                   </div>
                   <div>

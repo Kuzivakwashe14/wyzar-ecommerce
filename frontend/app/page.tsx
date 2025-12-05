@@ -122,7 +122,7 @@ export default function HomePage() {
                 <Link href="/products">
                   <Button 
                     size="lg" 
-                    className="bg-shop_dark_green hover:bg-shop_light_green text-gray-900 px-8 h-12"
+                    className="bg-shop_dark_green hover:bg-shop_light_green text-white px-8 h-12"
                   >
                     <ShoppingBag className="mr-2 h-5 w-5" />
                     Shop Now
@@ -132,7 +132,7 @@ export default function HomePage() {
                   <Button 
                     size="lg" 
                     variant="outline" 
-                    className="border-shop_dark_green text-shop_dark_green hover:bg-shop_dark_green hover:text-gray-900 px-8 h-12"
+                    className="border-shop_dark_green text-shop_dark_green hover:bg-shop_dark_green hover:text-white px-8 h-12"
                   >
                     Start Selling
                     <ArrowRight className="ml-2 h-5 w-5" />
@@ -306,7 +306,7 @@ export default function HomePage() {
 
           <div className="text-center mt-8 md:hidden">
             <Link href="/products">
-              <Button variant="outline" className="border-shop_dark_green text-shop_dark_green hover:bg-shop_dark_green hover:text-gray-900">
+              <Button variant="outline" className="border-shop_dark_green text-shop_dark_green hover:bg-shop_dark_green hover:text-white">
                 View All Products
                 <ArrowRight className="ml-2 h-4 w-4" />
               </Button>
@@ -342,18 +342,18 @@ export default function HomePage() {
       </section>
 
       {/* CTA Banner */}
-      <section className="py-16 bg-shop_dark_green text-gray-900">
+      <section className="py-16 bg-shop_dark_green text-white">
         <Container>
           <div className="grid md:grid-cols-2 gap-8 items-center">
             <div className="space-y-6">
-              <Badge className="bg-white/20 text-gray-900 border-white/30">
+              <Badge className="bg-white/20 text-white border-white/30">
                 <Star className="h-3 w-3 mr-1 fill-white" />
                 Start Your Business
               </Badge>
               <h2 className="text-3xl md:text-4xl font-bold">
                 Turn Your Products Into Profit
               </h2>
-              <p className="text-lg text-gray-900/80">
+              <p className="text-lg text-white/80">
                 Join thousands of successful sellers on Zimbabwe&apos;s fastest-growing marketplace. 
                 Start your business journey with zero upfront costs.
               </p>
@@ -361,7 +361,7 @@ export default function HomePage() {
                 <Link href="/become-a-seller">
                   <Button 
                     size="lg" 
-                    className="bg-shop_orange hover:bg-shop_orange/90 text-gray-900 px-8 h-12"
+                    className="bg-shop_orange hover:bg-shop_orange/90 text-white px-8 h-12"
                   >
                     Become a Seller
                     <ArrowRight className="ml-2 h-5 w-5" />
@@ -371,7 +371,7 @@ export default function HomePage() {
                   <Button 
                     size="lg" 
                     variant="outline" 
-                    className="border-white/50 text-gray-900 bg-transparent hover:bg-white/10 hover:text-gray-900 px-8 h-12"
+                    className="border-white/50 text-white bg-transparent hover:bg-white/10 hover:text-white px-8 h-12"
                   >
                     Learn More
                   </Button>
@@ -382,19 +382,19 @@ export default function HomePage() {
               <div className="grid grid-cols-2 gap-4">
                 <div className="bg-white/10 rounded-xl p-6 text-center">
                   <div className="text-4xl font-bold">0%</div>
-                  <div className="text-gray-900/70 text-sm mt-1">Upfront Fees</div>
+                  <div className="text-white/70 text-sm mt-1">Upfront Fees</div>
                 </div>
                 <div className="bg-white/10 rounded-xl p-6 text-center">
                   <div className="text-4xl font-bold">24/7</div>
-                  <div className="text-gray-900/70 text-sm mt-1">Support</div>
+                  <div className="text-white/70 text-sm mt-1">Support</div>
                 </div>
                 <div className="bg-white/10 rounded-xl p-6 text-center">
                   <div className="text-4xl font-bold">5K+</div>
-                  <div className="text-gray-900/70 text-sm mt-1">Active Sellers</div>
+                  <div className="text-white/70 text-sm mt-1">Active Sellers</div>
                 </div>
                 <div className="bg-white/10 rounded-xl p-6 text-center">
                   <div className="text-4xl font-bold">Fast</div>
-                  <div className="text-gray-900/70 text-sm mt-1">Payouts</div>
+                  <div className="text-white/70 text-sm mt-1">Payouts</div>
                 </div>
               </div>
             </div>

@@ -90,7 +90,7 @@ export default function Header() {
   return (
     <header className="sticky top-0 z-50 bg-white shadow-sm">
       {/* Top Announcement Bar */}
-      <div className="bg-shop_dark_green text-gray-900 py-2">
+      <div className="bg-shop_dark_green text-white py-2">
         <Container>
           <div className="flex items-center justify-between text-sm">
             <div className="flex items-center gap-4">
@@ -101,12 +101,12 @@ export default function Header() {
                 <Store className="h-4 w-4" />
                 <span className="hidden sm:inline">Sell on WyZar</span>
               </Link>
-              <span className="hidden md:inline text-gray-900/60">|</span>
-              <span className="hidden md:inline text-gray-900/80">
+              <span className="hidden md:inline text-white/60">|</span>
+              <span className="hidden md:inline text-white/80">
                 Free shipping on orders over $50
               </span>
             </div>
-            <div className="flex items-center gap-4 text-gray-900/80">
+            <div className="flex items-center gap-4 text-white/80">
               <Link 
                 href="/my-orders" 
                 className="hover:text-shop_orange transition-colors hidden sm:inline"
@@ -149,7 +149,7 @@ export default function Header() {
                   />
                   <button 
                     type="submit"
-                    className="absolute right-1 bg-shop_dark_green hover:bg-shop_light_green text-gray-900 p-2.5 rounded-full transition-colors"
+                    className="absolute right-1 bg-shop_dark_green hover:bg-shop_light_green text-white p-2.5 rounded-full transition-colors"
                   >
                     <Search className="h-4 w-4" />
                   </button>
@@ -168,7 +168,7 @@ export default function Header() {
                       className="hoverEffect hover:bg-shop_dark_green/10 flex items-center gap-2"
                     >
                       <Avatar className="h-8 w-8">
-                        <AvatarFallback className="bg-shop_dark_green text-gray-900 text-sm">
+                        <AvatarFallback className="bg-shop_dark_green text-white text-sm">
                           {user.email ? user.email.charAt(0).toUpperCase() : 'U'}
                         </AvatarFallback>
                       </Avatar>
@@ -250,7 +250,7 @@ export default function Header() {
                     </Button>
                   </Link>
                   <Link href="/sign-up">
-                    <Button className="bg-shop_dark_green hover:bg-shop_light_green text-gray-900">
+                    <Button className="bg-shop_dark_green hover:bg-shop_light_green text-white">
                       Sign Up
                     </Button>
                   </Link>
@@ -266,7 +266,7 @@ export default function Header() {
                 >
                   <Heart className="h-5 w-5" />
                   {wishlistCount > 0 && (
-                    <Badge className="absolute -top-1 -right-1 h-5 w-5 flex items-center justify-center p-0 text-xs bg-red-500 text-gray-900">
+                    <Badge className="absolute -top-1 -right-1 h-5 w-5 flex items-center justify-center p-0 text-xs bg-red-500 text-white">
                       {wishlistCount > 9 ? '9+' : wishlistCount}
                     </Badge>
                   )}
@@ -283,7 +283,7 @@ export default function Header() {
                   >
                     <MessageCircle className="h-5 w-5" />
                     {unreadMessages > 0 && (
-                      <Badge className="absolute -top-1 -right-1 h-5 w-5 flex items-center justify-center p-0 text-xs bg-shop_orange text-gray-900">
+                      <Badge className="absolute -top-1 -right-1 h-5 w-5 flex items-center justify-center p-0 text-xs bg-shop_orange text-white">
                         {unreadMessages > 9 ? '9+' : unreadMessages}
                       </Badge>
                     )}
@@ -295,7 +295,7 @@ export default function Header() {
               <div className="relative">
                 <CartSheet />
                 {itemCount > 0 && (
-                  <Badge className="absolute -top-1 -right-1 h-5 w-5 flex items-center justify-center p-0 text-xs bg-shop_orange text-gray-900 pointer-events-none">
+                  <Badge className="absolute -top-1 -right-1 h-5 w-5 flex items-center justify-center p-0 text-xs bg-shop_orange text-white pointer-events-none">
                     {itemCount > 9 ? '9+' : itemCount}
                   </Badge>
                 )}
@@ -316,7 +316,7 @@ export default function Header() {
                 />
                 <button 
                   type="submit"
-                  className="absolute right-1 bg-shop_dark_green hover:bg-shop_light_green text-gray-900 p-2 rounded-full transition-colors"
+                  className="absolute right-1 bg-shop_dark_green hover:bg-shop_light_green text-white p-2 rounded-full transition-colors"
                 >
                   <Search className="h-4 w-4" />
                 </button>

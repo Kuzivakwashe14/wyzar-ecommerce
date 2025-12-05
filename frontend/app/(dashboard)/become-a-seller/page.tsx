@@ -219,7 +219,7 @@ export default function BecomeASellerPage() {
             )}
           />
 
-          <Button type="submit" className="w-full bg-shop_dark_green hover:bg-shop_light_green" disabled={isSubmitting}>
+          <Button type="submit" className="w-full bg-shop_dark_green hover:bg-shop_light_green text-white" disabled={isSubmitting}>
             {isSubmitting ? "Submitting..." : "Submit Application"}
           </Button>
         </form>

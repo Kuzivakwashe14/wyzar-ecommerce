@@ -229,7 +229,7 @@ export default function CheckoutPage() {
               
               <Button 
                 type="submit" 
-                className="w-full bg-shop_dark_green hover:bg-shop_light_green" 
+                className="w-full bg-shop_dark_green hover:bg-shop_light_green text-white" 
                 size="lg"
                 disabled={isSubmitting}
               >

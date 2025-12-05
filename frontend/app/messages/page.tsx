@@ -120,7 +120,7 @@ export default function MessagesPage() {
               <Button
                 variant="outline"
                 onClick={() => router.push('/messages/blocked')}
-                className="mt-1 border-shop_dark_green text-shop_dark_green hover:bg-shop_dark_green hover:text-gray-900"
+                className="mt-1 border-shop_dark_green text-shop_dark_green hover:bg-shop_dark_green hover:text-white"
               >
                 <Ban className="h-4 w-4 mr-2" />
                 Blocked Users
@@ -136,7 +136,7 @@ export default function MessagesPage() {
               placeholder="Search messages..."
               className="w-64 border-gray-300 focus:border-shop_dark_green"
             />
-            <Button type="submit" disabled={isSearching || searchQuery.length < 2} className="bg-shop_dark_green hover:bg-shop_light_green">
+            <Button type="submit" disabled={isSearching || searchQuery.length < 2} className="bg-shop_dark_green hover:bg-shop_light_green text-white">
               <Search className="h-4 w-4" />
             </Button>
             {searchQuery && (

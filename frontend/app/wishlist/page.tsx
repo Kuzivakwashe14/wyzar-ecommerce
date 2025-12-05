@@ -95,7 +95,7 @@ export default function WishlistPage() {
               <Button
                 variant="outline"
                 onClick={handleAddAllToCart}
-                className="border-shop_dark_green text-shop_dark_green hover:bg-shop_dark_green hover:text-gray-900"
+                className="border-shop_dark_green text-shop_dark_green hover:bg-shop_dark_green hover:text-white"
               >
                 <ShoppingCart className="h-4 w-4 mr-2" />
                 Add All to Cart
@@ -103,7 +103,7 @@ export default function WishlistPage() {
               <Button
                 variant="outline"
                 onClick={handleClearWishlist}
-                className="border-red-500 text-red-500 hover:bg-red-500 hover:text-gray-900"
+                className="border-red-500 text-red-500 hover:bg-red-500 hover:text-white"
               >
                 <Trash2 className="h-4 w-4 mr-2" />
                 Clear All
@@ -127,7 +127,7 @@ export default function WishlistPage() {
                   Save items you love to your wishlist. Review them anytime and easily add them to your cart.
                 </p>
                 <Link href="/products">
-                  <Button className="bg-shop_dark_green hover:bg-shop_light_green text-gray-900">
+                  <Button className="bg-shop_dark_green hover:bg-shop_light_green text-white">
                     <ShoppingBag className="h-4 w-4 mr-2" />
                     Start Shopping
                   </Button>
@@ -203,7 +203,7 @@ export default function WishlistPage() {
                       size="sm"
                       onClick={() => handleAddToCart(product)}
                       disabled={product.quantity === 0}
-                      className="bg-shop_dark_green hover:bg-shop_light_green text-gray-900"
+                      className="bg-shop_dark_green hover:bg-shop_light_green text-white"
                     >
                       <ShoppingCart className="h-4 w-4 mr-1" />
                       Add

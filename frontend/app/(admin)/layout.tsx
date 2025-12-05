@@ -40,7 +40,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       <div className="flex h-screen items-center justify-center bg-shop_dark_green">
         <div className="text-center">
           <div className="h-12 w-12 animate-spin rounded-full border-4 border-shop_light_green border-t-transparent mx-auto mb-4"></div>
-          <p className="text-shop_light_pink">Loading admin panel...</p>
+          <p className="text-white">Loading admin panel...</p>
         </div>
       </div>
     );

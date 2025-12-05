@@ -110,7 +110,7 @@ export default function Footer() {
   };
 
   return (
-    <footer className="bg-shop_dark_green text-gray-900">
+    <footer className="bg-shop_dark_green text-white">
       {/* Features Section */}
       <div className="border-b border-white/10">
         <Container>
@@ -122,7 +122,7 @@ export default function Footer() {
                 </div>
                 <div>
                   <h4 className="font-semibold text-sm">{feature.title}</h4>
-                  <p className="text-xs text-gray-900/70">{feature.description}</p>
+                  <p className="text-xs text-white/70">{feature.description}</p>
                 </div>
               </div>
             ))}
@@ -136,7 +136,7 @@ export default function Footer() {
           <div className="py-8 flex flex-col md:flex-row items-center justify-between gap-6">
             <div className="text-center md:text-left">
               <h3 className="text-xl font-bold mb-2">Subscribe to our Newsletter</h3>
-              <p className="text-gray-900/70 text-sm">
+              <p className="text-white/70 text-sm">
                 Get the latest updates on new products and upcoming sales
               </p>
             </div>
@@ -148,14 +148,14 @@ export default function Footer() {
                   placeholder="Enter your email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  className="pl-10 bg-white/10 border-white/20 text-gray-900 placeholder:text-gray-900/50 focus:border-shop_orange"
+                  className="pl-10 bg-white/10 border-white/20 text-white placeholder:text-white/50 focus:border-shop_orange"
                   required
                   disabled={isSubmitting}
                 />
               </div>
               <Button 
                 type="submit" 
-                className="bg-shop_orange hover:bg-shop_orange/90 text-gray-900 shrink-0"
+                className="bg-shop_orange hover:bg-shop_orange/90 text-white shrink-0"
                 disabled={isSubmitting}
               >
                 {isSubmitting ? (
@@ -178,22 +178,22 @@ export default function Footer() {
           {/* Brand Column */}
           <div className="lg:col-span-2">
             <Logo variant="sm" />
-            <p className="mt-4 text-gray-900/70 text-sm leading-relaxed">
+            <p className="mt-4 text-white/70 text-sm leading-relaxed">
               WyZar is your one-stop destination for quality products at unbeatable prices. 
               Shop from thousands of sellers and find everything you need.
             </p>
             <div className="mt-6 space-y-3">
               <div className="flex items-center gap-3 text-sm">
                 <MapPin className="h-5 w-5 text-shop_orange shrink-0" />
-                <span className="text-gray-900/70">123 Commerce Street, Business District</span>
+                <span className="text-white/70">123 Commerce Street, Business District</span>
               </div>
               <div className="flex items-center gap-3 text-sm">
                 <Phone className="h-5 w-5 text-shop_orange shrink-0" />
-                <span className="text-gray-900/70">+1 (555) 123-4567</span>
+                <span className="text-white/70">+1 (555) 123-4567</span>
               </div>
               <div className="flex items-center gap-3 text-sm">
                 <Mail className="h-5 w-5 text-shop_orange shrink-0" />
-                <span className="text-gray-900/70">support@wyzar.com</span>
+                <span className="text-white/70">support@wyzar.com</span>
               </div>
             </div>
             {/* Social Links */}
@@ -221,7 +221,7 @@ export default function Footer() {
                 <li key={index}>
                   <Link 
                     href={link.href}
-                    className="text-gray-900/70 hover:text-shop_orange transition-colors text-sm"
+                    className="text-white/70 hover:text-shop_orange transition-colors text-sm"
                   >
                     {link.name}
                   </Link>
@@ -238,7 +238,7 @@ export default function Footer() {
                 <li key={index}>
                   <Link 
                     href={link.href}
-                    className="text-gray-900/70 hover:text-shop_orange transition-colors text-sm"
+                    className="text-white/70 hover:text-shop_orange transition-colors text-sm"
                   >
                     {link.name}
                   </Link>
@@ -255,7 +255,7 @@ export default function Footer() {
                 <li key={index}>
                   <Link 
                     href={link.href}
-                    className="text-gray-900/70 hover:text-shop_orange transition-colors text-sm"
+                    className="text-white/70 hover:text-shop_orange transition-colors text-sm"
                   >
                     {link.name}
                   </Link>
@@ -272,7 +272,7 @@ export default function Footer() {
                 <li key={index}>
                   <Link 
                     href={link.href}
-                    className="text-gray-900/70 hover:text-shop_orange transition-colors text-sm"
+                    className="text-white/70 hover:text-shop_orange transition-colors text-sm"
                   >
                     {link.name}
                   </Link>
@@ -287,17 +287,17 @@ export default function Footer() {
       <div className="border-t border-white/10">
         <Container>
           <div className="py-6 flex flex-col md:flex-row items-center justify-between gap-4">
-            <p className="text-gray-900/60 text-sm text-center md:text-left">
+            <p className="text-white/60 text-sm text-center md:text-left">
               © {new Date().getFullYear()} WyZar. All rights reserved.
             </p>
-            <div className="flex items-center gap-6 text-sm text-gray-900/60">
-              <Link href="/privacy" className="hover:text-gray-900 transition-colors">
+            <div className="flex items-center gap-6 text-sm text-white/60">
+              <Link href="/privacy" className="hover:text-white transition-colors">
                 Privacy Policy
               </Link>
-              <Link href="/terms" className="hover:text-gray-900 transition-colors">
+              <Link href="/terms" className="hover:text-white transition-colors">
                 Terms of Service
               </Link>
-              <Link href="/cookies" className="hover:text-gray-900 transition-colors">
+              <Link href="/cookies" className="hover:text-white transition-colors">
                 Cookie Policy
               </Link>
             </div>

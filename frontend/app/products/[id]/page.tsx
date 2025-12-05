@@ -396,7 +396,7 @@ export default function ProductDetailPage() {
                 <div className="space-y-2">
                   <Button
                     size="lg"
-                    className="w-full text-lg bg-shop_dark_green hover:bg-shop_light_green"
+                    className="w-full text-lg bg-shop_dark_green hover:bg-shop_light_green text-white"
                     disabled={product.quantity === 0}
                     onClick={handleAddToCart}
                   >

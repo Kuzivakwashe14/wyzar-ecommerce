@@ -99,10 +99,10 @@ export default function DashboardPage() {
           </p>
           <div className="flex gap-2">
             <Link href="/dashboard/products/new" passHref>
-              <Button className="bg-shop_dark_green hover:bg-shop_light_green">Add New</Button>
+              <Button className="bg-shop_dark_green hover:bg-shop_light_green text-white">Add New</Button>
             </Link>
             <Link href="/dashboard/products" passHref>
-              <Button variant="outline" className="border-shop_dark_green text-shop_dark_green hover:bg-shop_dark_green hover:text-gray-900">View All</Button>
+              <Button variant="outline" className="border-shop_dark_green text-shop_dark_green hover:bg-shop_dark_green hover:text-white">View All</Button>
             </Link>
           </div>
         </div>
@@ -114,7 +114,7 @@ export default function DashboardPage() {
             See and manage all your customer orders and sales.
           </p>
           <Link href="/dashboard/orders" passHref>
-            <Button className="bg-shop_dark_green hover:bg-shop_light_green">View Orders</Button>
+            <Button className="bg-shop_dark_green hover:bg-shop_light_green text-white">View Orders</Button>
           </Link>
         </div>
 
