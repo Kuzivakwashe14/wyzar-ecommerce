@@ -176,18 +176,18 @@ export default function ProductDetailPage() {
       <div className="container mx-auto py-12">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
           <div className="space-y-4">
-            <div className="aspect-square bg-gray-200 dark:bg-gray-700 rounded-lg animate-pulse" />
+            <div className="aspect-square bg-gray-200 rounded-lg animate-pulse" />
             <div className="grid grid-cols-4 gap-2">
               {[...Array(4)].map((_, i) => (
-                <div key={i} className="aspect-square bg-gray-200 dark:bg-gray-700 rounded animate-pulse" />
+                <div key={i} className="aspect-square bg-gray-200 rounded animate-pulse" />
               ))}
             </div>
           </div>
           <div className="space-y-4">
-            <div className="h-8 bg-gray-200 dark:bg-gray-700 rounded w-3/4 animate-pulse" />
-            <div className="h-6 bg-gray-200 dark:bg-gray-700 rounded w-1/2 animate-pulse" />
-            <div className="h-10 bg-gray-200 dark:bg-gray-700 rounded w-1/4 animate-pulse" />
-            <div className="h-32 bg-gray-200 dark:bg-gray-700 rounded animate-pulse" />
+            <div className="h-8 bg-gray-200 rounded w-3/4 animate-pulse" />
+            <div className="h-6 bg-gray-200 rounded w-1/2 animate-pulse" />
+            <div className="h-10 bg-gray-200 rounded w-1/4 animate-pulse" />
+            <div className="h-32 bg-gray-200 rounded animate-pulse" />
           </div>
         </div>
       </div>
@@ -197,11 +197,11 @@ export default function ProductDetailPage() {
   if (error || !product) {
     return (
       <div className="container mx-auto py-12 text-center">
-        <Card className="max-w-md mx-auto border-gray-200 dark:border-gray-700">
+        <Card className="max-w-md mx-auto border-gray-200">
           <CardContent className="p-12">
             <Package className="mx-auto h-16 w-16 text-shop_dark_green/50 mb-4" />
             <h3 className="text-xl font-semibold mb-2 text-shop_dark_green">Product Not Found</h3>
-            <p className="text-gray-600 dark:text-gray-400 mb-6">{error || "The product you're looking for doesn't exist."}</p>
+            <p className="text-gray-600 mb-6">{error || "The product you're looking for doesn't exist."}</p>
             <Button onClick={() => router.push("/products")} className="bg-shop_dark_green hover:bg-shop_light_green">Browse Products</Button>
           </CardContent>
         </Card>
@@ -210,11 +210,11 @@ export default function ProductDetailPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+    <div className="min-h-screen bg-gray-50">
       {/* Breadcrumb */}
-      <div className="border-b border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800">
+      <div className="border-b border-gray-200 bg-white">
         <div className="container mx-auto px-4 py-4">
-          <nav className="flex items-center space-x-2 text-sm text-gray-600 dark:text-gray-400">
+          <nav className="flex items-center space-x-2 text-sm text-gray-600">
             <Link href="/" className="hover:text-shop_dark_green transition-colors">Home</Link>
             <ChevronRight className="h-4 w-4" />
             <Link href="/products" className="hover:text-shop_dark_green transition-colors">Products</Link>
@@ -233,9 +233,9 @@ export default function ProductDetailPage() {
           {/* Left Column - Images */}
           <div className="lg:col-span-1 space-y-4">
             {/* Main Image */}
-            <Card className="overflow-hidden border-gray-200 dark:border-gray-700">
+            <Card className="overflow-hidden border-gray-200">
               <CardContent className="p-0">
-                <div className="relative w-full aspect-auto min-h-[300px] flex items-center justify-center bg-gray-100 dark:bg-gray-800">
+                <div className="relative w-full aspect-auto min-h-[300px] flex items-center justify-center bg-gray-100">
                   <Image
                     src={getImageUrl(product.images[selectedImage])}
                     alt={`${product.name} - Image ${selectedImage + 1}`}
@@ -258,7 +258,7 @@ export default function ProductDetailPage() {
                   onClick={() => setSelectedImage(index)}
                   className={`relative aspect-square rounded-lg overflow-hidden border-2 transition-all ${selectedImage === index
                     ? 'border-shop_dark_green ring-2 ring-shop_dark_green/20'
-                    : 'border-gray-200 dark:border-gray-700 hover:border-shop_light_green'
+                    : 'border-gray-200 hover:border-shop_light_green'
                     }`}
                 >
                   <Image
@@ -273,25 +273,25 @@ export default function ProductDetailPage() {
             </div>
 
             {/* Product Details Card */}
-            <Card className="border-gray-200 dark:border-gray-700">
+            <Card className="border-gray-200">
               <CardHeader>
                 <CardTitle className="text-shop_dark_green">Product Details</CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <p className="text-sm text-gray-500 dark:text-gray-400">Category</p>
+                    <p className="text-sm text-gray-500">Category</p>
                     <p className="font-medium">{product.category}</p>
                   </div>
                   <div>
-                    <p className="text-sm text-gray-500 dark:text-gray-400">Stock</p>
+                    <p className="text-sm text-gray-500">Stock</p>
                     <p className={`font-medium ${product.quantity > 0 ? 'text-shop_light_green' : 'text-red-600'}`}>
                       {product.quantity > 0 ? `${product.quantity} available` : 'Out of Stock'}
                     </p>
                   </div>
                   {product.deliveryTime && (
                     <div>
-                      <p className="text-sm text-gray-500 dark:text-gray-400">Delivery Time</p>
+                      <p className="text-sm text-gray-500">Delivery Time</p>
                       <p className="font-medium flex items-center gap-1">
                         <Clock className="h-4 w-4 text-shop_orange" />
                         {product.deliveryTime}
@@ -300,7 +300,7 @@ export default function ProductDetailPage() {
                   )}
                   {product.countryOfOrigin && (
                     <div>
-                      <p className="text-sm text-gray-500 dark:text-gray-400">Origin</p>
+                      <p className="text-sm text-gray-500">Origin</p>
                       <p className="font-medium flex items-center gap-1">
                         <MapPin className="h-4 w-4 text-shop_dark_green" />
                         {product.countryOfOrigin}
@@ -313,7 +313,7 @@ export default function ProductDetailPage() {
 
                 <div>
                   <h4 className="font-semibold mb-2 text-shop_dark_green">Description</h4>
-                  <p className="text-gray-600 dark:text-gray-400 whitespace-pre-line leading-relaxed">
+                  <p className="text-gray-600 whitespace-pre-line leading-relaxed">
                     {product.description}
                   </p>
                 </div>
@@ -324,22 +324,22 @@ export default function ProductDetailPage() {
           {/* Right Column - Purchase Info */}
           <div className="lg:col-span-2 space-y-4">
             {/* Product Title & Price Card */}
-            <Card className="border-gray-200 dark:border-gray-700">
+            <Card className="border-gray-200">
               <CardContent className="p-6 space-y-4">
                 <div>
                   <h1 className="text-2xl md:text-3xl font-bold mb-2 text-shop_dark_green">{product.name}</h1>
                   <div className="flex items-center gap-2">
                     <Badge className="bg-shop_dark_green/10 text-shop_dark_green hover:bg-shop_dark_green/20">{product.category}</Badge>
                     {product.rating && product.rating.count > 0 ? (
-                      <div className="flex items-center gap-1 text-sm text-gray-600 dark:text-gray-400">
+                      <div className="flex items-center gap-1 text-sm text-gray-600">
                         <Star className="h-4 w-4 fill-shop_orange text-shop_orange" />
                         <span>{product.rating.average.toFixed(1)}</span>
-                        <span className="text-gray-500 dark:text-gray-500">
+                        <span className="text-gray-500">
                           ({product.rating.count} review{product.rating.count !== 1 ? 's' : ''})
                         </span>
                       </div>
                     ) : (
-                      <div className="flex items-center gap-1 text-sm text-gray-500 dark:text-gray-500">
+                      <div className="flex items-center gap-1 text-sm text-gray-500">
                         <Star className="h-4 w-4 text-gray-300" />
                         <span>No reviews yet</span>
                       </div>
@@ -350,7 +350,7 @@ export default function ProductDetailPage() {
                 <Separator />
 
                 <div>
-                  <p className="text-sm text-gray-500 dark:text-gray-400 mb-1">Price</p>
+                  <p className="text-sm text-gray-500 mb-1">Price</p>
                   <p className="text-4xl font-bold text-shop_orange">
                     ${product.price.toFixed(2)}
                   </p>
@@ -382,7 +382,7 @@ export default function ProductDetailPage() {
                         >
                           <PlusIcon className="h-4 w-4" />
                         </Button>
-                        <span className="text-sm text-gray-500 dark:text-gray-400">
+                        <span className="text-sm text-gray-500">
                           {product.quantity} available
                         </span>
                       </div>
@@ -424,7 +424,7 @@ export default function ProductDetailPage() {
                       variant="outline" 
                       size="lg" 
                       onClick={handleShare}
-                      className="border-gray-300 dark:border-gray-600 hover:bg-gray-100 dark:hover:bg-gray-700"
+                      className="border-gray-300 hover:bg-gray-100"
                     >
                       <Share2 className="mr-2 h-4 w-4" />
                       Share
@@ -437,7 +437,7 @@ export default function ProductDetailPage() {
 
 
             {/* Trust Badges */}
-            <Card className="border-gray-200 dark:border-gray-700">
+            <Card className="border-gray-200">
               <CardContent className="p-4 space-y-3">
                 <div className="flex items-center gap-3 text-sm">
                   <Shield className="h-5 w-5 text-shop_light_green" />
