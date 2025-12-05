@@ -214,7 +214,7 @@ export default function PendingSellersPage() {
       <div className="flex items-center justify-center h-full">
         <div className="text-center">
           <div className="h-12 w-12 animate-spin rounded-full border-4 border-indigo-500 border-t-transparent mx-auto mb-4"></div>
-          <p className="text-slate-400">Loading pending sellers...</p>
+          <p className="text-gray-600">Loading pending sellers...</p>
         </div>
       </div>
     );
@@ -224,8 +224,8 @@ export default function PendingSellersPage() {
     <div className="space-y-6">
       {/* Header */}
       <div>
-        <h1 className="text-3xl font-bold text-white mb-2">Pending Seller Verifications</h1>
-        <p className="text-slate-400">Review and approve seller applications</p>
+        <h1 className="text-3xl font-bold text-gray-900 mb-2">Pending Seller Verifications</h1>
+        <p className="text-gray-600">Review and approve seller applications</p>
       </div>
 
       {/* Count */}
@@ -238,23 +238,23 @@ export default function PendingSellersPage() {
 
       {/* Sellers List */}
       {sellers.length === 0 ? (
-        <div className="bg-slate-950 border border-slate-800 rounded-xl p-12 text-center">
+        <div className="bg-white border border-gray-200 rounded-xl p-12 text-center">
           <CheckCircle className="w-16 h-16 text-green-500 mx-auto mb-4" />
-          <h3 className="text-xl font-semibold text-white mb-2">All Caught Up!</h3>
-          <p className="text-slate-400">There are no pending seller verifications at the moment.</p>
+          <h3 className="text-xl font-semibold text-gray-900 mb-2">All Caught Up!</h3>
+          <p className="text-gray-600">There are no pending seller verifications at the moment.</p>
         </div>
       ) : (
         <div className="grid grid-cols-1 gap-6">
           {sellers.map((seller) => (
             <div
               key={seller._id}
-              className="bg-slate-950 border border-slate-800 rounded-xl p-6 hover:border-indigo-500 transition-all"
+              className="bg-white border border-gray-200 rounded-xl p-6 hover:border-indigo-500 transition-all"
             >
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 {/* Seller Information */}
                 <div className="space-y-4">
                   <div>
-                    <h3 className="text-xl font-bold text-white mb-2">
+                    <h3 className="text-xl font-bold text-gray-900 mb-2">
                       {seller.sellerDetails?.businessName || 'No business name'}
                     </h3>
                     <span className="px-3 py-1 bg-blue-500/10 text-blue-400 text-sm rounded-full">
@@ -263,24 +263,24 @@ export default function PendingSellersPage() {
                   </div>
 
                   <div className="space-y-2">
-                    <div className="flex items-center gap-2 text-slate-300">
-                      <Mail className="w-4 h-4 text-slate-500" />
+                    <div className="flex items-center gap-2 text-gray-700">
+                      <Mail className="w-4 h-4 text-gray-500" />
                       <span className="text-sm">{seller.email}</span>
                       {seller.isEmailVerified && (
                         <CheckCircle className="w-4 h-4 text-green-400" />
                       )}
                     </div>
 
-                    <div className="flex items-center gap-2 text-slate-300">
-                      <Phone className="w-4 h-4 text-slate-500" />
+                    <div className="flex items-center gap-2 text-gray-700">
+                      <Phone className="w-4 h-4 text-gray-500" />
                       <span className="text-sm">{seller.phone}</span>
                       {seller.isPhoneVerified && (
                         <CheckCircle className="w-4 h-4 text-green-400" />
                       )}
                     </div>
 
-                    <div className="flex items-center gap-2 text-slate-300">
-                      <Calendar className="w-4 h-4 text-slate-500" />
+                    <div className="flex items-center gap-2 text-gray-700">
+                      <Calendar className="w-4 h-4 text-gray-500" />
                       <span className="text-sm">
                         Applied {new Date(seller.createdAt).toLocaleDateString()}
                       </span>
@@ -293,7 +293,7 @@ export default function PendingSellersPage() {
                           seller.sellerDetails.verificationStatus === 'approved' ? 'bg-green-500/10 text-green-400' :
                           seller.sellerDetails.verificationStatus === 'rejected' ? 'bg-red-500/10 text-red-400' :
                           seller.sellerDetails.verificationStatus === 'under_review' ? 'bg-amber-500/10 text-amber-400' :
-                          'bg-slate-500/10 text-slate-400'
+                          'bg-slate-500/10 text-gray-600'
                         }`}>
                           {seller.sellerDetails.verificationStatus.replace('_', ' ').toUpperCase()}
                         </span>
@@ -304,23 +304,23 @@ export default function PendingSellersPage() {
 
                 {/* Verification Documents Section */}
                 <div className="col-span-1 md:col-span-2 space-y-4">
-                  <h4 className="text-lg font-semibold text-white">Verification Documents</h4>
+                  <h4 className="text-lg font-semibold text-gray-900">Verification Documents</h4>
 
                   {seller.sellerDetails?.verificationDocuments && seller.sellerDetails.verificationDocuments.length > 0 ? (
                     <div className="space-y-3">
                       {seller.sellerDetails.verificationDocuments.map((doc) => (
                         <div
                           key={doc._id}
-                          className="bg-slate-900 border border-slate-700 rounded-lg p-4"
+                          className="bg-gray-50 border border-gray-300 rounded-lg p-4"
                         >
                           <div className="flex items-start justify-between mb-3">
                             <div className="flex items-center gap-3">
                               <FileText className="w-5 h-5 text-indigo-400" />
                               <div>
-                                <h5 className="font-medium text-white">
+                                <h5 className="font-medium text-gray-900">
                                   {getDocumentTypeLabel(doc.documentType)}
                                 </h5>
-                                <p className="text-xs text-slate-400">
+                                <p className="text-xs text-gray-600">
                                   Uploaded {new Date(doc.uploadedAt).toLocaleDateString()}
                                 </p>
                               </div>
@@ -342,7 +342,7 @@ export default function PendingSellersPage() {
                               View Document →
                             </button>
                             {doc.documentName && (
-                              <span className="text-xs text-slate-500">
+                              <span className="text-xs text-gray-500">
                                 {doc.documentName}
                               </span>
                             )}
@@ -360,7 +360,7 @@ export default function PendingSellersPage() {
                             <div className="space-y-3">
                               {expandedDocuments.has(doc._id) && (
                                 <div>
-                                  <label className="block text-sm font-medium text-slate-300 mb-2">
+                                  <label className="block text-sm font-medium text-gray-700 mb-2">
                                     Rejection Reason
                                   </label>
                                   <textarea
@@ -369,7 +369,7 @@ export default function PendingSellersPage() {
                                       ...prev,
                                       [doc._id]: e.target.value
                                     }))}
-                                    className="w-full px-3 py-2 bg-slate-800 border border-slate-600 rounded text-white placeholder-slate-500 focus:outline-none focus:border-indigo-500 text-sm"
+                                    className="w-full px-3 py-2 bg-gray-100 border border-gray-300 rounded text-gray-900 placeholder-gray-400 focus:outline-none focus:border-shop_dark_green text-sm"
                                     rows={2}
                                     placeholder="Provide a reason for rejection..."
                                   />
@@ -380,7 +380,7 @@ export default function PendingSellersPage() {
                                 <button
                                   onClick={() => handleDocumentApprove(seller._id, doc._id)}
                                   disabled={processing === `${seller._id}-${doc._id}`}
-                                  className="flex-1 flex items-center justify-center gap-2 px-4 py-2 bg-green-600 hover:bg-green-700 disabled:bg-slate-700 text-white rounded text-sm font-medium transition-all"
+                                  className="flex-1 flex items-center justify-center gap-2 px-4 py-2 bg-green-600 hover:bg-green-700 disabled:bg-gray-200 text-gray-900 rounded text-sm font-medium transition-all"
                                 >
                                   {processing === `${seller._id}-${doc._id}` ? (
                                     <>
@@ -400,14 +400,14 @@ export default function PendingSellersPage() {
                                     <button
                                       onClick={() => handleDocumentReject(seller._id, doc._id)}
                                       disabled={processing === `${seller._id}-${doc._id}`}
-                                      className="flex-1 flex items-center justify-center gap-2 px-4 py-2 bg-red-600 hover:bg-red-700 disabled:bg-slate-700 text-white rounded text-sm font-medium transition-all"
+                                      className="flex-1 flex items-center justify-center gap-2 px-4 py-2 bg-red-600 hover:bg-red-700 disabled:bg-gray-200 text-gray-900 rounded text-sm font-medium transition-all"
                                     >
                                       <XCircle className="w-4 h-4" />
                                       Confirm Reject
                                     </button>
                                     <button
                                       onClick={() => toggleDocumentExpansion(doc._id)}
-                                      className="px-4 py-2 bg-slate-700 hover:bg-slate-600 text-white rounded text-sm font-medium transition-all"
+                                      className="px-4 py-2 bg-gray-200 hover:bg-gray-300 text-gray-900 rounded text-sm font-medium transition-all"
                                     >
                                       Cancel
                                     </button>
@@ -416,7 +416,7 @@ export default function PendingSellersPage() {
                                   <button
                                     onClick={() => toggleDocumentExpansion(doc._id)}
                                     disabled={processing === `${seller._id}-${doc._id}`}
-                                    className="flex-1 flex items-center justify-center gap-2 px-4 py-2 bg-slate-700 hover:bg-slate-600 disabled:bg-slate-800 text-white rounded text-sm font-medium transition-all"
+                                    className="flex-1 flex items-center justify-center gap-2 px-4 py-2 bg-gray-200 hover:bg-gray-300 disabled:bg-gray-100 text-gray-900 rounded text-sm font-medium transition-all"
                                   >
                                     <XCircle className="w-4 h-4" />
                                     Reject
@@ -429,9 +429,9 @@ export default function PendingSellersPage() {
                       ))}
                     </div>
                   ) : (
-                    <div className="bg-slate-900 border border-slate-700 rounded-lg p-6 text-center">
-                      <FileText className="w-12 h-12 text-slate-600 mx-auto mb-3" />
-                      <p className="text-slate-400">No verification documents uploaded</p>
+                    <div className="bg-gray-50 border border-gray-300 rounded-lg p-6 text-center">
+                      <FileText className="w-12 h-12 text-gray-400 mx-auto mb-3" />
+                      <p className="text-gray-600">No verification documents uploaded</p>
                     </div>
                   )}
                 </div>
@@ -441,13 +441,13 @@ export default function PendingSellersPage() {
                   {/* Reject Reason Input */}
                   {selectedSeller?._id === seller._id && (
                     <div>
-                      <label className="block text-sm font-medium text-slate-300 mb-2">
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
                         Rejection Reason
                       </label>
                       <textarea
                         value={rejectReason}
                         onChange={(e) => setRejectReason(e.target.value)}
-                        className="w-full px-4 py-2 bg-slate-900 border border-slate-700 rounded-lg text-white placeholder-slate-500 focus:outline-none focus:border-indigo-500"
+                        className="w-full px-4 py-2 bg-gray-50 border border-gray-300 rounded-lg text-gray-900 placeholder-gray-400 focus:outline-none focus:border-shop_dark_green"
                         rows={3}
                         placeholder="Provide a reason for rejection..."
                       />
@@ -459,7 +459,7 @@ export default function PendingSellersPage() {
                     <button
                       onClick={() => handleApprove(seller._id)}
                       disabled={processing === seller._id}
-                      className="flex items-center justify-center gap-2 px-6 py-3 bg-green-600 hover:bg-green-700 disabled:bg-slate-700 text-white rounded-lg font-medium transition-all"
+                      className="flex items-center justify-center gap-2 px-6 py-3 bg-green-600 hover:bg-green-700 disabled:bg-gray-200 text-gray-900 rounded-lg font-medium transition-all"
                     >
                       {processing === seller._id ? (
                         <>
@@ -479,7 +479,7 @@ export default function PendingSellersPage() {
                         <button
                           onClick={() => handleReject(seller._id)}
                           disabled={processing === seller._id}
-                          className="flex-1 flex items-center justify-center gap-2 px-6 py-3 bg-red-600 hover:bg-red-700 disabled:bg-slate-700 text-white rounded-lg font-medium transition-all"
+                          className="flex-1 flex items-center justify-center gap-2 px-6 py-3 bg-red-600 hover:bg-red-700 disabled:bg-gray-200 text-gray-900 rounded-lg font-medium transition-all"
                         >
                           <XCircle className="w-5 h-5" />
                           Confirm Reject
@@ -489,7 +489,7 @@ export default function PendingSellersPage() {
                             setSelectedSeller(null);
                             setRejectReason('');
                           }}
-                          className="px-6 py-3 bg-slate-700 hover:bg-slate-600 text-white rounded-lg font-medium transition-all"
+                          className="px-6 py-3 bg-gray-200 hover:bg-gray-300 text-gray-900 rounded-lg font-medium transition-all"
                         >
                           Cancel
                         </button>
@@ -498,7 +498,7 @@ export default function PendingSellersPage() {
                       <button
                         onClick={() => setSelectedSeller(seller)}
                         disabled={processing === seller._id}
-                        className="flex items-center justify-center gap-2 px-6 py-3 bg-slate-700 hover:bg-slate-600 disabled:bg-slate-800 text-white rounded-lg font-medium transition-all"
+                        className="flex items-center justify-center gap-2 px-6 py-3 bg-gray-200 hover:bg-gray-300 disabled:bg-gray-100 text-gray-900 rounded-lg font-medium transition-all"
                       >
                         <XCircle className="w-5 h-5" />
                         Reject Application
@@ -507,12 +507,12 @@ export default function PendingSellersPage() {
                   </div>
 
                   {/* Verification Status */}
-                  <div className="p-4 bg-slate-900 rounded-lg space-y-2">
-                    <p className="text-xs text-slate-500 uppercase font-semibold mb-3">
+                  <div className="p-4 bg-gray-50 rounded-lg space-y-2">
+                    <p className="text-xs text-gray-500 uppercase font-semibold mb-3">
                       Verification Status
                     </p>
                     <div className="flex items-center justify-between">
-                      <span className="text-sm text-slate-300">Email Verified</span>
+                      <span className="text-sm text-gray-700">Email Verified</span>
                       {seller.isEmailVerified ? (
                         <CheckCircle className="w-5 h-5 text-green-400" />
                       ) : (
@@ -520,7 +520,7 @@ export default function PendingSellersPage() {
                       )}
                     </div>
                     <div className="flex items-center justify-between">
-                      <span className="text-sm text-slate-300">Phone Verified</span>
+                      <span className="text-sm text-gray-700">Phone Verified</span>
                       {seller.isPhoneVerified ? (
                         <CheckCircle className="w-5 h-5 text-green-400" />
                       ) : (
@@ -528,7 +528,7 @@ export default function PendingSellersPage() {
                       )}
                     </div>
                     <div className="flex items-center justify-between">
-                      <span className="text-sm text-slate-300">Documents</span>
+                      <span className="text-sm text-gray-700">Documents</span>
                       <div className="flex items-center gap-2">
                         {(() => {
                           const docs = seller.sellerDetails?.verificationDocuments || [];
@@ -547,7 +547,7 @@ export default function PendingSellersPage() {
                                 <span className="text-red-400">{rejected} ✗</span>
                               )}
                               {docs.length === 0 && (
-                                <span className="text-slate-500">None</span>
+                                <span className="text-gray-500">None</span>
                               )}
                             </div>
                           );
@@ -564,3 +564,4 @@ export default function PendingSellersPage() {
     </div>
   );
 }
+

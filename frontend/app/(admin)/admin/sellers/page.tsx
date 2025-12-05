@@ -7,8 +7,8 @@ export default function SellersPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-3xl font-bold text-white mb-2">Sellers</h1>
-        <p className="text-slate-400">Manage all sellers on the platform</p>
+        <h1 className="text-3xl font-bold text-gray-900 mb-2">Sellers</h1>
+        <p className="text-gray-600">Manage all sellers on the platform</p>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -18,23 +18,24 @@ export default function SellersPage() {
         >
           <div className="flex items-center justify-between mb-4">
             <div className="p-3 bg-white/10 rounded-lg">
-              <Store className="w-8 h-8 text-white" />
+              <Store className="w-8 h-8 text-gray-900" />
             </div>
-            <ArrowRight className="w-6 h-6 text-white/60 group-hover:text-white group-hover:translate-x-1 transition-all" />
+            <ArrowRight className="w-6 h-6 text-gray-900/60 group-hover:text-gray-900 group-hover:translate-x-1 transition-all" />
           </div>
-          <h2 className="text-2xl font-bold text-white mb-2">Pending Verifications</h2>
+          <h2 className="text-2xl font-bold text-gray-900 mb-2">Pending Verifications</h2>
           <p className="text-amber-100">Review and approve seller applications</p>
         </Link>
 
-        <div className="bg-slate-950 border border-slate-800 rounded-xl p-8">
+        <div className="bg-white border border-gray-200 rounded-xl p-8">
           <div className="p-3 bg-green-500/10 rounded-lg w-fit mb-4">
             <Store className="w-8 h-8 text-green-500" />
           </div>
-          <h2 className="text-2xl font-bold text-white mb-2">Verified Sellers</h2>
-          <p className="text-slate-400 mb-4">View all verified sellers</p>
-          <p className="text-slate-500 text-sm">Coming soon...</p>
+          <h2 className="text-2xl font-bold text-gray-900 mb-2">Verified Sellers</h2>
+          <p className="text-gray-600 mb-4">View all verified sellers</p>
+          <p className="text-gray-500 text-sm">Coming soon...</p>
         </div>
       </div>
     </div>
   );
 }
+

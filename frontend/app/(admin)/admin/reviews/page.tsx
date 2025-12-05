@@ -103,7 +103,7 @@ export default function ReviewsPage() {
       <div className="flex items-center justify-center h-full">
         <div className="text-center">
           <div className="h-12 w-12 animate-spin rounded-full border-4 border-indigo-500 border-t-transparent mx-auto mb-4"></div>
-          <p className="text-slate-400">Loading reviews...</p>
+          <p className="text-gray-600">Loading reviews...</p>
         </div>
       </div>
     );
@@ -113,21 +113,21 @@ export default function ReviewsPage() {
     <div className="space-y-6">
       {/* Header */}
       <div>
-        <h1 className="text-3xl font-bold text-white mb-2">Review Management</h1>
-        <p className="text-slate-400">Manage and moderate customer reviews</p>
+        <h1 className="text-3xl font-bold text-gray-900 mb-2">Review Management</h1>
+        <p className="text-gray-600">Manage and moderate customer reviews</p>
       </div>
 
       {/* Filters */}
-      <div className="bg-slate-950 border border-slate-800 rounded-xl p-4">
+      <div className="bg-white border border-gray-200 rounded-xl p-4">
         <div className="flex items-center gap-4">
-          <label className="text-slate-400 text-sm">Filter by Status:</label>
+          <label className="text-gray-600 text-sm">Filter by Status:</label>
           <select
             value={statusFilter}
             onChange={(e) => {
               setStatusFilter(e.target.value);
               setCurrentPage(1);
             }}
-            className="px-4 py-2 bg-slate-900 border border-slate-700 rounded-lg text-white focus:outline-none focus:border-indigo-500"
+            className="px-4 py-2 bg-gray-50 border border-gray-300 rounded-lg text-gray-900 focus:outline-none focus:border-shop_dark_green"
           >
             <option value="">All Reviews</option>
             <option value="approved">Approved</option>
@@ -137,49 +137,49 @@ export default function ReviewsPage() {
       </div>
 
       {/* Reviews Table */}
-      <div className="bg-slate-950 border border-slate-800 rounded-xl overflow-hidden">
+      <div className="bg-white border border-gray-200 rounded-xl overflow-hidden">
         {reviews.length === 0 ? (
           <div className="text-center py-12">
-            <p className="text-slate-400">No reviews found</p>
+            <p className="text-gray-600">No reviews found</p>
           </div>
         ) : (
           <>
             <div className="overflow-x-auto">
               <table className="w-full">
-                <thead className="bg-slate-900">
+                <thead className="bg-gray-50">
                   <tr>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-slate-400 uppercase">
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-600 uppercase">
                       Product
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-slate-400 uppercase">
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-600 uppercase">
                       User
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-slate-400 uppercase">
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-600 uppercase">
                       Rating
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-slate-400 uppercase">
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-600 uppercase">
                       Review
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-slate-400 uppercase">
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-600 uppercase">
                       Status
                     </th>
-                    <th className="px-6 py-3 text-right text-xs font-medium text-slate-400 uppercase">
+                    <th className="px-6 py-3 text-right text-xs font-medium text-gray-600 uppercase">
                       Actions
                     </th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-800">
+                <tbody className="divide-y divide-gray-200">
                   {reviews.map((review) => (
                     <tr
                       key={review._id}
-                      className="hover:bg-slate-900 transition-colors cursor-pointer"
+                      className="hover:bg-gray-50 transition-colors cursor-pointer"
                       onClick={() => setSelectedReview(review)}
                     >
                       <td className="px-6 py-4">
-                        <p className="text-white font-medium">{review.product.name}</p>
+                        <p className="text-gray-900 font-medium">{review.product.name}</p>
                       </td>
                       <td className="px-6 py-4">
-                        <p className="text-slate-300 text-sm">{review.user.email}</p>
+                        <p className="text-gray-700 text-sm">{review.user.email}</p>
                         {review.verifiedPurchase && (
                           <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-green-500/10 text-green-400 text-xs rounded mt-1">
                             <CheckCircle className="w-3 h-3" />
@@ -191,9 +191,9 @@ export default function ReviewsPage() {
                       <td className="px-6 py-4">
                         <div className="max-w-md">
                           {review.title && (
-                            <p className="text-white font-medium mb-1">{review.title}</p>
+                            <p className="text-gray-900 font-medium mb-1">{review.title}</p>
                           )}
-                          <p className="text-slate-400 text-sm line-clamp-2">
+                          <p className="text-gray-600 text-sm line-clamp-2">
                             {review.comment}
                           </p>
                         </div>
@@ -219,7 +219,7 @@ export default function ReviewsPage() {
                                 e.stopPropagation();
                                 handleApprove(review._id, true);
                               }}
-                              className="px-3 py-1 bg-green-600 hover:bg-green-700 text-white text-sm rounded transition-all"
+                              className="px-3 py-1 bg-green-600 hover:bg-green-700 text-gray-900 text-sm rounded transition-all"
                             >
                               Approve
                             </button>
@@ -230,7 +230,7 @@ export default function ReviewsPage() {
                                 e.stopPropagation();
                                 handleApprove(review._id, false);
                               }}
-                              className="px-3 py-1 bg-yellow-600 hover:bg-yellow-700 text-white text-sm rounded transition-all"
+                              className="px-3 py-1 bg-yellow-600 hover:bg-yellow-700 text-gray-900 text-sm rounded transition-all"
                             >
                               Reject
                             </button>
@@ -240,7 +240,7 @@ export default function ReviewsPage() {
                               e.stopPropagation();
                               handleDelete(review._id);
                             }}
-                            className="px-3 py-1 bg-red-600 hover:bg-red-700 text-white text-sm rounded transition-all"
+                            className="px-3 py-1 bg-red-600 hover:bg-red-700 text-gray-900 text-sm rounded transition-all"
                           >
                             <Trash2 className="w-4 h-4" />
                           </button>
@@ -254,22 +254,22 @@ export default function ReviewsPage() {
 
             {/* Pagination */}
             {totalPages > 1 && (
-              <div className="bg-slate-900 px-6 py-4 flex items-center justify-between border-t border-slate-800">
-                <div className="text-sm text-slate-400">
+              <div className="bg-gray-50 px-6 py-4 flex items-center justify-between border-t border-gray-200">
+                <div className="text-sm text-gray-600">
                   Page {currentPage} of {totalPages}
                 </div>
                 <div className="flex items-center gap-2">
                   <button
                     onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
                     disabled={currentPage === 1}
-                    className="p-2 rounded-lg bg-slate-800 hover:bg-slate-700 disabled:opacity-50 disabled:cursor-not-allowed text-white transition-all"
+                    className="p-2 rounded-lg bg-gray-100 hover:bg-gray-200 disabled:opacity-50 disabled:cursor-not-allowed text-gray-900 transition-all"
                   >
                     Previous
                   </button>
                   <button
                     onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
                     disabled={currentPage === totalPages}
-                    className="p-2 rounded-lg bg-slate-800 hover:bg-slate-700 disabled:opacity-50 disabled:cursor-not-allowed text-white transition-all"
+                    className="p-2 rounded-lg bg-gray-100 hover:bg-gray-200 disabled:opacity-50 disabled:cursor-not-allowed text-gray-900 transition-all"
                   >
                     Next
                   </button>
@@ -283,13 +283,13 @@ export default function ReviewsPage() {
       {/* Review Detail Modal */}
       {selectedReview && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-slate-900 border border-slate-800 rounded-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+          <div className="bg-gray-50 border border-gray-200 rounded-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
             <div className="p-6">
               <div className="flex items-center justify-between mb-4">
-                <h2 className="text-2xl font-bold text-white">Review Details</h2>
+                <h2 className="text-2xl font-bold text-gray-900">Review Details</h2>
                 <button
                   onClick={() => setSelectedReview(null)}
-                  className="text-slate-400 hover:text-white"
+                  className="text-gray-600 hover:text-gray-900"
                 >
                   <XCircle className="w-6 h-6" />
                 </button>
@@ -297,13 +297,13 @@ export default function ReviewsPage() {
 
               <div className="space-y-4">
                 <div>
-                  <p className="text-slate-400 text-sm mb-1">Product</p>
-                  <p className="text-white font-medium">{selectedReview.product.name}</p>
+                  <p className="text-gray-600 text-sm mb-1">Product</p>
+                  <p className="text-gray-900 font-medium">{selectedReview.product.name}</p>
                 </div>
 
                 <div>
-                  <p className="text-slate-400 text-sm mb-1">User</p>
-                  <p className="text-white">{selectedReview.user.email}</p>
+                  <p className="text-gray-600 text-sm mb-1">User</p>
+                  <p className="text-gray-900">{selectedReview.user.email}</p>
                   {selectedReview.verifiedPurchase && (
                     <span className="inline-flex items-center gap-1 px-2 py-1 bg-green-500/10 text-green-400 text-xs rounded mt-1">
                       <CheckCircle className="w-3 h-3" />
@@ -313,24 +313,24 @@ export default function ReviewsPage() {
                 </div>
 
                 <div>
-                  <p className="text-slate-400 text-sm mb-1">Rating</p>
+                  <p className="text-gray-600 text-sm mb-1">Rating</p>
                   {renderStars(selectedReview.rating)}
                 </div>
 
                 {selectedReview.title && (
                   <div>
-                    <p className="text-slate-400 text-sm mb-1">Title</p>
-                    <p className="text-white font-medium">{selectedReview.title}</p>
+                    <p className="text-gray-600 text-sm mb-1">Title</p>
+                    <p className="text-gray-900 font-medium">{selectedReview.title}</p>
                   </div>
                 )}
 
                 <div>
-                  <p className="text-slate-400 text-sm mb-1">Review</p>
-                  <p className="text-white whitespace-pre-wrap">{selectedReview.comment}</p>
+                  <p className="text-gray-600 text-sm mb-1">Review</p>
+                  <p className="text-gray-900 whitespace-pre-wrap">{selectedReview.comment}</p>
                 </div>
 
                 <div>
-                  <p className="text-slate-400 text-sm mb-1">Status</p>
+                  <p className="text-gray-600 text-sm mb-1">Status</p>
                   {selectedReview.isApproved ? (
                     <span className="inline-flex items-center gap-1 px-2 py-1 bg-green-500/10 text-green-400 text-xs rounded">
                       <CheckCircle className="w-3 h-3" />
@@ -345,17 +345,17 @@ export default function ReviewsPage() {
                 </div>
 
                 <div>
-                  <p className="text-slate-400 text-sm mb-1">Date</p>
-                  <p className="text-white text-sm">
+                  <p className="text-gray-600 text-sm mb-1">Date</p>
+                  <p className="text-gray-900 text-sm">
                     {new Date(selectedReview.createdAt).toLocaleString()}
                   </p>
                 </div>
 
-                <div className="flex items-center gap-2 pt-4 border-t border-slate-800">
+                <div className="flex items-center gap-2 pt-4 border-t border-gray-200">
                   {!selectedReview.isApproved && (
                     <button
                       onClick={() => handleApprove(selectedReview._id, true)}
-                      className="flex-1 px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded transition-all"
+                      className="flex-1 px-4 py-2 bg-green-600 hover:bg-green-700 text-gray-900 rounded transition-all"
                     >
                       Approve
                     </button>
@@ -363,14 +363,14 @@ export default function ReviewsPage() {
                   {selectedReview.isApproved && (
                     <button
                       onClick={() => handleApprove(selectedReview._id, false)}
-                      className="flex-1 px-4 py-2 bg-yellow-600 hover:bg-yellow-700 text-white rounded transition-all"
+                      className="flex-1 px-4 py-2 bg-yellow-600 hover:bg-yellow-700 text-gray-900 rounded transition-all"
                     >
                       Reject
                     </button>
                   )}
                   <button
                     onClick={() => handleDelete(selectedReview._id)}
-                    className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded transition-all"
+                    className="px-4 py-2 bg-red-600 hover:bg-red-700 text-gray-900 rounded transition-all"
                   >
                     <Trash2 className="w-4 h-4" />
                   </button>
@@ -383,4 +383,5 @@ export default function ReviewsPage() {
     </div>
   );
 }
+
 

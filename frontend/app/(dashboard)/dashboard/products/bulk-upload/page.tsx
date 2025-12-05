@@ -159,3 +159,4 @@ const BulkUploadPage = () => {
 };
 
 export default BulkUploadPage;
+

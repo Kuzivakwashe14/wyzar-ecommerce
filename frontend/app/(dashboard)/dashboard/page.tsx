@@ -102,7 +102,7 @@ export default function DashboardPage() {
               <Button className="bg-shop_dark_green hover:bg-shop_light_green">Add New</Button>
             </Link>
             <Link href="/dashboard/products" passHref>
-              <Button variant="outline" className="border-shop_dark_green text-shop_dark_green hover:bg-shop_dark_green hover:text-white">View All</Button>
+              <Button variant="outline" className="border-shop_dark_green text-shop_dark_green hover:bg-shop_dark_green hover:text-gray-900">View All</Button>
             </Link>
           </div>
         </div>

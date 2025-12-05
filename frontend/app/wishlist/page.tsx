@@ -95,7 +95,7 @@ export default function WishlistPage() {
               <Button
                 variant="outline"
                 onClick={handleAddAllToCart}
-                className="border-shop_dark_green text-shop_dark_green hover:bg-shop_dark_green hover:text-white"
+                className="border-shop_dark_green text-shop_dark_green hover:bg-shop_dark_green hover:text-gray-900"
               >
                 <ShoppingCart className="h-4 w-4 mr-2" />
                 Add All to Cart
@@ -103,7 +103,7 @@ export default function WishlistPage() {
               <Button
                 variant="outline"
                 onClick={handleClearWishlist}
-                className="border-red-500 text-red-500 hover:bg-red-500 hover:text-white"
+                className="border-red-500 text-red-500 hover:bg-red-500 hover:text-gray-900"
               >
                 <Trash2 className="h-4 w-4 mr-2" />
                 Clear All
@@ -127,7 +127,7 @@ export default function WishlistPage() {
                   Save items you love to your wishlist. Review them anytime and easily add them to your cart.
                 </p>
                 <Link href="/products">
-                  <Button className="bg-shop_dark_green hover:bg-shop_light_green text-white">
+                  <Button className="bg-shop_dark_green hover:bg-shop_light_green text-gray-900">
                     <ShoppingBag className="h-4 w-4 mr-2" />
                     Start Shopping
                   </Button>
@@ -156,7 +156,7 @@ export default function WishlistPage() {
                   {/* Remove from Wishlist */}
                   <button
                     onClick={() => handleRemove(product._id, product.name)}
-                    className="absolute top-3 right-3 h-9 w-9 rounded-full bg-white shadow-md flex items-center justify-center text-red-500 hover:bg-red-500 hover:text-white transition-colors"
+                    className="absolute top-3 right-3 h-9 w-9 rounded-full bg-white shadow-md flex items-center justify-center text-red-500 hover:bg-red-500 hover:text-gray-900 transition-colors"
                   >
                     <Trash2 className="h-4 w-4" />
                   </button>
@@ -164,7 +164,7 @@ export default function WishlistPage() {
                   {/* Stock Status */}
                   {product.quantity === 0 && (
                     <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
-                      <span className="bg-red-500 text-white px-4 py-2 rounded-full text-sm font-medium">
+                      <span className="bg-red-500 text-gray-900 px-4 py-2 rounded-full text-sm font-medium">
                         Out of Stock
                       </span>
                     </div>
@@ -203,7 +203,7 @@ export default function WishlistPage() {
                       size="sm"
                       onClick={() => handleAddToCart(product)}
                       disabled={product.quantity === 0}
-                      className="bg-shop_dark_green hover:bg-shop_light_green text-white"
+                      className="bg-shop_dark_green hover:bg-shop_light_green text-gray-900"
                     >
                       <ShoppingCart className="h-4 w-4 mr-1" />
                       Add
@@ -225,3 +225,4 @@ export default function WishlistPage() {
     </div>
   );
 }
+

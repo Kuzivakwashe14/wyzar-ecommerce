@@ -107,44 +107,44 @@ export default function ProductsPage() {
     <div className="space-y-6">
       {/* Header */}
       <div>
-        <h1 className="text-3xl font-bold text-white mb-2">Product Management</h1>
-        <p className="text-slate-400">Manage all products on the platform</p>
+        <h1 className="text-3xl font-bold text-gray-900 mb-2">Product Management</h1>
+        <p className="text-gray-600">Manage all products on the platform</p>
       </div>
 
       {/* Stats */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <div className="bg-slate-950 border border-slate-800 rounded-lg p-4">
+        <div className="bg-white border border-gray-200 rounded-lg p-4">
           <div className="flex items-center gap-3">
             <div className="p-3 bg-purple-500/10 rounded-lg">
               <Package className="w-6 h-6 text-purple-500" />
             </div>
             <div>
-              <p className="text-slate-400 text-sm">Total Products</p>
-              <p className="text-2xl font-bold text-white">{totalProducts}</p>
+              <p className="text-gray-600 text-sm">Total Products</p>
+              <p className="text-2xl font-bold text-gray-900">{totalProducts}</p>
             </div>
           </div>
         </div>
-        <div className="bg-slate-950 border border-slate-800 rounded-lg p-4">
+        <div className="bg-white border border-gray-200 rounded-lg p-4">
           <div className="flex items-center gap-3">
             <div className="p-3 bg-amber-500/10 rounded-lg">
               <Star className="w-6 h-6 text-amber-500" />
             </div>
             <div>
-              <p className="text-slate-400 text-sm">Featured</p>
-              <p className="text-2xl font-bold text-white">
+              <p className="text-gray-600 text-sm">Featured</p>
+              <p className="text-2xl font-bold text-gray-900">
                 {products.filter(p => p.featured).length}
               </p>
             </div>
           </div>
         </div>
-        <div className="bg-slate-950 border border-slate-800 rounded-lg p-4">
+        <div className="bg-white border border-gray-200 rounded-lg p-4">
           <div className="flex items-center gap-3">
             <div className="p-3 bg-green-500/10 rounded-lg">
               <DollarSign className="w-6 h-6 text-green-500" />
             </div>
             <div>
-              <p className="text-slate-400 text-sm">Avg Price</p>
-              <p className="text-2xl font-bold text-white">
+              <p className="text-gray-600 text-sm">Avg Price</p>
+              <p className="text-2xl font-bold text-gray-900">
                 ${products.length > 0 ? (products.reduce((sum, p) => sum + p.price, 0) / products.length).toFixed(2) : '0'}
               </p>
             </div>
@@ -153,12 +153,12 @@ export default function ProductsPage() {
       </div>
 
       {/* Search and Filters */}
-      <div className="bg-slate-950 border border-slate-800 rounded-xl p-4">
+      <div className="bg-white border border-gray-200 rounded-xl p-4">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
           {/* Search */}
           <div className="md:col-span-2">
             <div className="relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-500" />
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-500" />
               <input
                 type="text"
                 value={search}
@@ -167,7 +167,7 @@ export default function ProductsPage() {
                   setCurrentPage(1);
                 }}
                 placeholder="Search products..."
-                className="w-full pl-10 pr-4 py-2 bg-slate-900 border border-slate-700 rounded-lg text-white placeholder-slate-500 focus:outline-none focus:border-indigo-500"
+                className="w-full pl-10 pr-4 py-2 bg-gray-50 border border-gray-300 rounded-lg text-gray-900 placeholder-gray-400 focus:outline-none focus:border-shop_dark_green"
               />
             </div>
           </div>
@@ -179,7 +179,7 @@ export default function ProductsPage() {
               setCategory(e.target.value);
               setCurrentPage(1);
             }}
-            className="px-4 py-2 bg-slate-900 border border-slate-700 rounded-lg text-white focus:outline-none focus:border-indigo-500"
+            className="px-4 py-2 bg-gray-50 border border-gray-300 rounded-lg text-gray-900 focus:outline-none focus:border-shop_dark_green"
           >
             <option value="">All Categories</option>
             <option value="Electronics">Electronics</option>
@@ -197,7 +197,7 @@ export default function ProductsPage() {
               setFeatured(e.target.value);
               setCurrentPage(1);
             }}
-            className="px-4 py-2 bg-slate-900 border border-slate-700 rounded-lg text-white focus:outline-none focus:border-indigo-500"
+            className="px-4 py-2 bg-gray-50 border border-gray-300 rounded-lg text-gray-900 focus:outline-none focus:border-shop_dark_green"
           >
             <option value="">All Products</option>
             <option value="true">Featured Only</option>
@@ -207,51 +207,51 @@ export default function ProductsPage() {
       </div>
 
       {/* Products Grid */}
-      <div className="bg-slate-950 border border-slate-800 rounded-xl overflow-hidden">
+      <div className="bg-white border border-gray-200 rounded-xl overflow-hidden">
         {loading ? (
           <div className="flex items-center justify-center py-12">
             <div className="text-center">
               <div className="h-12 w-12 animate-spin rounded-full border-4 border-indigo-500 border-t-transparent mx-auto mb-4"></div>
-              <p className="text-slate-400">Loading products...</p>
+              <p className="text-gray-600">Loading products...</p>
             </div>
           </div>
         ) : products.length === 0 ? (
           <div className="text-center py-12">
-            <Package className="w-16 h-16 text-slate-600 mx-auto mb-4" />
-            <p className="text-slate-400">No products found</p>
+            <Package className="w-16 h-16 text-gray-400 mx-auto mb-4" />
+            <p className="text-gray-600">No products found</p>
           </div>
         ) : (
           <>
             <div className="overflow-x-auto">
               <table className="w-full">
-                <thead className="bg-slate-900">
+                <thead className="bg-gray-50">
                   <tr>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-slate-400 uppercase tracking-wider">
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-600 uppercase tracking-wider">
                       Product
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-slate-400 uppercase tracking-wider">
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-600 uppercase tracking-wider">
                       Seller
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-slate-400 uppercase tracking-wider">
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-600 uppercase tracking-wider">
                       Price
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-slate-400 uppercase tracking-wider">
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-600 uppercase tracking-wider">
                       Stock
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-slate-400 uppercase tracking-wider">
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-600 uppercase tracking-wider">
                       Views
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-slate-400 uppercase tracking-wider">
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-600 uppercase tracking-wider">
                       Status
                     </th>
-                    <th className="px-6 py-3 text-right text-xs font-medium text-slate-400 uppercase tracking-wider">
+                    <th className="px-6 py-3 text-right text-xs font-medium text-gray-600 uppercase tracking-wider">
                       Actions
                     </th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-800">
+                <tbody className="divide-y divide-gray-200">
                   {products.map((product) => (
-                    <tr key={product._id} className="hover:bg-slate-900 transition-colors">
+                    <tr key={product._id} className="hover:bg-gray-50 transition-colors">
                       <td className="px-6 py-4">
                         <div className="flex items-center gap-3">
                           {product.images && product.images.length > 0 ? (
@@ -261,24 +261,24 @@ export default function ProductsPage() {
                               className="w-12 h-12 rounded-lg object-cover"
                             />
                           ) : (
-                            <div className="w-12 h-12 bg-slate-800 rounded-lg flex items-center justify-center">
-                              <Package className="w-6 h-6 text-slate-600" />
+                            <div className="w-12 h-12 bg-gray-100 rounded-lg flex items-center justify-center">
+                              <Package className="w-6 h-6 text-gray-400" />
                             </div>
                           )}
                           <div>
-                            <p className="text-white font-medium line-clamp-1">
+                            <p className="text-gray-900 font-medium line-clamp-1">
                               {product.name}
                             </p>
-                            <p className="text-slate-400 text-sm">{product.category}</p>
+                            <p className="text-gray-600 text-sm">{product.category}</p>
                           </div>
                         </div>
                       </td>
                       <td className="px-6 py-4">
-                        <p className="text-white text-sm">
+                        <p className="text-gray-900 text-sm">
                           {product.seller.sellerDetails?.businessName || product.seller.email}
                         </p>
                       </td>
-                      <td className="px-6 py-4 text-white font-medium">
+                      <td className="px-6 py-4 text-gray-900 font-medium">
                         ${product.price.toLocaleString()}
                       </td>
                       <td className="px-6 py-4">
@@ -290,7 +290,7 @@ export default function ProductsPage() {
                           {product.quantity} units
                         </span>
                       </td>
-                      <td className="px-6 py-4 text-slate-400 text-sm">
+                      <td className="px-6 py-4 text-gray-600 text-sm">
                         {product.views || 0}
                       </td>
                       <td className="px-6 py-4">
@@ -307,8 +307,8 @@ export default function ProductsPage() {
                             onClick={() => handleFeature(product._id, product.featured)}
                             className={`p-2 rounded-lg transition-all ${
                               product.featured
-                                ? 'bg-amber-600 hover:bg-amber-700 text-white'
-                                : 'bg-slate-700 hover:bg-slate-600 text-slate-300'
+                                ? 'bg-amber-600 hover:bg-amber-700 text-gray-900'
+                                : 'bg-gray-200 hover:bg-gray-300 text-gray-700'
                             }`}
                             title={product.featured ? 'Unfeature' : 'Feature'}
                           >
@@ -320,7 +320,7 @@ export default function ProductsPage() {
                           </button>
                           <button
                             onClick={() => handleDelete(product._id)}
-                            className="p-2 rounded-lg bg-red-600 hover:bg-red-700 text-white transition-all"
+                            className="p-2 rounded-lg bg-red-600 hover:bg-red-700 text-gray-900 transition-all"
                             title="Delete"
                           >
                             <Trash2 className="w-4 h-4" />
@@ -334,25 +334,25 @@ export default function ProductsPage() {
             </div>
 
             {/* Pagination */}
-            <div className="bg-slate-900 px-6 py-4 flex items-center justify-between border-t border-slate-800">
-              <div className="text-sm text-slate-400">
+            <div className="bg-gray-50 px-6 py-4 flex items-center justify-between border-t border-gray-200">
+              <div className="text-sm text-gray-600">
                 Showing {products.length} of {totalProducts} products
               </div>
               <div className="flex items-center gap-2">
                 <button
                   onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
                   disabled={currentPage === 1}
-                  className="p-2 rounded-lg bg-slate-800 hover:bg-slate-700 disabled:opacity-50 disabled:cursor-not-allowed text-white transition-all"
+                  className="p-2 rounded-lg bg-gray-100 hover:bg-gray-200 disabled:opacity-50 disabled:cursor-not-allowed text-gray-900 transition-all"
                 >
                   <ChevronLeft className="w-5 h-5" />
                 </button>
-                <span className="px-4 py-2 bg-slate-800 rounded-lg text-white">
+                <span className="px-4 py-2 bg-gray-100 rounded-lg text-gray-900">
                   Page {currentPage} of {totalPages}
                 </span>
                 <button
                   onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
                   disabled={currentPage === totalPages}
-                  className="p-2 rounded-lg bg-slate-800 hover:bg-slate-700 disabled:opacity-50 disabled:cursor-not-allowed text-white transition-all"
+                  className="p-2 rounded-lg bg-gray-100 hover:bg-gray-200 disabled:opacity-50 disabled:cursor-not-allowed text-gray-900 transition-all"
                 >
                   <ChevronRight className="w-5 h-5" />
                 </button>
@@ -364,3 +364,4 @@ export default function ProductsPage() {
     </div>
   );
 }
+

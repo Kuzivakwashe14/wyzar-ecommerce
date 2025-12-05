@@ -23,3 +23,4 @@ export default function CsrfInitializer() {
   // This component doesn't render anything
   return null;
 }
+

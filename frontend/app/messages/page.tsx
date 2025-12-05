@@ -120,7 +120,7 @@ export default function MessagesPage() {
               <Button
                 variant="outline"
                 onClick={() => router.push('/messages/blocked')}
-                className="mt-1 border-shop_dark_green text-shop_dark_green hover:bg-shop_dark_green hover:text-white"
+                className="mt-1 border-shop_dark_green text-shop_dark_green hover:bg-shop_dark_green hover:text-gray-900"
               >
                 <Ban className="h-4 w-4 mr-2" />
                 Blocked Users
@@ -210,3 +210,4 @@ export default function MessagesPage() {
     </div>
   );
 }
+

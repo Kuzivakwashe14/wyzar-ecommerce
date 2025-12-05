@@ -246,7 +246,7 @@ export default function SignUpPage() {
               )}
             />
 
-            <Button type="submit" className="w-full bg-shop_dark_green hover:bg-shop_light_green text-white" disabled={isLoading}>
+            <Button type="submit" className="w-full bg-shop_dark_green hover:bg-shop_light_green text-gray-900" disabled={isLoading}>
               {isLoading ? "Sending OTP..." : "Continue"}
             </Button>
           </form>
@@ -268,7 +268,7 @@ export default function SignUpPage() {
 
             <Button
               onClick={onSubmitOTP}
-              className="w-full bg-shop_dark_green hover:bg-shop_light_green text-white"
+              className="w-full bg-shop_dark_green hover:bg-shop_light_green text-gray-900"
               disabled={isLoading || otp.length !== 6}
             >
               {isLoading ? "Verifying..." : "Verify & Create Account"}
@@ -310,3 +310,4 @@ export default function SignUpPage() {
     </div>
   );
 }
+

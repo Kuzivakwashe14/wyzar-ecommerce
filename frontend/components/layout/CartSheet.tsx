@@ -34,7 +34,7 @@ export default function CartSheet() {
         >
           <ShoppingCart className="h-5 w-5" />
           {itemCount > 0 && (
-            <Badge className="absolute -right-1 -top-1 h-5 w-5 rounded-full p-0 flex items-center justify-center text-xs bg-shop_orange text-white">
+            <Badge className="absolute -right-1 -top-1 h-5 w-5 rounded-full p-0 flex items-center justify-center text-xs bg-shop_orange text-gray-900">
               {itemCount > 9 ? '9+' : itemCount}
             </Badge>
           )}
@@ -63,7 +63,7 @@ export default function CartSheet() {
               Looks like you haven&apos;t added anything to your cart yet.
             </p>
             <SheetClose asChild>
-              <Button asChild className="bg-shop_dark_green hover:bg-shop_light_green text-white">
+              <Button asChild className="bg-shop_dark_green hover:bg-shop_light_green text-gray-900">
                 <Link href="/products">
                   Start Shopping
                 </Link>
@@ -153,7 +153,7 @@ export default function CartSheet() {
                 <SheetClose asChild>
                   <Button 
                     asChild
-                    className="w-full bg-shop_dark_green hover:bg-shop_light_green text-white h-12"
+                    className="w-full bg-shop_dark_green hover:bg-shop_light_green text-gray-900 h-12"
                     size="lg"
                   >
                     <Link href="/checkout">
@@ -165,7 +165,7 @@ export default function CartSheet() {
                   <Button 
                     asChild
                     variant="outline" 
-                    className="w-full h-11 border-shop_dark_green text-shop_dark_green hover:bg-shop_dark_green hover:text-white"
+                    className="w-full h-11 border-shop_dark_green text-shop_dark_green hover:bg-shop_dark_green hover:text-gray-900"
                   >
                     <Link href="/products">
                       Continue Shopping

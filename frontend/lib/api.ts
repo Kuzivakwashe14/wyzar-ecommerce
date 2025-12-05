@@ -14,9 +14,9 @@ export const apiRequest = async (
   try {
     const authToken = localStorage.getItem('authToken'); // or however you store it
 
-    const headers: HeadersInit = {
+    const headers: Record<string, string> = {
       'Content-Type': 'application/json',
-      ...(options.headers || {})
+      ...(options.headers as Record<string, string> || {})
     };
 
     // Add auth token if available

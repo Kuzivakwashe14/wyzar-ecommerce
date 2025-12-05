@@ -385,12 +385,12 @@ export default function ProductsPage() {
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Header Section */}
-      <div className="bg-shop_dark_green text-white py-12">
+      <div className="bg-shop_dark_green text-gray-900 py-12">
         <Container>
           <h1 className="text-3xl md:text-4xl font-bold mb-2">
             Discover Products
           </h1>
-          <p className="text-white/80">
+          <p className="text-gray-900/80">
             Browse through our extensive collection of quality products
           </p>
         </Container>
@@ -408,7 +408,7 @@ export default function ProductsPage() {
                     Filters
                   </span>
                   {activeFiltersCount > 0 && (
-                    <Badge className="bg-shop_dark_green text-white">
+                    <Badge className="bg-shop_dark_green text-gray-900">
                       {activeFiltersCount}
                     </Badge>
                   )}
@@ -469,7 +469,7 @@ export default function ProductsPage() {
                       className={cn(
                         "p-2 transition-colors",
                         viewMode === "grid"
-                          ? "bg-shop_dark_green text-white"
+                          ? "bg-shop_dark_green text-gray-900"
                           : "bg-white text-gray-600 hover:bg-gray-100"
                       )}
                     >
@@ -480,7 +480,7 @@ export default function ProductsPage() {
                       className={cn(
                         "p-2 transition-colors",
                         viewMode === "list"
-                          ? "bg-shop_dark_green text-white"
+                          ? "bg-shop_dark_green text-gray-900"
                           : "bg-white text-gray-600 hover:bg-gray-100"
                       )}
                     >
@@ -493,12 +493,12 @@ export default function ProductsPage() {
                     <SheetTrigger asChild>
                       <Button
                         variant="outline"
-                        className="lg:hidden border-shop_dark_green text-shop_dark_green hover:bg-shop_dark_green hover:text-white"
+                        className="lg:hidden border-shop_dark_green text-shop_dark_green hover:bg-shop_dark_green hover:text-gray-900"
                       >
                         <SlidersHorizontal className="h-5 w-5 mr-2" />
                         Filters
                         {activeFiltersCount > 0 && (
-                          <Badge className="ml-2 bg-shop_dark_green text-white">
+                          <Badge className="ml-2 bg-shop_dark_green text-gray-900">
                             {activeFiltersCount}
                           </Badge>
                         )}
@@ -633,7 +633,7 @@ export default function ProductsPage() {
                       </p>
                       <Button
                         onClick={clearFilters}
-                        className="bg-shop_dark_green hover:bg-shop_light_green text-white"
+                        className="bg-shop_dark_green hover:bg-shop_light_green text-gray-900"
                       >
                         <RotateCcw className="h-4 w-4 mr-2" />
                         Reset Filters
@@ -660,3 +660,4 @@ export default function ProductsPage() {
     </div>
   );
 }
+

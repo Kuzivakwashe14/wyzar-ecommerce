@@ -270,3 +270,4 @@ export default function ChatBox({ conversationId, otherUser, currentUserId }: Ch
     </Card>
   );
 }
+

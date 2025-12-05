@@ -247,7 +247,7 @@ export default function Navbar() {
                   <DropdownMenuTrigger asChild>
                     <Button variant="ghost" className="relative h-9 w-9 rounded-full">
                       <Avatar className="h-9 w-9">
-                        <AvatarFallback className="bg-linear-to-br from-purple-600 to-blue-600 text-white">
+                        <AvatarFallback className="bg-linear-to-br from-purple-600 to-blue-600 text-gray-900">
                           {user.email ? user.email.charAt(0).toUpperCase() : 'U'}
                         </AvatarFallback>
                       </Avatar>
@@ -379,3 +379,4 @@ export default function Navbar() {
     </nav>
   );
 }
+

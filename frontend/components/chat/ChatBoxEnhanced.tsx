@@ -533,3 +533,4 @@ export default function ChatBoxEnhanced({ conversationId, otherUser, currentUser
     </>
   );
 }
+

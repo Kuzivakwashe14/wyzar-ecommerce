@@ -87,3 +87,4 @@ const Logo = ({ className, variant = "default" }: Props) => {
 };
 
 export default Logo;
+

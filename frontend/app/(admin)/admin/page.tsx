@@ -108,7 +108,7 @@ export default function AdminDashboard() {
           </div>
           <Link
             href="/admin/sellers/pending"
-            className="px-3 py-1.5 bg-shop_orange hover:bg-shop_orange/90 text-white rounded-md text-xs font-medium transition-all"
+            className="px-3 py-1.5 bg-shop_orange hover:bg-shop_orange/90 text-gray-900 rounded-md text-xs font-medium transition-all"
           >
             Review Now
           </Link>
@@ -188,15 +188,15 @@ export default function AdminDashboard() {
         <div className="bg-linear-to-br from-shop_dark_green to-shop_light_green rounded-lg p-4">
           <div className="flex items-center justify-between mb-2">
             <div className="p-2 bg-white/10 rounded-md">
-              <DollarSign className="w-4 h-4 text-white" />
+              <DollarSign className="w-4 h-4 text-gray-900" />
             </div>
-            <Clock className="w-4 h-4 text-white/60" />
+            <Clock className="w-4 h-4 text-gray-900/60" />
           </div>
-          <h3 className="text-xl font-bold text-white">
+          <h3 className="text-xl font-bold text-gray-900">
             ${stats?.revenue.today.toLocaleString()}
           </h3>
           <p className="text-shop_light_pink text-xs">Today&apos;s Revenue</p>
-          <p className="text-white/80 text-[10px] mt-1">
+          <p className="text-gray-900/80 text-[10px] mt-1">
             Commission: ${stats?.commission.today.toLocaleString()}
           </p>
         </div>
@@ -205,15 +205,15 @@ export default function AdminDashboard() {
         <div className="bg-linear-to-br from-shop_light_green to-emerald-500 rounded-lg p-4">
           <div className="flex items-center justify-between mb-2">
             <div className="p-2 bg-white/10 rounded-md">
-              <TrendingUp className="w-4 h-4 text-white" />
+              <TrendingUp className="w-4 h-4 text-gray-900" />
             </div>
-            <span className="text-white/60 text-[10px]">7 days</span>
+            <span className="text-gray-900/60 text-[10px]">7 days</span>
           </div>
-          <h3 className="text-xl font-bold text-white">
+          <h3 className="text-xl font-bold text-gray-900">
             ${stats?.revenue.thisWeek.toLocaleString()}
           </h3>
-          <p className="text-white/90 text-xs">This Week</p>
-          <p className="text-white/80 text-[10px] mt-1">
+          <p className="text-gray-900/90 text-xs">This Week</p>
+          <p className="text-gray-900/80 text-[10px] mt-1">
             Commission: ${stats?.commission.week.toLocaleString()}
           </p>
         </div>
@@ -222,15 +222,15 @@ export default function AdminDashboard() {
         <div className="bg-linear-to-br from-shop_orange to-orange-500 rounded-lg p-4">
           <div className="flex items-center justify-between mb-2">
             <div className="p-2 bg-white/10 rounded-md">
-              <DollarSign className="w-4 h-4 text-white" />
+              <DollarSign className="w-4 h-4 text-gray-900" />
             </div>
-            <span className="text-white/60 text-[10px]">30 days</span>
+            <span className="text-gray-900/60 text-[10px]">30 days</span>
           </div>
-          <h3 className="text-xl font-bold text-white">
+          <h3 className="text-xl font-bold text-gray-900">
             ${stats?.revenue.thisMonth.toLocaleString()}
           </h3>
-          <p className="text-white/90 text-xs">This Month</p>
-          <p className="text-white/80 text-[10px] mt-1">
+          <p className="text-gray-900/90 text-xs">This Month</p>
+          <p className="text-gray-900/80 text-[10px] mt-1">
             Commission: ${stats?.commission.month.toLocaleString()}
           </p>
         </div>
@@ -300,7 +300,7 @@ export default function AdminDashboard() {
                 className="flex items-center justify-between p-2 bg-gray-50 rounded-md hover:bg-gray-100 transition-all"
               >
                 <div className="flex items-center gap-2">
-                  <div className="w-6 h-6 rounded-full bg-shop_dark_green flex items-center justify-center text-white text-[10px] font-bold">
+                  <div className="w-6 h-6 rounded-full bg-shop_dark_green flex items-center justify-center text-gray-900 text-[10px] font-bold">
                     {user.email.charAt(0).toUpperCase()}
                   </div>
                   <div>
@@ -329,3 +329,4 @@ export default function AdminDashboard() {
     </div>
   );
 }
+

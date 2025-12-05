@@ -102,7 +102,7 @@ export default function ProductCard({ product }: ProductCardProps) {
         {/* Badges */}
         <div className="absolute top-3 left-3 flex flex-col gap-2">
           {product.quantity < 10 && product.quantity > 0 && (
-            <Badge className="bg-shop_orange text-white text-xs">
+            <Badge className="bg-shop_orange text-gray-900 text-xs">
               Low Stock
             </Badge>
           )}
@@ -113,7 +113,7 @@ export default function ProductCard({ product }: ProductCardProps) {
           )}
           {/* Check if product is new (created within last 7 days) */}
           {new Date(product.createdAt) > new Date(Date.now() - 7 * 24 * 60 * 60 * 1000) && (
-            <Badge className="bg-shop_light_green text-white text-xs">
+            <Badge className="bg-shop_light_green text-gray-900 text-xs">
               New
             </Badge>
           )}
@@ -125,8 +125,8 @@ export default function ProductCard({ product }: ProductCardProps) {
           className={cn(
             "absolute top-3 right-3 h-9 w-9 rounded-full flex items-center justify-center transition-all duration-300",
             isWishlisted 
-              ? "bg-red-500 text-white" 
-              : "bg-white/90 text-gray-600 hover:bg-red-500 hover:text-white shadow-md"
+              ? "bg-red-500 text-gray-900" 
+              : "bg-white/90 text-gray-600 hover:bg-red-500 hover:text-gray-900 shadow-md"
           )}
         >
           <Heart className={cn("h-4 w-4", isWishlisted && "fill-current")} />
@@ -140,7 +140,7 @@ export default function ProductCard({ product }: ProductCardProps) {
           <Button
             onClick={handleAddToCart}
             size="sm"
-            className="bg-shop_dark_green hover:bg-shop_light_green text-white shadow-lg"
+            className="bg-shop_dark_green hover:bg-shop_light_green text-gray-900 shadow-lg"
             disabled={product.quantity === 0}
           >
             <ShoppingCart className="h-4 w-4 mr-1" />
@@ -215,7 +215,7 @@ export default function ProductCard({ product }: ProductCardProps) {
             onClick={handleAddToCart}
             size="icon"
             variant="outline"
-            className="md:hidden border-shop_dark_green text-shop_dark_green hover:bg-shop_dark_green hover:text-white"
+            className="md:hidden border-shop_dark_green text-shop_dark_green hover:bg-shop_dark_green hover:text-gray-900"
             disabled={product.quantity === 0}
           >
             <ShoppingCart className="h-4 w-4" />
