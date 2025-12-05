@@ -32,8 +32,10 @@ export const SocketProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       return;
     }
 
-    // Connect to Socket.IO server
-    const socketURL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:5000';
+    // Connect to Socket.IO server - use base URL without /api path
+    const apiUrl = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:5000/api';
+    // Remove /api suffix for Socket.IO connection
+    const socketURL = apiUrl.replace(/\/api\/?$/, '');
     const newSocket = io(socketURL, {
       withCredentials: true,
       transports: ['websocket', 'polling']

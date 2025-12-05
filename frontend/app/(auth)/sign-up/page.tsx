@@ -7,6 +7,7 @@ import * as z from "zod";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import { FaGoogle, FaFacebook } from "react-icons/fa";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -16,14 +17,15 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-  FormDescription,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import { OTPInput } from "@/components/ui/otp-input";
-import { api, useAuth } from "@/context/AuthContent";
+import { useAuth } from "@/context/AuthContent";
 
-// Step 1: Registration details schema
+// Registration schema
 const registrationSchema = z.object({
+  name: z.string().min(2, {
+    message: "Name must be at least 2 characters.",
+  }),
   email: z.string().email({
     message: "Please enter a valid email address.",
   }),
@@ -40,47 +42,43 @@ type RegistrationFormValues = z.infer<typeof registrationSchema>;
 
 export default function SignUpPage() {
   const router = useRouter();
-  const { register } = useAuth();
-  const [step, setStep] = useState<1 | 2>(1);
+  const { signUp, signInWithGoogle, signInWithFacebook } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
-  const [otp, setOtp] = useState("");
-  const [formData, setFormData] = useState<RegistrationFormValues | null>(null);
-  const [canResend, setCanResend] = useState(false);
-  const [countdown, setCountdown] = useState(60);
+  const [socialLoading, setSocialLoading] = useState<string | null>(null);
 
   const form = useForm<RegistrationFormValues>({
     resolver: zodResolver(registrationSchema),
     defaultValues: {
+      name: "",
       email: "",
       password: "",
       confirmPassword: "",
     },
   });
 
-  // Step 1: Send OTP
-  const onSubmitDetails = async (values: RegistrationFormValues) => {
+  const onSubmit = async (values: RegistrationFormValues) => {
     setIsLoading(true);
     try {
-      // Send OTP to email address
-      const response = await api.post('/otp/send', {
-        email: values.email,
-        type: 'registration'
+      const result = await signUp(values.email, values.password, values.name);
+
+      if (result.error) {
+        toast.error("Registration Failed", {
+          description: result.error,
+        });
+        return;
+      }
+
+      toast.success("Account Created!", {
+        description: "Please check your email to verify your account.",
       });
 
-      if (response.data.success) {
-        setFormData(values);
-        setStep(2);
-        toast.success("OTP Sent", {
-          description: "We've sent a verification code to your email address.",
-        });
+      // Redirect to home page
+      router.push('/');
 
-        // Start countdown for resend
-        startResendCountdown();
-      }
-    } catch (error: any) {
-      console.error("Failed to send OTP:", error);
-      const errorMessage = error.response?.data?.msg || "Failed to send OTP. Please try again.";
-      toast.error("Error", {
+    } catch (error: unknown) {
+      console.error("Registration failed:", error);
+      const errorMessage = error instanceof Error ? error.message : "Registration failed. Please try again.";
+      toast.error("Registration Failed", {
         description: errorMessage,
       });
     } finally {
@@ -88,91 +86,32 @@ export default function SignUpPage() {
     }
   };
 
-  // Step 2: Verify OTP and Complete Registration
-  const onSubmitOTP = async () => {
-    if (otp.length !== 6) {
-      toast.error("Invalid OTP", {
-        description: "Please enter the complete 6-digit code.",
-      });
-      return;
-    }
-
-    if (!formData) return;
-
-    setIsLoading(true);
+  const handleGoogleSignIn = async () => {
+    setSocialLoading('google');
     try {
-      // First verify OTP
-      const otpResponse = await api.post('/otp/verify', {
-        email: formData.email,
-        otp,
-        type: 'registration'
-      });
-
-      if (otpResponse.data.success) {
-        // OTP verified, now register the user
-        await register(formData.email, formData.password);
-
-        toast.success("Account Created", {
-          description: "Your account has been created successfully!",
-        });
-
-        // Redirect to home page
-        router.push('/');
-      }
-    } catch (error: any) {
-      console.error("Verification failed:", error);
-      const errorMessage = error.response?.data?.msg || "Verification failed. Please try again.";
-      toast.error("Verification Failed", {
-        description: errorMessage,
+      await signInWithGoogle();
+    } catch (error) {
+      console.error("Google sign-in failed:", error);
+      toast.error("Google Sign-In Failed", {
+        description: "Could not sign in with Google. Please try again.",
       });
     } finally {
-      setIsLoading(false);
+      setSocialLoading(null);
     }
   };
 
-  // Resend OTP
-  const handleResendOTP = async () => {
-    if (!formData || !canResend) return;
-
-    setIsLoading(true);
+  const handleFacebookSignIn = async () => {
+    setSocialLoading('facebook');
     try {
-      const response = await api.post('/otp/send', {
-        email: formData.email,
-        type: 'registration'
-      });
-
-      if (response.data.success) {
-        toast.success("OTP Resent", {
-          description: "We've sent a new verification code to your email.",
-        });
-        setOtp(""); // Clear current OTP
-        startResendCountdown();
-      }
-    } catch (error: any) {
-      const errorMessage = error.response?.data?.msg || "Failed to resend OTP.";
-      toast.error("Error", {
-        description: errorMessage,
+      await signInWithFacebook();
+    } catch (error) {
+      console.error("Facebook sign-in failed:", error);
+      toast.error("Facebook Sign-In Failed", {
+        description: "Could not sign in with Facebook. Please try again.",
       });
     } finally {
-      setIsLoading(false);
+      setSocialLoading(null);
     }
-  };
-
-  // Countdown timer for resend
-  const startResendCountdown = () => {
-    setCanResend(false);
-    setCountdown(60);
-
-    const interval = setInterval(() => {
-      setCountdown((prev) => {
-        if (prev <= 1) {
-          clearInterval(interval);
-          setCanResend(true);
-          return 0;
-        }
-        return prev - 1;
-      });
-    }, 1000);
   };
 
   return (
@@ -180,126 +119,138 @@ export default function SignUpPage() {
       <div className="space-y-2 text-center">
         <h2 className="text-3xl font-bold tracking-tight text-shop_dark_green">Create Account</h2>
         <p className="text-sm text-muted-foreground">
-          {step === 1
-            ? "Enter your details to get started"
-            : "Enter the verification code sent to your email"}
+          Enter your details to get started
         </p>
       </div>
 
-      {step === 1 ? (
-        <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmitDetails)} className="space-y-4">
-            <FormField
-              control={form.control}
-              name="email"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Email</FormLabel>
-                  <FormControl>
-                    <Input
-                      placeholder="name@example.com"
-                      type="email"
-                      disabled={isLoading}
-                      {...field}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+      {/* Social Sign-Up Buttons */}
+      <div className="grid grid-cols-2 gap-3">
+        <Button
+          variant="outline"
+          type="button"
+          disabled={!!socialLoading || isLoading}
+          onClick={handleGoogleSignIn}
+          className="w-full"
+        >
+          <FaGoogle className="mr-2 h-4 w-4" />
+          {socialLoading === 'google' ? "..." : "Google"}
+        </Button>
+        <Button
+          variant="outline"
+          type="button"
+          disabled={!!socialLoading || isLoading}
+          onClick={handleFacebookSignIn}
+          className="w-full"
+        >
+          <FaFacebook className="mr-2 h-4 w-4" />
+          {socialLoading === 'facebook' ? "..." : "Facebook"}
+        </Button>
+      </div>
 
-            <FormField
-              control={form.control}
-              name="password"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Password</FormLabel>
-                  <FormControl>
-                    <Input
-                      type="password"
-                      placeholder="Min. 6 characters"
-                      disabled={isLoading}
-                      {...field}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <FormField
-              control={form.control}
-              name="confirmPassword"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Confirm Password</FormLabel>
-                  <FormControl>
-                    <Input
-                      type="password"
-                      placeholder="Re-enter your password"
-                      disabled={isLoading}
-                      {...field}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <Button type="submit" className="w-full bg-shop_dark_green hover:bg-shop_light_green text-white" disabled={isLoading}>
-              {isLoading ? "Sending OTP..." : "Continue"}
-            </Button>
-          </form>
-        </Form>
-      ) : (
-        <div className="space-y-6">
-          <div className="space-y-4">
-            <div className="text-center">
-              <p className="text-sm text-muted-foreground mb-4">
-                Code sent to {formData?.email}
-              </p>
-              <OTPInput
-                length={6}
-                value={otp}
-                onChange={setOtp}
-                disabled={isLoading}
-              />
-            </div>
-
-            <Button
-              onClick={onSubmitOTP}
-              className="w-full bg-shop_dark_green hover:bg-shop_light_green text-white"
-              disabled={isLoading || otp.length !== 6}
-            >
-              {isLoading ? "Verifying..." : "Verify & Create Account"}
-            </Button>
-
-            <div className="text-center space-y-2">
-              <button
-                type="button"
-                onClick={handleResendOTP}
-                disabled={!canResend || isLoading}
-                className="text-sm text-shop_dark_green hover:text-shop_light_green hover:underline disabled:opacity-50 disabled:cursor-not-allowed disabled:no-underline"
-              >
-                {canResend ? "Resend Code" : `Resend in ${countdown}s`}
-              </button>
-
-              <div>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setStep(1);
-                    setOtp("");
-                  }}
-                  className="text-sm text-muted-foreground hover:text-foreground hover:underline"
-                >
-                  Change email address
-                </button>
-              </div>
-            </div>
-          </div>
+      <div className="relative">
+        <div className="absolute inset-0 flex items-center">
+          <span className="w-full border-t" />
         </div>
-      )}
+        <div className="relative flex justify-center text-xs uppercase">
+          <span className="bg-white px-2 text-muted-foreground">
+            Or continue with email
+          </span>
+        </div>
+      </div>
+
+      <Form {...form}>
+        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+          <FormField
+            control={form.control}
+            name="name"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Full Name</FormLabel>
+                <FormControl>
+                  <Input
+                    placeholder="John Doe"
+                    disabled={isLoading || !!socialLoading}
+                    {...field}
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          <FormField
+            control={form.control}
+            name="email"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Email</FormLabel>
+                <FormControl>
+                  <Input
+                    placeholder="name@example.com"
+                    type="email"
+                    disabled={isLoading || !!socialLoading}
+                    {...field}
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          <FormField
+            control={form.control}
+            name="password"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Password</FormLabel>
+                <FormControl>
+                  <Input
+                    type="password"
+                    placeholder="Min. 6 characters"
+                    disabled={isLoading || !!socialLoading}
+                    {...field}
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          <FormField
+            control={form.control}
+            name="confirmPassword"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Confirm Password</FormLabel>
+                <FormControl>
+                  <Input
+                    type="password"
+                    placeholder="Re-enter your password"
+                    disabled={isLoading || !!socialLoading}
+                    {...field}
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          <Button 
+            type="submit" 
+            className="w-full bg-shop_dark_green hover:bg-shop_light_green text-white" 
+            disabled={isLoading || !!socialLoading}
+          >
+            {isLoading ? "Creating Account..." : "Create Account"}
+          </Button>
+        </form>
+      </Form>
+
+      <p className="text-xs text-center text-muted-foreground">
+        By creating an account, you agree to our{" "}
+        <Link href="/terms" className="text-shop_dark_green hover:underline">Terms of Service</Link>
+        {" "}and{" "}
+        <Link href="/privacy" className="text-shop_dark_green hover:underline">Privacy Policy</Link>
+      </p>
 
       <div className="text-center text-sm">
         Already have an account?{" "}

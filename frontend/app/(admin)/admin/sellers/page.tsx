@@ -14,7 +14,7 @@ export default function SellersPage() {
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <Link
           href="/admin/sellers/pending"
-          className="bg-gradient-to-br from-amber-600 to-amber-700 rounded-xl p-8 hover:shadow-lg hover:shadow-amber-500/20 transition-all group"
+          className="bg-linear-to-br from-amber-600 to-amber-700 rounded-xl p-8 hover:shadow-lg hover:shadow-amber-500/20 transition-all group"
         >
           <div className="flex items-center justify-between mb-4">
             <div className="p-3 bg-white/10 rounded-lg">

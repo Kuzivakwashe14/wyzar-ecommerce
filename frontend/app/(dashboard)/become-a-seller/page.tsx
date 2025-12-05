@@ -46,7 +46,7 @@ const formSchema = z.object({
 
 export default function BecomeASellerPage() {
   const router = useRouter();
-  const { user, isAuthenticated, loading, login } = useAuth();
+  const { user, isAuthenticated, loading, refreshSession } = useAuth();
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   // 2. Define the form
@@ -92,8 +92,8 @@ export default function BecomeASellerPage() {
       });
 
       // Update the user in our AuthContext
-      // We're doing a "soft" login to refresh the user data
-      await login(localStorage.getItem('token')!); 
+      // Refresh the session to get updated user data
+      await refreshSession(); 
 
       toast(
         "Success!",{

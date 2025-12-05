@@ -1,4 +1,5 @@
-// In backend/middleware/adminAuth.js
+// backend/middleware/adminAuth.js
+// Admin authentication middleware that supports both legacy JWT and BetterAuth sessions
 
 const jwt = require('jsonwebtoken');
 const User = require('../models/User');
@@ -6,46 +7,127 @@ const User = require('../models/User');
 /**
  * Admin authentication middleware
  * Checks if the user is authenticated AND has admin role
- * Use this middleware after the regular auth middleware
  */
 async function adminAuth(req, res, next) {
   try {
-    // 1. Get the token from the request header
-    const token = req.header('x-auth-token');
-
-    // 2. Check if no token
-    if (!token) {
-      return res.status(401).json({ msg: 'No token, authorization denied' });
+    // Method 1: Check for legacy x-auth-token header
+    const legacyToken = req.header('x-auth-token');
+    if (legacyToken) {
+      try {
+        const decoded = jwt.verify(legacyToken, process.env.JWT_SECRET);
+        
+        // Get user from database to check role
+        const user = await User.findById(decoded.user.id).select('-password');
+        
+        if (!user) {
+          return res.status(401).json({ msg: 'User not found' });
+        }
+        
+        if (user.isSuspended) {
+          return res.status(403).json({ msg: 'Account is suspended' });
+        }
+        
+        if (user.role !== 'admin') {
+          return res.status(403).json({ msg: 'Access denied. Admin privileges required.' });
+        }
+        
+        req.user = {
+          id: user._id,
+          email: user.email,
+          role: user.role
+        };
+        return next();
+      } catch (err) {
+        // Token invalid, try other methods
+      }
     }
 
-    // 3. Verify token
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    // Method 2: Check for Authorization Bearer token (BetterAuth session token)
+    const authHeader = req.header('Authorization');
+    if (authHeader && authHeader.startsWith('Bearer ')) {
+      const sessionToken = authHeader.substring(7);
+      
+      try {
+        const response = await fetch(`${process.env.FRONTEND_URL || 'http://localhost:3000'}/api/auth/get-session`, {
+          headers: {
+            'Cookie': `better-auth.session_token=${sessionToken}`,
+          },
+        });
 
-    // 4. Get user from database to check role (in case it changed)
-    const user = await User.findById(decoded.user.id).select('-password');
-
-    if (!user) {
-      return res.status(401).json({ msg: 'User not found' });
+        if (response.ok) {
+          const sessionData = await response.json();
+          if (sessionData && sessionData.user) {
+            // Verify user is admin
+            const user = await User.findOne({ email: sessionData.user.email }).select('-password');
+            
+            if (!user) {
+              return res.status(401).json({ msg: 'User not found' });
+            }
+            
+            if (user.isSuspended) {
+              return res.status(403).json({ msg: 'Account is suspended' });
+            }
+            
+            if (user.role !== 'admin') {
+              return res.status(403).json({ msg: 'Access denied. Admin privileges required.' });
+            }
+            
+            req.user = {
+              id: user._id,
+              email: user.email,
+              role: user.role
+            };
+            return next();
+          }
+        }
+      } catch (fetchError) {
+        console.error('Error validating BetterAuth session:', fetchError);
+      }
     }
 
-    // 5. Check if user is suspended
-    if (user.isSuspended) {
-      return res.status(403).json({ msg: 'Account is suspended' });
+    // Method 3: Check for session cookie
+    const sessionCookie = req.cookies?.['better-auth.session_token'];
+    if (sessionCookie) {
+      try {
+        const response = await fetch(`${process.env.FRONTEND_URL || 'http://localhost:3000'}/api/auth/get-session`, {
+          headers: {
+            'Cookie': `better-auth.session_token=${sessionCookie}`,
+          },
+        });
+
+        if (response.ok) {
+          const sessionData = await response.json();
+          if (sessionData && sessionData.user) {
+            // Verify user is admin
+            const user = await User.findOne({ email: sessionData.user.email }).select('-password');
+            
+            if (!user) {
+              return res.status(401).json({ msg: 'User not found' });
+            }
+            
+            if (user.isSuspended) {
+              return res.status(403).json({ msg: 'Account is suspended' });
+            }
+            
+            if (user.role !== 'admin') {
+              return res.status(403).json({ msg: 'Access denied. Admin privileges required.' });
+            }
+            
+            req.user = {
+              id: user._id,
+              email: user.email,
+              role: user.role
+            };
+            return next();
+          }
+        }
+      } catch (fetchError) {
+        console.error('Error validating session cookie:', fetchError);
+      }
     }
 
-    // 6. Check if user has admin role
-    if (user.role !== 'admin') {
-      return res.status(403).json({ msg: 'Access denied. Admin privileges required.' });
-    }
-
-    // 7. Add user to request
-    req.user = {
-      id: user._id,
-      email: user.email,
-      role: user.role
-    };
-
-    next();
+    // No valid authentication found
+    return res.status(401).json({ msg: 'No token, authorization denied' });
   } catch (err) {
     console.error('Admin auth error:', err);
     res.status(401).json({ msg: 'Token is not valid' });

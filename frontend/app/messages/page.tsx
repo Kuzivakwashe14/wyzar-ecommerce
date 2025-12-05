@@ -188,11 +188,11 @@ export default function MessagesPage() {
 
         {/* Chat Box */}
         <div className="md:col-span-2">
-          {selectedConv ? (
+          {selectedConv && user ? (
             <ChatBoxEnhanced
               conversationId={selectedConv._id}
               otherUser={selectedConv.otherUser}
-              currentUserId={user._id}
+              currentUserId={user._id || user.id}
             />
           ) : (
             <Card className="h-[600px] flex items-center justify-center border-gray-200">

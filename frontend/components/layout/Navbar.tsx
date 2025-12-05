@@ -73,6 +73,9 @@ export default function Navbar() {
   }, [isAuthenticated, user]);
 
   const fetchUnreadCount = async () => {
+    // Only fetch if authenticated
+    if (!isAuthenticated || !user) return;
+    
     try {
       const response = await api.get('/messages/unread-count');
       setUnreadMessages(response.data.unreadCount);

@@ -96,8 +96,9 @@ app.get('/api/csrf-token', csrfProtection, (req, res) => {
 });
 
 // --- API Routes ---
+// Note: Main authentication is handled by BetterAuth in the frontend
+// Backend /api/auth routes are kept for legacy endpoints like /me
 app.use('/api/auth', require('./routes/auth'));
-app.use('/api/otp', require('./routes/otp'));
 app.use('/api/seller', require('./routes/seller'));
 app.use('/api/products', require('./routes/product'));
 app.use('/api/orders', require('./routes/order'));

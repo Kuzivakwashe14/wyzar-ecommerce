@@ -66,18 +66,6 @@ const ENV_SCHEMA = {
     description: 'Comma-separated list of allowed CORS origins'
   },
 
-  // SMS Service (Africa's Talking)
-  AT_API_KEY: {
-    required: false, // Optional for development
-    type: 'string',
-    description: 'Africa\'s Talking API key'
-  },
-  AT_USERNAME: {
-    required: false,
-    type: 'string',
-    description: 'Africa\'s Talking username'
-  },
-
   // Email Service
   EMAIL_HOST: {
     required: false,
@@ -240,10 +228,6 @@ function validateEnvironment() {
 
     if (validatedEnv.JWT_SECRET && validatedEnv.JWT_SECRET.length < 64) {
       validationErrors.addWarning('JWT_SECRET is shorter than 64 characters. Consider using a longer secret in production.');
-    }
-
-    if (!process.env.AT_API_KEY) {
-      validationErrors.addWarning('AT_API_KEY not set. SMS functionality will not work.');
     }
 
     if (!process.env.EMAIL_HOST) {

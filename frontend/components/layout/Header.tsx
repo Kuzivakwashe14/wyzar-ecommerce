@@ -46,7 +46,7 @@ const categories = [
 ];
 
 export default function Header() {
-  const { isAuthenticated, user, logout } = useAuth();
+  const { isAuthenticated, user, logout, loading } = useAuth();
   const { itemCount } = useCart();
   const { wishlistCount } = useWishlist();
   const router = useRouter();
@@ -54,19 +54,27 @@ export default function Header() {
   const [unreadMessages, setUnreadMessages] = useState(0);
 
   const fetchUnreadCount = useCallback(async () => {
+    // Only fetch if authenticated and loading is complete
+    if (loading || !isAuthenticated || !user) return;
+    
     try {
       const response = await api.get('/messages/unread-count');
       setUnreadMessages(response.data.unreadCount);
     } catch (error) {
+      // Silently ignore auth errors - user may not be fully authenticated
+      if ((error as { response?: { status?: number } })?.response?.status === 401) {
+        return;
+      }
       console.error('Error fetching unread count:', error);
     }
-  }, []);
+  }, [loading, isAuthenticated, user]);
 
   useEffect(() => {
     let interval: NodeJS.Timeout;
     
     const initFetch = async () => {
-      if (isAuthenticated && user) {
+      // Wait for loading to complete and ensure user is authenticated
+      if (!loading && isAuthenticated && user) {
         await fetchUnreadCount();
         interval = setInterval(fetchUnreadCount, 30000);
       }
@@ -77,7 +85,7 @@ export default function Header() {
     return () => {
       if (interval) clearInterval(interval);
     };
-  }, [isAuthenticated, user, fetchUnreadCount]);
+  }, [loading, isAuthenticated, user, fetchUnreadCount]);
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
@@ -230,6 +238,13 @@ export default function Header() {
                         </DropdownMenuItem>
                       </Link>
                     )}
+
+                    <Link href="/dashboard/security">
+                      <DropdownMenuItem className="cursor-pointer">
+                        <Settings className="mr-2 h-4 w-4" />
+                        Security Settings
+                      </DropdownMenuItem>
+                    </Link>
 
                     <DropdownMenuSeparator />
                     <DropdownMenuItem onClick={() => logout()} className="cursor-pointer text-red-600">

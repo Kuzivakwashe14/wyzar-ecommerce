@@ -6,8 +6,14 @@ import Header from "./Header";
 export default function ConditionalNavbar() {
   const pathname = usePathname();
 
-  // Don't show navbar on admin routes
-  if (pathname?.startsWith('/admin')) {
+  // Don't show navbar on admin routes or auth pages
+  if (
+    pathname?.startsWith('/admin') ||
+    pathname === '/login' ||
+    pathname === '/sign-up' ||
+    pathname === '/forgot-password' ||
+    pathname === '/reset-password'
+  ) {
     return null;
   }
 
