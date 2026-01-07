@@ -333,9 +333,24 @@ router.delete('/:id', auth, validateObjectIdParam('id'), async (req, res) => {
 // @access  Private
 router.get('/user/me', auth, async (req, res) => {
   try {
-    const reviews = await Review.find({ user: req.user.id })
-      .populate('product', '_id name images price')
-      .sort({ createdAt: -1 });
+    const reviews = await prisma.review.findMany({
+      where: {
+        userId: req.user.id
+      },
+      include: {
+        product: {
+          select: {
+            id: true,
+            name: true,
+            images: true,
+            price: true
+          }
+        }
+      },
+      orderBy: {
+        createdAt: 'desc'
+      }
+    });
 
     res.json({
       success: true,

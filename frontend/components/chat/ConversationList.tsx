@@ -91,10 +91,10 @@ export default function ConversationList({
         <div className="p-2">
           {conversations.map((conversation) => (
             <button
-              key={conversation._id}
-              onClick={() => onSelectConversation(conversation._id)}
+              key={conversation.id}
+              onClick={() => onSelectConversation(conversation.id)}
               className={`w-full p-3 rounded-lg transition-colors text-left hover:bg-muted/50 ${
-                selectedConversation === conversation._id ? 'bg-muted' : ''
+                selectedConversation === conversation.id ? 'bg-muted' : ''
               }`}
             >
               <div className="flex items-start gap-3">

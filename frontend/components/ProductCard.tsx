@@ -16,6 +16,7 @@ import { Heart, ShoppingCart, Star, Eye } from "lucide-react";
 // Define the Product type to match our API response
 export interface Product {
   id: string;
+  sellerId?: string; // Add sellerId from backend
   name: string;
   description: string;
   price: number;

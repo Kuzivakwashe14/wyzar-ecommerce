@@ -244,6 +244,7 @@ router.get('/:id', validateObjectIdParam('id'), async (req, res) => {
       include: {
         seller: {
           select: {
+            id: true,
             email: true,
             sellerDetails: {
               select: {

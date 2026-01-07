@@ -61,7 +61,7 @@ export default function MessagesPage() {
 
       // Auto-select first conversation if none selected
       if (response.data.length > 0 && !selectedConversation) {
-        setSelectedConversation(response.data[0]._id);
+        setSelectedConversation(response.data[0].id);
       }
     } catch (error) {
       console.error('Error fetching conversations:', error);
@@ -96,7 +96,7 @@ export default function MessagesPage() {
     setSearchResults([]);
   };
 
-  const selectedConv = conversations.find(c => c._id === selectedConversation);
+  const selectedConv = conversations.find(c => c.id === selectedConversation);
 
   if (!user) {
     return null;
@@ -154,15 +154,15 @@ export default function MessagesPage() {
             <div className="space-y-2 max-h-60 overflow-y-auto">
               {searchResults.map((msg: any) => (
                 <button
-                  key={msg._id}
+                  key={msg.id}
                   onClick={() => {
-                    setSelectedConversation(msg.conversation._id);
+                    setSelectedConversation(msg.conversation.id);
                     clearSearch();
                   }}
                   className="w-full text-left p-3 hover:bg-white rounded-lg transition-colors"
                 >
                   <p className="text-sm font-medium text-shop_dark_green">
-                    {msg.sender._id === user?._id ? 'You' : msg.sender.sellerDetails?.businessName || msg.sender.email}
+                    {msg.sender.id === user?.id ? 'You' : msg.sender.sellerDetails?.businessName || msg.sender.email}
                   </p>
                   <p className="text-sm text-gray-600 truncate">{msg.message}</p>
                   <p className="text-xs text-gray-500 mt-1">
@@ -190,9 +190,9 @@ export default function MessagesPage() {
         <div className="md:col-span-2">
           {selectedConv ? (
             <ChatBoxEnhanced
-              conversationId={selectedConv._id}
+              conversationId={selectedConv.id}
               otherUser={selectedConv.otherUser}
-              currentUserId={user._id}
+              currentUserId={user.id}
             />
           ) : (
             <Card className="h-[600px] flex items-center justify-center border-gray-200">

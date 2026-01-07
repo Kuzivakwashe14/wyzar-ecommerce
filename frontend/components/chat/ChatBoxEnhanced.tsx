@@ -37,16 +37,16 @@ import { getImageUrl } from '@/lib/utils';
 import Image from 'next/image';
 
 interface Message {
-  _id: string;
+  id: string;
   sender: {
-    _id: string;
+    id: string;
     email: string;
     sellerDetails?: {
       businessName: string;
     };
   };
   receiver: {
-    _id: string;
+    id: string;
   };
   message: string;
   attachments?: string[];
@@ -57,7 +57,7 @@ interface Message {
 interface ChatBoxProps {
   conversationId: string;
   otherUser: {
-    _id: string;
+    id: string;
     email: string;
     sellerDetails?: {
       businessName: string;
@@ -102,13 +102,13 @@ export default function ChatBoxEnhanced({ conversationId, otherUser, currentUser
     };
 
     const handleUserTyping = (data: any) => {
-      if (data.conversationId === conversationId && data.userId === otherUser._id) {
+      if (data.conversationId === conversationId && data.userId === otherUser.id) {
         setIsTyping(true);
       }
     };
 
     const handleUserStopTyping = (data: any) => {
-      if (data.conversationId === conversationId && data.userId === otherUser._id) {
+      if (data.conversationId === conversationId && data.userId === otherUser.id) {
         setIsTyping(false);
       }
     };
@@ -122,9 +122,10 @@ export default function ChatBoxEnhanced({ conversationId, otherUser, currentUser
       socket.off('user_typing', handleUserTyping);
       socket.off('user_stop_typing', handleUserStopTyping);
     };
-  }, [socket, conversationId, otherUser._id]);
+  }, [socket, conversationId, otherUser.id]);
 
   const fetchMessages = async () => {
+    if (!conversationId) return; // Guard against undefined conversationId
     try {
       setLoading(true);
       const response = await api.get(`/messages/conversation/${conversationId}`);
@@ -140,7 +141,7 @@ export default function ChatBoxEnhanced({ conversationId, otherUser, currentUser
 
   const checkBlockStatus = async () => {
     try {
-      const response = await api.get(`/messages/is-blocked/${otherUser._id}`);
+      const response = await api.get(`/messages/is-blocked/${otherUser.id}`);
       setIsBlocked(response.data.isBlocked);
     } catch (error) {
       console.error('Error checking block status:', error);
@@ -156,7 +157,7 @@ export default function ChatBoxEnhanced({ conversationId, otherUser, currentUser
 
     socket.emit('typing', {
       conversationId,
-      receiverId: otherUser._id
+      receiverId: otherUser.id
     });
 
     if (typingTimeoutRef.current) {
@@ -166,7 +167,7 @@ export default function ChatBoxEnhanced({ conversationId, otherUser, currentUser
     typingTimeoutRef.current = setTimeout(() => {
       socket.emit('stop_typing', {
         conversationId,
-        receiverId: otherUser._id
+        receiverId: otherUser.id
       });
     }, 2000);
   };
@@ -207,7 +208,7 @@ export default function ChatBoxEnhanced({ conversationId, otherUser, currentUser
       if (selectedImages.length > 0) {
         // Send with images
         const formData = new FormData();
-        formData.append('receiverId', otherUser._id);
+        formData.append('receiverId', otherUser.id);
         formData.append('message', newMessage.trim());
         selectedImages.forEach(file => {
           formData.append('images', file);
@@ -223,7 +224,7 @@ export default function ChatBoxEnhanced({ conversationId, otherUser, currentUser
       } else {
         // Send text only
         const response = await api.post('/messages/send', {
-          receiverId: otherUser._id,
+          receiverId: otherUser.id,
           message: newMessage.trim()
         });
 
@@ -234,7 +235,7 @@ export default function ChatBoxEnhanced({ conversationId, otherUser, currentUser
       if (socket) {
         socket.emit('stop_typing', {
           conversationId,
-          receiverId: otherUser._id
+          receiverId: otherUser.id
         });
       }
 
@@ -253,11 +254,11 @@ export default function ChatBoxEnhanced({ conversationId, otherUser, currentUser
   const handleBlockUser = async () => {
     try {
       if (isBlocked) {
-        await api.post(`/messages/unblock/${otherUser._id}`);
+        await api.post(`/messages/unblock/${otherUser.id}`);
         setIsBlocked(false);
         toast.success('User unblocked');
       } else {
-        await api.post(`/messages/block/${otherUser._id}`);
+        await api.post(`/messages/block/${otherUser.id}`);
         setIsBlocked(true);
         toast.success('User blocked');
       }
@@ -275,7 +276,7 @@ export default function ChatBoxEnhanced({ conversationId, otherUser, currentUser
 
     try {
       await api.post('/messages/report', {
-        reportedUserId: otherUser._id,
+        reportedUserId: otherUser.id,
         reason: reportReason,
         description: reportDescription,
         conversationId
@@ -347,11 +348,11 @@ export default function ChatBoxEnhanced({ conversationId, otherUser, currentUser
           <ScrollArea className="flex-1 p-4">
             <div className="space-y-4">
               {messages.map((message) => {
-                const isCurrentUser = message.sender._id === currentUserId;
+                const isCurrentUser = message.sender.id === currentUserId;
 
                 return (
                   <div
-                    key={message._id}
+                    key={message.id}
                     className={`flex ${isCurrentUser ? 'justify-end' : 'justify-start'}`}
                   >
                     <div className={`flex gap-2 max-w-[70%] ${isCurrentUser ? 'flex-row-reverse' : 'flex-row'}`}>

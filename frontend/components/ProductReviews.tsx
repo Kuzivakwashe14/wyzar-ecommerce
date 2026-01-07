@@ -54,6 +54,7 @@ export default function ProductReviews({ productId }: ProductReviewsProps) {
   const [userReview, setUserReview] = useState<Review | null>(null);
 
   useEffect(() => {
+    if (!productId) return; // Guard against undefined productId
     fetchReviews();
     if (isAuthenticated) {
       checkUserReview();
@@ -61,6 +62,7 @@ export default function ProductReviews({ productId }: ProductReviewsProps) {
   }, [productId, currentPage, sortBy, isAuthenticated]);
 
   const fetchReviews = async () => {
+    if (!productId) return; // Guard against undefined productId
     try {
       setLoading(true);
       const { data } = await api.get(
@@ -78,6 +80,7 @@ export default function ProductReviews({ productId }: ProductReviewsProps) {
   };
 
   const checkUserReview = async () => {
+    if (!productId) return; // Guard against undefined productId
     try {
       const { data } = await api.get('/reviews/user/me');
       const review = data.reviews.find((r: any) => {
