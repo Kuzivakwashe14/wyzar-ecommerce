@@ -114,7 +114,7 @@ export default function ProductDetailPage() {
         const allProductsResponse = await api.get("/products");
         const related = allProductsResponse.data
           .filter((p: Product) =>
-            p.category === response.data.category && p._id !== response.data._id
+            p.category === response.data.category && p.id !== response.data.id
           )
           .slice(0, 4);
         setRelatedProducts(related);

@@ -209,7 +209,7 @@ export default function MobileMenu({ categories }: MobileMenuProps) {
                   </>
                 )}
 
-                {user.role === 'admin' && (
+                {(user.role === 'admin' || user.role === 'ADMIN') && (
                   <Link href="/admin" onClick={handleClose}>
                     <Button variant="ghost" className="w-full justify-start gap-3 h-12">
                       <Shield className="h-5 w-5 text-shop_orange" />

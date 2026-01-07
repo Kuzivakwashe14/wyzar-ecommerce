@@ -172,8 +172,10 @@ const validatePasswordDoesntContainUserInfo = (password, userInfo) => {
  */
 const validatePasswordMiddleware = (req, res, next) => {
   const password = req.body.password;
+  console.log('Password validation middleware:', { hasPassword: !!password, passwordLength: password?.length });
 
   if (!password) {
+    console.log('Password validation failed: password is required');
     return res.status(400).json({
       success: false,
       msg: 'Password is required'
@@ -181,14 +183,18 @@ const validatePasswordMiddleware = (req, res, next) => {
   }
 
   const validation = validatePasswordStrength(password);
+  console.log('Password strength validation:', { valid: validation.valid, errors: validation.errors, strength: validation.strength });
 
   if (!validation.valid) {
-    return res.status(400).json({
+    console.log('Password validation failed:', validation.errors);
+    const errorResponse = {
       success: false,
       msg: 'Password does not meet security requirements',
       errors: validation.errors,
       strength: validation.strength
-    });
+    };
+    console.log('Sending error response:', JSON.stringify(errorResponse));
+    return res.status(400).json(errorResponse);
   }
 
   // Check if password contains user info
@@ -199,13 +205,17 @@ const validatePasswordMiddleware = (req, res, next) => {
   };
 
   const userInfoCheck = validatePasswordDoesntContainUserInfo(password, userInfo);
+  console.log('User info check:', userInfoCheck);
+  
   if (!userInfoCheck.valid) {
+    console.log('Password contains user info:', userInfoCheck.error);
     return res.status(400).json({
       success: false,
       msg: userInfoCheck.error
     });
   }
 
+  console.log('Password validation passed');
   next();
 };
 

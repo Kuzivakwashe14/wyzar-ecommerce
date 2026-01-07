@@ -5,7 +5,7 @@ const express = require('express');
 const router = express.Router();
 const bcrypt = require('bcryptjs');
 const adminAuth = require('../middleware/adminAuth');
-const User = require('../models/User');
+const prisma = require('../config/prisma');
 
 // ==========================================
 // ADMIN ACCESS CONTROL
@@ -16,9 +16,23 @@ const User = require('../models/User');
 // @access  Private (Admin only)
 router.get('/admins', adminAuth, async (req, res) => {
   try {
-    const admins = await User.find({ role: 'admin' })
-      .select('-password')
-      .sort({ createdAt: -1 });
+    const admins = await prisma.user.findMany({
+      where: { role: 'ADMIN' },
+      select: {
+        id: true,
+        email: true,
+        phone: true,
+        isPhoneVerified: true,
+        isEmailVerified: true,
+        isSeller: true,
+        isVerified: true,
+        role: true,
+        isSuspended: true,
+        suspensionReason: true,
+        createdAt: true
+      },
+      orderBy: { createdAt: 'desc' }
+    });
 
     res.json({
       success: true,

@@ -15,7 +15,7 @@ import {
 } from 'lucide-react';
 
 interface VerificationDocument {
-  _id: string;
+  id: string;
   documentType: string;
   documentPath: string;
   documentName?: string;
@@ -25,7 +25,7 @@ interface VerificationDocument {
 }
 
 interface PendingSeller {
-  _id: string;
+  id: string;
   email: string;
   phone: string;
   isPhoneVerified: boolean;
@@ -247,7 +247,7 @@ export default function PendingSellersPage() {
         <div className="grid grid-cols-1 gap-6">
           {sellers.map((seller) => (
             <div
-              key={seller._id}
+              key={seller.id}
               className="bg-white border border-gray-200 rounded-xl p-6 hover:border-indigo-500 transition-all"
             >
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -310,7 +310,7 @@ export default function PendingSellersPage() {
                     <div className="space-y-3">
                       {seller.sellerDetails.verificationDocuments.map((doc) => (
                         <div
-                          key={doc._id}
+                          key={doc.id}
                           className="bg-gray-50 border border-gray-300 rounded-lg p-4"
                         >
                           <div className="flex items-start justify-between mb-3">
@@ -336,7 +336,7 @@ export default function PendingSellersPage() {
 
                           <div className="flex items-center gap-3 mb-3">
                             <button
-                              onClick={() => handleViewDocument(seller._id, doc._id)}
+                              onClick={() => handleViewDocument(seller.id, doc.id)}
                               className="text-sm text-indigo-400 hover:text-indigo-300 hover:underline cursor-pointer"
                             >
                               View Document →
@@ -358,16 +358,16 @@ export default function PendingSellersPage() {
 
                           {doc.status === 'pending' && (
                             <div className="space-y-3">
-                              {expandedDocuments.has(doc._id) && (
+                              {expandedDocuments.has(doc.id) && (
                                 <div>
                                   <label className="block text-sm font-medium text-gray-700 mb-2">
                                     Rejection Reason
                                   </label>
                                   <textarea
-                                    value={documentRejectReasons[doc._id] || ''}
+                                    value={documentRejectReasons[doc.id] || ''}
                                     onChange={(e) => setDocumentRejectReasons(prev => ({
                                       ...prev,
-                                      [doc._id]: e.target.value
+                                      [doc.id]: e.target.value
                                     }))}
                                     className="w-full px-3 py-2 bg-gray-100 border border-gray-300 rounded text-gray-900 placeholder-gray-400 focus:outline-none focus:border-shop_dark_green text-sm"
                                     rows={2}
@@ -378,11 +378,11 @@ export default function PendingSellersPage() {
 
                               <div className="flex gap-2">
                                 <button
-                                  onClick={() => handleDocumentApprove(seller._id, doc._id)}
-                                  disabled={processing === `${seller._id}-${doc._id}`}
+                                  onClick={() => handleDocumentApprove(seller.id, doc.id)}
+                                  disabled={processing === `${seller.id}-${doc.id}`}
                                   className="flex-1 flex items-center justify-center gap-2 px-4 py-2 bg-green-600 hover:bg-green-700 disabled:bg-gray-200 text-gray-900 rounded text-sm font-medium transition-all"
                                 >
-                                  {processing === `${seller._id}-${doc._id}` ? (
+                                  {processing === `${seller.id}-${doc.id}` ? (
                                     <>
                                       <Loader2 className="w-4 h-4 animate-spin" />
                                       Processing...
@@ -395,18 +395,18 @@ export default function PendingSellersPage() {
                                   )}
                                 </button>
 
-                                {expandedDocuments.has(doc._id) ? (
+                                {expandedDocuments.has(doc.id) ? (
                                   <>
                                     <button
-                                      onClick={() => handleDocumentReject(seller._id, doc._id)}
-                                      disabled={processing === `${seller._id}-${doc._id}`}
+                                      onClick={() => handleDocumentReject(seller.id, doc.id)}
+                                      disabled={processing === `${seller.id}-${doc.id}`}
                                       className="flex-1 flex items-center justify-center gap-2 px-4 py-2 bg-red-600 hover:bg-red-700 disabled:bg-gray-200 text-gray-900 rounded text-sm font-medium transition-all"
                                     >
                                       <XCircle className="w-4 h-4" />
                                       Confirm Reject
                                     </button>
                                     <button
-                                      onClick={() => toggleDocumentExpansion(doc._id)}
+                                      onClick={() => toggleDocumentExpansion(doc.id)}
                                       className="px-4 py-2 bg-gray-200 hover:bg-gray-300 text-gray-900 rounded text-sm font-medium transition-all"
                                     >
                                       Cancel
@@ -414,8 +414,8 @@ export default function PendingSellersPage() {
                                   </>
                                 ) : (
                                   <button
-                                    onClick={() => toggleDocumentExpansion(doc._id)}
-                                    disabled={processing === `${seller._id}-${doc._id}`}
+                                    onClick={() => toggleDocumentExpansion(doc.id)}
+                                    disabled={processing === `${seller.id}-${doc.id}`}
                                     className="flex-1 flex items-center justify-center gap-2 px-4 py-2 bg-gray-200 hover:bg-gray-300 disabled:bg-gray-100 text-gray-900 rounded text-sm font-medium transition-all"
                                   >
                                     <XCircle className="w-4 h-4" />
@@ -439,7 +439,7 @@ export default function PendingSellersPage() {
                 {/* Actions */}
                 <div className="col-span-1 md:col-span-2 space-y-4">
                   {/* Reject Reason Input */}
-                  {selectedSeller?._id === seller._id && (
+                  {selectedSeller?.id === seller.id && (
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-2">
                         Rejection Reason
@@ -457,11 +457,11 @@ export default function PendingSellersPage() {
                   {/* Action Buttons */}
                   <div className="flex flex-col gap-3">
                     <button
-                      onClick={() => handleApprove(seller._id)}
-                      disabled={processing === seller._id}
+                      onClick={() => handleApprove(seller.id)}
+                      disabled={processing === seller.id}
                       className="flex items-center justify-center gap-2 px-6 py-3 bg-green-600 hover:bg-green-700 disabled:bg-gray-200 text-gray-900 rounded-lg font-medium transition-all"
                     >
-                      {processing === seller._id ? (
+                      {processing === seller.id ? (
                         <>
                           <Loader2 className="w-5 h-5 animate-spin" />
                           Processing...
@@ -474,11 +474,11 @@ export default function PendingSellersPage() {
                       )}
                     </button>
 
-                    {selectedSeller?._id === seller._id ? (
+                    {selectedSeller?.id === seller.id ? (
                       <div className="flex gap-3">
                         <button
-                          onClick={() => handleReject(seller._id)}
-                          disabled={processing === seller._id}
+                          onClick={() => handleReject(seller.id)}
+                          disabled={processing === seller.id}
                           className="flex-1 flex items-center justify-center gap-2 px-6 py-3 bg-red-600 hover:bg-red-700 disabled:bg-gray-200 text-gray-900 rounded-lg font-medium transition-all"
                         >
                           <XCircle className="w-5 h-5" />
@@ -497,7 +497,7 @@ export default function PendingSellersPage() {
                     ) : (
                       <button
                         onClick={() => setSelectedSeller(seller)}
-                        disabled={processing === seller._id}
+                        disabled={processing === seller.id}
                         className="flex items-center justify-center gap-2 px-6 py-3 bg-gray-200 hover:bg-gray-300 disabled:bg-gray-100 text-gray-900 rounded-lg font-medium transition-all"
                       >
                         <XCircle className="w-5 h-5" />

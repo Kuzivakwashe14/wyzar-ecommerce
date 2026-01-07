@@ -648,7 +648,7 @@ export default function ProductsPage() {
                       : "flex flex-col"
                   )}>
                     {filteredAndSortedProducts.map((product) => (
-                      <ProductCard key={product._id} product={product} />
+                      <ProductCard key={product.id} product={product} />
                     ))}
                   </div>
                 )}

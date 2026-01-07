@@ -55,7 +55,7 @@ const sanitizeString = (input, options = {}) => {
 /**
  * Sanitize object - recursively sanitize all string values
  */
-const sanitizeObject = (obj, depth = 0, maxDepth = 5) => {
+const sanitizeObject = (obj, depth = 0, maxDepth = 5, excludeFields = []) => {
   if (depth > maxDepth) return obj;
   if (!obj || typeof obj !== 'object') return obj;
 
@@ -73,10 +73,13 @@ const sanitizeObject = (obj, depth = 0, maxDepth = 5) => {
       continue; // Skip dangerous keys
     }
 
-    if (typeof value === 'string') {
+    // Skip sanitization for excluded fields (like passwords)
+    if (excludeFields.includes(safeKey)) {
+      sanitized[safeKey] = value;
+    } else if (typeof value === 'string') {
       sanitized[safeKey] = sanitizeString(value);
     } else if (typeof value === 'object' && value !== null) {
-      sanitized[safeKey] = sanitizeObject(value, depth + 1, maxDepth);
+      sanitized[safeKey] = sanitizeObject(value, depth + 1, maxDepth, excludeFields);
     } else {
       sanitized[safeKey] = value;
     }
@@ -190,7 +193,9 @@ const validateObjectId = (id, fieldName = 'id') => {
 
   const idString = String(id);
   
-  if (!/^[0-9a-fA-F]{24}$/.test(idString)) {
+  // UUID format validation (PostgreSQL/Prisma uses UUIDs)
+  // Format: 8-4-4-4-12 hexadecimal characters (with hyphens)
+  if (!/^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/i.test(idString)) {
     throw new ValidationError(`Invalid ${fieldName} format`, fieldName);
   }
 
@@ -347,10 +352,12 @@ const validateFileUpload = (file, options = {}) => {
 
 /**
  * Middleware: Sanitize request body
+ * Excludes password fields from HTML sanitization
  */
 const sanitizeRequestBody = (req, res, next) => {
   if (req.body && typeof req.body === 'object') {
-    req.body = sanitizeObject(req.body);
+    // Don't sanitize password fields - they need to be compared as-is
+    req.body = sanitizeObject(req.body, 0, 5, ['password', 'newPassword', 'oldPassword', 'confirmPassword']);
   }
   next();
 };
@@ -360,7 +367,7 @@ const sanitizeRequestBody = (req, res, next) => {
  */
 const sanitizeQueryParams = (req, res, next) => {
   if (req.query && typeof req.query === 'object') {
-    req.query = sanitizeObject(req.query);
+    req.query = sanitizeObject(req.query, 0, 5, []);
   }
   next();
 };

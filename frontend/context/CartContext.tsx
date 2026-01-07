@@ -44,7 +44,7 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
   // 7. Add to Cart function
   const addToCart = (product: Product) => {
     setCartItems(prevItems => {
-      const existingItem = prevItems.find(item => item._id === product._id);
+      const existingItem = prevItems.find(item => item.id === product.id);
 
       if (existingItem) {
         // If item exists, check against stock
@@ -58,7 +58,7 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
         }
         // Update quantity
         return prevItems.map(item =>
-          item._id === product._id
+          item.id === product.id
             ? { ...item, cartQuantity: newQuantity }
             : item
         );
@@ -83,7 +83,7 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
 
   // 8. Remove from Cart function
   const removeFromCart = (productId: string) => {
-    setCartItems(prevItems => prevItems.filter(item => item._id !== productId));
+    setCartItems(prevItems => prevItems.filter(item => item.id !== productId));
     toast(
       "Item Removed",{
       description: "The item was removed from your cart.",
@@ -100,7 +100,7 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
 
     setCartItems(prevItems =>
       prevItems.map(item => {
-        if (item._id === productId) {
+        if (item.id === productId) {
           // Check stock
           if (newQuantity > item.quantity) {
             toast(
@@ -151,3 +151,4 @@ export const useCart = () => {
   }
   return context;
 };
+

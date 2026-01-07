@@ -1,7 +1,7 @@
 // In backend/middleware/adminAuth.js
 
 const jwt = require('jsonwebtoken');
-const User = require('../models/User');
+const prisma = require('../config/prisma');
 
 /**
  * Admin authentication middleware
@@ -22,7 +22,15 @@ async function adminAuth(req, res, next) {
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
 
     // 4. Get user from database to check role (in case it changed)
-    const user = await User.findById(decoded.user.id).select('-password');
+    const user = await prisma.user.findUnique({
+      where: { id: decoded.user.id },
+      select: {
+        id: true,
+        email: true,
+        role: true,
+        isSuspended: true
+      }
+    });
 
     if (!user) {
       return res.status(401).json({ msg: 'User not found' });
@@ -34,13 +42,13 @@ async function adminAuth(req, res, next) {
     }
 
     // 6. Check if user has admin role
-    if (user.role !== 'admin') {
+    if (user.role !== 'ADMIN') {
       return res.status(403).json({ msg: 'Access denied. Admin privileges required.' });
     }
 
     // 7. Add user to request
     req.user = {
-      id: user._id,
+      id: user.id,
       email: user.email,
       role: user.role
     };

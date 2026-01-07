@@ -246,7 +246,7 @@ export default function UsersPage() {
                       </td>
                       <td className="px-6 py-4">
                         <div className="flex flex-col gap-1">
-                          {user.role === 'admin' && (
+                          {(user.role === 'admin' || user.role === 'ADMIN') && (
                             <span className="inline-flex items-center gap-1 px-2 py-1 bg-purple-500/10 text-purple-400 text-xs rounded w-fit">
                               <Shield className="w-3 h-3" />
                               Admin
@@ -257,7 +257,7 @@ export default function UsersPage() {
                               Seller
                             </span>
                           )}
-                          {!user.isSeller && user.role !== 'admin' && (
+                          {!user.isSeller && user.role !== 'admin' && user.role !== 'ADMIN' && (
                             <span className="inline-flex px-2 py-1 bg-blue-500/10 text-blue-400 text-xs rounded w-fit">
                               Buyer
                             </span>

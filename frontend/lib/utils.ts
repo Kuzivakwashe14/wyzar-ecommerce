@@ -14,13 +14,16 @@ export function getImageUrl(imagePath: string | undefined): string {
   // Handle potential backslashes from Windows paths
   const cleanPath = imagePath.replace(/\\/g, "/");
 
-  // If path starts with /static/, it's served by Nginx on port 80
-  if (cleanPath.startsWith("/static/")) {
-    return `http://localhost${cleanPath}`;
+  // Images are served by Express static middleware at /uploads
+  // E.g., /uploads/products/image.jpg -> http://localhost:5000/uploads/products/image.jpg
+  // Use NEXT_PUBLIC_API_URL (without /api) for static file serving
+  const baseUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
+  
+  // If path already starts with /, just append to base URL
+  if (cleanPath.startsWith("/")) {
+    return `${baseUrl}${cleanPath}`;
   }
-
-  // For other paths, use the API base URL
-  const finalPath = cleanPath.startsWith("/") ? cleanPath.slice(1) : cleanPath;
-  const baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:5000";
-  return `${baseUrl}/${finalPath}`;
+  
+  // Otherwise add / before appending
+  return `${baseUrl}/${cleanPath}`;
 }

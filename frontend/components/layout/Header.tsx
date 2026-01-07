@@ -215,7 +215,7 @@ export default function Header() {
                       </>
                     )}
 
-                    {user.role === 'admin' ? (
+                    {(user.role === 'admin' || user.role === 'ADMIN') ? (
                       <Link href="/admin">
                         <DropdownMenuItem className="cursor-pointer">
                           <Shield className="mr-2 h-4 w-4" />

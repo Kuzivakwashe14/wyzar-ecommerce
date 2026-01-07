@@ -5,10 +5,8 @@ const router = express.Router();
 const auth = require('../middleware/auth');
 const { Paynow } = require('paynow');
 
-// Import our models
-const Order = require('../models/Order');
-const Product = require('../models/Product');
-const User = require('../models/User');
+// Import Prisma client
+const prisma = require('../config/prisma');
 
 // Import notification service
 const {
@@ -57,7 +55,7 @@ router.post('/create', auth, validateOrderCreation, async (req, res) => {
     }
     
     // Get the logged-in user
-    const user = await User.findById(req.user.id);
+    const user = await prisma.user.findUnique({ where: { id: req.user.id } });
 
     // --- A. Create Order in our DB ---
     
@@ -65,14 +63,16 @@ router.post('/create', auth, validateOrderCreation, async (req, res) => {
     const productIds = cartItems.map(item => item._id);
 
     // 2. Fetch the *real* product data from our DB (Security!)
-    const dbProducts = await Product.find({ _id: { $in: productIds } });
+    const dbProducts = await prisma.product.findMany({ 
+      where: { id: { in: productIds } } 
+    });
 
     let totalPrice = 0;
     const orderItems = [];
 
     // 3. Loop and calculate total price
     for (const cartItem of cartItems) {
-      const dbProduct = dbProducts.find(p => p._id.toString() === cartItem._id);
+      const dbProduct = dbProducts.find(p => p.id === cartItem._id);
       if (!dbProduct) {
         return res.status(404).json({ msg: `Product ${cartItem.name} not found` });
       }
@@ -88,22 +88,31 @@ router.post('/create', auth, validateOrderCreation, async (req, res) => {
         quantity: cartItem.cartQuantity,
         image: dbProduct.images[0], // Save first image
         price: dbProduct.price,
-        product: dbProduct._id,
+        productId: dbProduct.id,
       });
     }
 
     // 4. Create new order instance
-    const newOrder = new Order({
-      user: req.user.id,
-      orderItems,
-      shippingAddress,
-      paymentMethod,
-      totalPrice,
-      status: paymentMethod === 'CashOnDelivery' ? 'Confirmed' : 'Pending', // COD orders are confirmed immediately
+    const savedOrder = await prisma.order.create({
+      data: {
+        userId: req.user.id,
+        shippingFullName: shippingAddress.fullName,
+        shippingAddress: shippingAddress.address,
+        shippingCity: shippingAddress.city,
+        shippingPhone: shippingAddress.phone,
+        paymentMethod: paymentMethod === 'CashOnDelivery' ? 'CASH_ON_DELIVERY' : 'PAYNOW',
+        totalPrice,
+        status: paymentMethod === 'CashOnDelivery' ? 'CONFIRMED' : 'PENDING',
+        orderItems: {
+          createMany: {
+            data: orderItems
+          }
+        }
+      },
+      include: {
+        orderItems: true
+      }
     });
-
-    // 5. Save the pending order
-    const savedOrder = await newOrder.save();
     
     // 6. Send order confirmation notifications (Email + SMS) - Don't block the response
     sendOrderConfirmation(savedOrder, user).catch(err => {
@@ -112,16 +121,19 @@ router.post('/create', auth, validateOrderCreation, async (req, res) => {
 
     // 7. Notify sellers of new orders - Group items by seller
     const sellerOrders = {};
-    for (const item of orderItems) {
-      const product = await Product.findById(item.product).populate('seller');
+    for (const item of savedOrder.orderItems) {
+      const product = await prisma.product.findUnique({ 
+        where: { id: item.productId },
+        include: { seller: true }
+      });
       if (product && product.seller) {
-        if (!sellerOrders[product.seller._id]) {
-          sellerOrders[product.seller._id] = {
+        if (!sellerOrders[product.seller.id]) {
+          sellerOrders[product.seller.id] = {
             seller: product.seller,
             items: []
           };
         }
-        sellerOrders[product.seller._id].items.push(item);
+        sellerOrders[product.seller.id].items.push(item);
       }
     }
 
@@ -129,7 +141,7 @@ router.post('/create', auth, validateOrderCreation, async (req, res) => {
     for (const sellerId in sellerOrders) {
       const { seller, items } = sellerOrders[sellerId];
       const sellerOrderDetails = {
-        ...savedOrder.toObject(),
+        ...savedOrder,
         orderItems: items
       };
       notifySellerOfOrder(sellerOrderDetails, seller).catch(err => {
@@ -143,22 +155,25 @@ router.post('/create', auth, validateOrderCreation, async (req, res) => {
     if (paymentMethod === 'CashOnDelivery') {
       // Update product stock immediately for COD orders
       for (const item of savedOrder.orderItems) {
-        await Product.findByIdAndUpdate(item.product, {
-          $inc: { quantity: -item.quantity }
+        await prisma.product.update({
+          where: { id: item.productId },
+          data: { quantity: { decrement: item.quantity } }
         });
       }
 
-      savedOrder.paymentResult = {
-        id: 'COD_' + Date.now(),
-        status: 'Cash on Delivery - Payment pending',
-        update_time: new Date().toISOString(),
-      };
-      await savedOrder.save();
+      await prisma.order.update({
+        where: { id: savedOrder.id },
+        data: {
+          paymentResultId: 'COD_' + Date.now(),
+          paymentStatus: 'Cash on Delivery - Payment pending',
+          paymentUpdateTime: new Date().toISOString()
+        }
+      });
 
       return res.json({
-        orderId: savedOrder._id,
+        orderId: savedOrder.id,
         message: 'Order placed successfully! Pay with cash upon delivery.',
-        redirectUrl: `/order/success?orderId=${savedOrder._id}`,
+        redirectUrl: `/order/success?orderId=${savedOrder.id}`,
         paymentMethod: 'CashOnDelivery'
       });
     }
@@ -167,7 +182,7 @@ router.post('/create', auth, validateOrderCreation, async (req, res) => {
     if (isPaynowConfigured) {
       // Production: Use Paynow payment gateway
       // 1. Create a new payment
-      const payment = paynow.createPayment(savedOrder._id.toString(), user.email);
+      const payment = paynow.createPayment(savedOrder.id, user.email);
 
       // 2. Add total as a single item
       payment.add("WyZar Order", savedOrder.totalPrice);
@@ -178,7 +193,7 @@ router.post('/create', auth, validateOrderCreation, async (req, res) => {
       if (response.success) {
         // 4. Send back the redirect URL to the frontend
         res.json({
-          orderId: savedOrder._id,
+          orderId: savedOrder.id,
           paynowRedirectUrl: response.redirectUrl,
         });
       } else {
@@ -187,28 +202,30 @@ router.post('/create', auth, validateOrderCreation, async (req, res) => {
       }
     } else {
       // Development mode: Auto-approve the order and update stock
-      savedOrder.status = 'Paid';
-      savedOrder.paidAt = new Date();
-      savedOrder.paymentResult = {
-        id: 'DEV_' + Date.now(),
-        status: 'Development Mode - Auto Approved',
-        update_time: new Date().toISOString(),
-      };
+      const updatedOrder = await prisma.order.update({
+        where: { id: savedOrder.id },
+        data: {
+          status: 'PAID',
+          paidAt: new Date(),
+          paymentResultId: 'DEV_' + Date.now(),
+          paymentStatus: 'Development Mode - Auto Approved',
+          paymentUpdateTime: new Date().toISOString()
+        }
+      });
 
       // Update product stock
       for (const item of savedOrder.orderItems) {
-        await Product.findByIdAndUpdate(item.product, {
-          $inc: { quantity: -item.quantity }
+        await prisma.product.update({
+          where: { id: item.productId },
+          data: { quantity: { decrement: item.quantity } }
         });
       }
 
-      await savedOrder.save();
-
       // Return success without payment URL
       res.json({
-        orderId: savedOrder._id,
+        orderId: savedOrder.id,
         message: 'Order created successfully (Development mode - payment skipped)',
-        redirectUrl: `/order/success?orderId=${savedOrder._id}`,
+        redirectUrl: `/order/success?orderId=${savedOrder.id}`,
       });
     }
 
@@ -232,7 +249,7 @@ router.post('/paynow/callback', async (req, res) => {
 
     // 2. Find the order in your database
     // The 'reference' is the Order ID we sent to Paynow
-    const order = await Order.findById(statusUpdate.reference);
+    const order = await prisma.order.findUnique({ where: { id: statusUpdate.reference } });
 
     if (!order) {
       console.error(`Order not found: ${statusUpdate.reference}`);
@@ -241,8 +258,8 @@ router.post('/paynow/callback', async (req, res) => {
     }
     
     // Only update if it's still Pending
-    if (order.status !== 'Pending') {
-      console.log(`Order ${order._id} already processed. Status: ${order.status}`);
+    if (order.status !== 'PENDING') {
+      console.log(`Order ${order.id} already processed. Status: ${order.status}`);
       return res.status(200).json({ msg: 'Order already processed' });
     }
 
@@ -252,38 +269,48 @@ router.post('/paynow/callback', async (req, res) => {
 
     if (successfulStatus.includes(statusUpdate.status)) {
       // 4. Update the order in your database
-      order.status = 'Paid';
-      order.paidAt = new Date();
-      order.paymentResult = {
-        id: statusUpdate.paynowreference,
-        status: statusUpdate.status,
-        update_time: new Date().toISOString(),
-      };
+      await prisma.order.update({
+        where: { id: order.id },
+        data: {
+          status: 'PAID',
+          paidAt: new Date(),
+          paymentResultId: statusUpdate.paynowreference,
+          paymentStatus: statusUpdate.status,
+          paymentUpdateTime: new Date().toISOString()
+        }
+      });
       
       // --- IMPORTANT: Update Product Stock ---
       // We must decrease the quantity of products sold
-      for (const item of order.orderItems) {
-        await Product.findByIdAndUpdate(item.product, {
-          $inc: { quantity: -item.quantity } // Decrement quantity
+      const orderItems = await prisma.orderItem.findMany({
+        where: { orderId: order.id }
+      });
+      
+      for (const item of orderItems) {
+        await prisma.product.update({
+          where: { id: item.productId },
+          data: { quantity: { decrement: item.quantity } }
         });
       }
 
-      await order.save();
-      console.log(`Order ${order._id} marked as Paid.`);
+      console.log(`Order ${order.id} marked as Paid.`);
       
       // Send payment confirmation notification
-      const user = await User.findById(order.user);
+      const user = await prisma.user.findUnique({ where: { id: order.userId } });
       if (user) {
-        sendOrderStatusUpdate(order, user, 'Paid').catch(err => {
+        const updatedOrder = await prisma.order.findUnique({ where: { id: order.id } });
+        sendOrderStatusUpdate(updatedOrder, user, 'Paid').catch(err => {
           console.error('Error sending payment confirmation:', err);
         });
       }
       
     } else {
-      console.log(`Order ${order._id} status: ${statusUpdate.status}`);
+      console.log(`Order ${order.id} status: ${statusUpdate.status}`);
       // Handle 'Cancelled' or 'Failed' statuses
-      order.status = 'Cancelled';
-      await order.save();
+      await prisma.order.update({
+        where: { id: order.id },
+        data: { status: 'CANCELLED' }
+      });
     }
 
     // 5. Respond to Paynow to acknowledge receipt
@@ -302,20 +329,20 @@ router.post('/paynow/callback', async (req, res) => {
 // @access  Private (Seller only)
 router.post('/:id/verify-payment', auth, validateObjectIdParam('id'), async (req, res) => {
   try {
-    const order = await Order.findById(req.params.id);
+    const order = await prisma.order.findUnique({ where: { id: req.params.id } });
     
     if (!order) {
       return res.status(404).json({ success: false, msg: 'Order not found' });
     }
 
     // Check if user is a seller
-    const user = await User.findById(req.user.id);
+    const user = await prisma.user.findUnique({ where: { id: req.user.id } });
     if (!user.isSeller) {
       return res.status(403).json({ success: false, msg: 'Only sellers can verify payments' });
     }
 
     // Only verify pending orders
-    if (order.status !== 'Pending') {
+    if (order.status !== 'PENDING') {
       return res.status(400).json({ 
         success: false, 
         msg: `Order is already ${order.status}. No verification needed.` 
@@ -323,29 +350,36 @@ router.post('/:id/verify-payment', auth, validateObjectIdParam('id'), async (req
     }
 
     // If Paynow is configured, try to poll for status
-    if (paynow && order.paymentResult?.pollUrl) {
+    if (paynow && order.paymentResultId) {
       try {
-        const status = await paynow.pollTransaction(order.paymentResult.pollUrl);
+        const status = await paynow.pollTransaction(order.paymentResultId);
         
         if (status.paid) {
-          order.status = 'Paid';
-          order.paidAt = new Date();
-          order.paymentResult.status = 'Paid (Verified)';
-          order.paymentResult.update_time = new Date().toISOString();
+          await prisma.order.update({
+            where: { id: order.id },
+            data: {
+              status: 'PAID',
+              paidAt: new Date(),
+              paymentStatus: 'Paid (Verified)',
+              paymentUpdateTime: new Date().toISOString()
+            }
+          });
 
           // Update stock
-          for (const item of order.orderItems) {
-            await Product.findByIdAndUpdate(item.product, {
-              $inc: { quantity: -item.quantity }
+          const orderItems = await prisma.orderItem.findMany({
+            where: { orderId: order.id }
+          });
+          for (const item of orderItems) {
+            await prisma.product.update({
+              where: { id: item.productId },
+              data: { quantity: { decrement: item.quantity } }
             });
           }
-
-          await order.save();
           
           return res.json({
             success: true,
             msg: 'Payment verified successfully! Order marked as Paid.',
-            order: { _id: order._id, status: order.status }
+            order: { id: order.id, status: 'PAID' }
           });
         } else {
           return res.json({
@@ -380,20 +414,23 @@ router.post('/:id/verify-payment', auth, validateObjectIdParam('id'), async (req
 // @access  Private (Seller only)
 router.post('/:id/confirm-payment', auth, validateObjectIdParam('id'), async (req, res) => {
   try {
-    const order = await Order.findById(req.params.id);
+    const order = await prisma.order.findUnique({ 
+      where: { id: req.params.id },
+      include: { orderItems: true }
+    });
     
     if (!order) {
       return res.status(404).json({ success: false, msg: 'Order not found' });
     }
 
     // Check if user is a seller
-    const user = await User.findById(req.user.id);
+    const user = await prisma.user.findUnique({ where: { id: req.user.id } });
     if (!user.isSeller) {
       return res.status(403).json({ success: false, msg: 'Only sellers can confirm payments' });
     }
 
     // Only confirm pending orders
-    if (order.status !== 'Pending') {
+    if (order.status !== 'PENDING') {
       return res.status(400).json({ 
         success: false, 
         msg: `Order is already ${order.status}. Cannot confirm payment.` 
@@ -401,27 +438,30 @@ router.post('/:id/confirm-payment', auth, validateObjectIdParam('id'), async (re
     }
 
     // Mark as paid
-    order.status = 'Paid';
-    order.paidAt = new Date();
-    order.paymentResult = {
-      id: 'MANUAL_' + Date.now(),
-      status: 'Manually Confirmed by Seller',
-      update_time: new Date().toISOString(),
-    };
+    await prisma.order.update({
+      where: { id: order.id },
+      data: {
+        status: 'PAID',
+        paidAt: new Date(),
+        paymentResultId: 'MANUAL_' + Date.now(),
+        paymentStatus: 'Manually Confirmed by Seller',
+        paymentUpdateTime: new Date().toISOString()
+      }
+    });
 
     // Update stock
     for (const item of order.orderItems) {
-      await Product.findByIdAndUpdate(item.product, {
-        $inc: { quantity: -item.quantity }
+      await prisma.product.update({
+        where: { id: item.productId },
+        data: { quantity: { decrement: item.quantity } }
       });
     }
 
-    await order.save();
-
     // Notify buyer
-    const buyer = await User.findById(order.user);
+    const buyer = await prisma.user.findUnique({ where: { id: order.userId } });
     if (buyer) {
-      sendOrderStatusUpdate(order, buyer, 'Paid').catch(err => {
+      const updatedOrder = await prisma.order.findUnique({ where: { id: order.id } });
+      sendOrderStatusUpdate(updatedOrder, buyer, 'Paid').catch(err => {
         console.error('Error sending payment confirmation:', err);
       });
     }
@@ -429,7 +469,7 @@ router.post('/:id/confirm-payment', auth, validateObjectIdParam('id'), async (re
     res.json({
       success: true,
       msg: 'Payment confirmed! Order marked as Paid.',
-      order: { _id: order._id, status: order.status }
+      order: { id: order.id, status: 'PAID' }
     });
 
   } catch (err) {
@@ -445,7 +485,11 @@ router.post('/:id/confirm-payment', auth, validateObjectIdParam('id'), async (re
 // @access  Private
 router.get('/myorders', auth, async (req, res) => {
   try {
-    const orders = await Order.find({ user: req.user.id }).sort({ createdAt: -1 });
+    const orders = await prisma.order.findMany({
+      where: { userId: req.user.id },
+      include: { orderItems: true },
+      orderBy: { createdAt: 'desc' }
+    });
     res.json(orders);
   } catch (err) {
     console.error(err.message);
@@ -459,24 +503,24 @@ router.get('/myorders', auth, async (req, res) => {
 // @access  Private
 router.get('/:id', auth, validateObjectIdParam('id'), async (req, res) => {
   try {
-    const order = await Order.findById(req.params.id);
+    const order = await prisma.order.findUnique({
+      where: { id: req.params.id },
+      include: { orderItems: true }
+    });
 
     if (!order) {
       return res.status(404).json({ msg: 'Order not found' });
     }
 
     // Security check: Make sure the user viewing the order is the one who made it
-    if (order.user.toString() !== req.user.id) {
+    if (order.userId !== req.user.id) {
       return res.status(401).json({ msg: 'Not authorized' });
     }
 
     res.json(order);
   } catch (err) {
     console.error(err.message);
-    if (err.kind === 'ObjectId') {
-      return res.status(404).json({ msg: 'Order not found' });
-    }
-    res.status(500).send('Server Error');
+    return res.status(404).json({ msg: 'Order not found' });
   }
 });
 
@@ -488,17 +532,34 @@ router.put('/:id/status', auth, validateObjectIdParam('id'), async (req, res) =>
   try {
     const { status, trackingNumber } = req.body;
 
-    // Validate status
-    const validStatuses = ['Pending', 'Confirmed', 'Paid', 'Shipped', 'Delivered', 'Cancelled'];
-    if (!validStatuses.includes(status)) {
+    // Validate status and map to Prisma enum
+    const statusMap = {
+      'Pending': 'PENDING',
+      'Confirmed': 'CONFIRMED',
+      'Paid': 'PAID',
+      'Shipped': 'SHIPPED',
+      'Delivered': 'DELIVERED',
+      'Cancelled': 'CANCELLED'
+    };
+    
+    if (!statusMap[status]) {
       return res.status(400).json({ 
         success: false,
         msg: 'Invalid status. Must be: Pending, Confirmed, Paid, Shipped, Delivered, or Cancelled' 
       });
     }
+    
+    const prismaStatus = statusMap[status];
 
     // Find the order
-    const order = await Order.findById(req.params.id).populate('user');
+    const order = await prisma.order.findUnique({
+      where: { id: req.params.id },
+      include: { 
+        orderItems: true,
+        user: true 
+      }
+    });
+    
     if (!order) {
       return res.status(404).json({ 
         success: false,
@@ -507,7 +568,7 @@ router.put('/:id/status', auth, validateObjectIdParam('id'), async (req, res) =>
     }
 
     // Check if user is seller of at least one product in the order
-    const user = await User.findById(req.user.id);
+    const user = await prisma.user.findUnique({ where: { id: req.user.id } });
     if (!user.isSeller) {
       return res.status(403).json({ 
         success: false,
@@ -516,14 +577,13 @@ router.put('/:id/status', auth, validateObjectIdParam('id'), async (req, res) =>
     }
 
     // Verify seller owns at least one product in this order
-    const orderProductIds = order.orderItems.map(item => {
-      // Handle both ObjectId and string formats
-      return item.product?.toString ? item.product.toString() : item.product;
-    });
+    const orderProductIds = order.orderItems.map(item => item.productId);
     
-    const sellerProducts = await Product.find({ 
-      seller: req.user.id,
-      _id: { $in: orderProductIds }
+    const sellerProducts = await prisma.product.findMany({ 
+      where: {
+        sellerId: req.user.id,
+        id: { in: orderProductIds }
+      }
     });
 
     if (sellerProducts.length === 0) {
@@ -533,71 +593,50 @@ router.put('/:id/status', auth, validateObjectIdParam('id'), async (req, res) =>
       });
     }
 
-    // Get seller's product IDs for filtering
-    const sellerProductIds = sellerProducts.map(p => p._id.toString());
-    
-    // Filter order items to only include seller's products
-    const sellerOrderItems = order.orderItems.filter(item => {
-      const itemProductId = item.product?.toString ? item.product.toString() : item.product;
-      return sellerProductIds.includes(itemProductId);
-    });
-
-    // Check if all items in the order belong to this seller
-    // If not, we should only update status for seller's items (but current schema doesn't support per-item status)
-    // For now, we'll allow status update if seller has at least one item
-    // Note: This means status update affects the entire order, which may include other sellers' items
-    // This is a limitation of the current schema design
-
     // Validate status transitions
     const oldStatus = order.status;
     const validTransitions = {
-      'Pending': ['Paid', 'Cancelled'],
-      'Confirmed': ['Shipped', 'Paid', 'Cancelled'], // COD orders: can be marked Paid anytime
-      'Paid': ['Shipped', 'Cancelled'],
-      'Shipped': ['Delivered', 'Paid'], // COD orders can be marked as Paid after shipping
-      'Delivered': ['Paid'], // COD orders can be marked as Paid after delivery
-      'Cancelled': [] // Cannot transition from Cancelled
+      'PENDING': ['PAID', 'CANCELLED'],
+      'CONFIRMED': ['SHIPPED', 'PAID', 'CANCELLED'],
+      'PAID': ['SHIPPED', 'CANCELLED'],
+      'SHIPPED': ['DELIVERED', 'PAID'],
+      'DELIVERED': ['PAID'],
+      'CANCELLED': []
     };
 
-    if (!validTransitions[oldStatus]?.includes(status)) {
+    if (!validTransitions[oldStatus]?.includes(prismaStatus)) {
       return res.status(400).json({
         success: false,
-        msg: `Cannot change order status from ${oldStatus} to ${status}. Valid transitions: ${validTransitions[oldStatus]?.join(', ') || 'none'}`
+        msg: `Cannot change order status from ${oldStatus} to ${prismaStatus}.`
       });
     }
 
+    // Build update data
+    const updateData = { status: prismaStatus };
+    if (trackingNumber) updateData.trackingNumber = trackingNumber;
+    if (prismaStatus === 'SHIPPED' && !order.shippedAt) updateData.shippedAt = new Date();
+    if (prismaStatus === 'DELIVERED' && !order.deliveredAt) updateData.deliveredAt = new Date();
+
     // Update order status
-    order.status = status;
-
-    // Add tracking number if provided
-    if (trackingNumber) {
-      order.trackingNumber = trackingNumber;
-    }
-
-    // Set timestamps based on status
-    if (status === 'Shipped' && !order.shippedAt) {
-      order.shippedAt = new Date();
-    }
-    if (status === 'Delivered' && !order.deliveredAt) {
-      order.deliveredAt = new Date();
-    }
-
-    await order.save();
+    const updatedOrder = await prisma.order.update({
+      where: { id: req.params.id },
+      data: updateData
+    });
 
     // Send status update notification to buyer
-    sendOrderStatusUpdate(order, order.user, status).catch(err => {
+    sendOrderStatusUpdate(updatedOrder, order.user, status).catch(err => {
       console.error('Error sending status update notification:', err);
     });
 
     res.json({
       success: true,
-      msg: `Order status updated from ${oldStatus} to ${status}`,
+      msg: `Order status updated from ${oldStatus} to ${prismaStatus}`,
       order: {
-        id: order._id,
-        status: order.status,
-        trackingNumber: order.trackingNumber,
-        shippedAt: order.shippedAt,
-        deliveredAt: order.deliveredAt
+        id: updatedOrder.id,
+        status: updatedOrder.status,
+        trackingNumber: updatedOrder.trackingNumber,
+        shippedAt: updatedOrder.shippedAt,
+        deliveredAt: updatedOrder.deliveredAt
       }
     });
 
@@ -617,7 +656,7 @@ router.put('/:id/status', auth, validateObjectIdParam('id'), async (req, res) =>
 // @access  Private (Seller only)
 router.get('/seller/orders', auth, async (req, res) => {
   try {
-    const user = await User.findById(req.user.id);
+    const user = await prisma.user.findUnique({ where: { id: req.user.id } });
     if (!user.isSeller) {
       return res.status(403).json({ 
         success: false,
@@ -626,8 +665,10 @@ router.get('/seller/orders', auth, async (req, res) => {
     }
 
     // Find all products by this seller
-    const sellerProducts = await Product.find({ seller: req.user.id });
-    const productIds = sellerProducts.map(p => p._id.toString());
+    const sellerProducts = await prisma.product.findMany({ 
+      where: { sellerId: req.user.id } 
+    });
+    const productIds = sellerProducts.map(p => p.id);
 
     if (productIds.length === 0) {
       return res.json({
@@ -638,19 +679,32 @@ router.get('/seller/orders', auth, async (req, res) => {
     }
 
     // Find orders containing these products
-    const orders = await Order.find({
-      'orderItems.product': { $in: productIds }
-    })
-    .populate('user', 'email phone')
-    .sort({ createdAt: -1 });
+    const orders = await prisma.order.findMany({
+      where: {
+        orderItems: {
+          some: {
+            productId: { in: productIds }
+          }
+        }
+      },
+      include: {
+        user: {
+          select: {
+            id: true,
+            email: true,
+            phone: true
+          }
+        },
+        orderItems: true
+      },
+      orderBy: { createdAt: 'desc' }
+    });
 
     // Filter order items to show only seller's products and calculate seller's total
     const filteredOrders = orders.map(order => {
-      const orderObj = order.toObject();
-      const sellerItems = orderObj.orderItems.filter(item => {
-        const itemProductId = item.product?.toString() || item.product;
-        return productIds.includes(itemProductId);
-      });
+      const sellerItems = order.orderItems.filter(item => 
+        productIds.includes(item.productId)
+      );
       
       // Calculate total price for seller's items only
       const sellerTotalPrice = sellerItems.reduce((total, item) => {
@@ -658,9 +712,9 @@ router.get('/seller/orders', auth, async (req, res) => {
       }, 0);
 
       return {
-        ...orderObj,
+        ...order,
         orderItems: sellerItems,
-        sellerTotalPrice: sellerTotalPrice // Add seller's portion of the order
+        sellerTotalPrice: sellerTotalPrice
       };
     });
 
@@ -686,7 +740,7 @@ router.get('/seller/orders', auth, async (req, res) => {
 // @access  Private (Seller only)
 router.get('/seller/stats', auth, async (req, res) => {
   try {
-    const user = await User.findById(req.user.id);
+    const user = await prisma.user.findUnique({ where: { id: req.user.id } });
     if (!user.isSeller) {
       return res.status(403).json({ 
         success: false,
@@ -695,8 +749,10 @@ router.get('/seller/stats', auth, async (req, res) => {
     }
 
     // Find all products by this seller
-    const sellerProducts = await Product.find({ seller: req.user.id });
-    const productIds = sellerProducts.map(p => p._id.toString());
+    const sellerProducts = await prisma.product.findMany({ 
+      where: { sellerId: req.user.id } 
+    });
+    const productIds = sellerProducts.map(p => p.id);
 
     if (productIds.length === 0) {
       return res.json({
@@ -710,21 +766,28 @@ router.get('/seller/stats', auth, async (req, res) => {
     }
 
     // Find all orders containing seller's products
-    const allOrders = await Order.find({
-      'orderItems.product': { $in: productIds }
+    const allOrders = await prisma.order.findMany({
+      where: {
+        orderItems: {
+          some: {
+            productId: { in: productIds }
+          }
+        }
+      },
+      include: {
+        orderItems: true
+      }
     });
 
-    // Calculate total earnings from "Paid" orders only
-    // (As per requirement: sum of money from seller's products in "Paid" orders)
+    // Calculate total earnings from "PAID" orders only
     let totalEarnings = 0;
     
     for (const order of allOrders) {
-      if (order.status === 'Paid') {
+      if (order.status === 'PAID') {
         // Calculate seller's portion of this order
-        const sellerItems = order.orderItems.filter(item => {
-          const itemProductId = item.product?.toString ? item.product.toString() : item.product;
-          return productIds.includes(itemProductId);
-        });
+        const sellerItems = order.orderItems.filter(item => 
+          productIds.includes(item.productId)
+        );
         
         const sellerRevenue = sellerItems.reduce((total, item) => {
           return total + (item.price * item.quantity);
@@ -737,9 +800,9 @@ router.get('/seller/stats', auth, async (req, res) => {
     // Count total unique orders containing seller's products
     const totalOrders = allOrders.length;
 
-    // Count pending orders (status: "Pending" or "Paid" - waiting to be shipped)
+    // Count pending orders (status: "PENDING" or "PAID" - waiting to be shipped)
     const pendingOrders = allOrders.filter(order => 
-      order.status === 'Pending' || order.status === 'Paid'
+      order.status === 'PENDING' || order.status === 'PAID'
     ).length;
 
     res.json({

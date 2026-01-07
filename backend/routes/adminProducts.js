@@ -4,8 +4,7 @@
 const express = require('express');
 const router = express.Router();
 const adminAuth = require('../middleware/adminAuth');
-const Product = require('../models/Product');
-const User = require('../models/User');
+const prisma = require('../config/prisma');
 
 // ==========================================
 // PRODUCT MANAGEMENT
@@ -27,49 +26,64 @@ router.get('/', adminAuth, async (req, res) => {
       maxPrice = ''
     } = req.query;
 
-    // Build query
-    const query = {};
+    // Build where clause
+    const where = {};
 
     // Search by name, description, or brand
     if (search) {
-      query.$or = [
-        { name: { $regex: search, $options: 'i' } },
-        { description: { $regex: search, $options: 'i' } },
-        { brand: { $regex: search, $options: 'i' } }
+      where.OR = [
+        { name: { contains: search, mode: 'insensitive' } },
+        { description: { contains: search, mode: 'insensitive' } },
+        { brand: { contains: search, mode: 'insensitive' } }
       ];
     }
 
     // Filter by category
     if (category) {
-      query.category = category;
+      where.category = category;
     }
 
     // Filter by featured status
     if (featured !== '') {
-      query.featured = featured === 'true';
+      where.featured = featured === 'true';
     }
 
     // Filter by condition
     if (condition) {
-      query.condition = condition;
+      where.condition = condition.toUpperCase();
     }
 
     // Filter by price range
     if (minPrice || maxPrice) {
-      query.price = {};
-      if (minPrice) query.price.$gte = parseFloat(minPrice);
-      if (maxPrice) query.price.$lte = parseFloat(maxPrice);
+      where.price = {};
+      if (minPrice) where.price.gte = parseFloat(minPrice);
+      if (maxPrice) where.price.lte = parseFloat(maxPrice);
     }
 
     // Execute query with pagination
-    const products = await Product.find(query)
-      .populate('seller', 'email sellerDetails.businessName isVerified')
-      .sort({ createdAt: -1 })
-      .limit(limit * 1)
-      .skip((page - 1) * limit);
+    const products = await prisma.product.findMany({
+      where,
+      include: {
+        seller: {
+          select: {
+            id: true,
+            email: true,
+            isVerified: true,
+            sellerDetails: {
+              select: {
+                businessName: true
+              }
+            }
+          }
+        }
+      },
+      orderBy: { createdAt: 'desc' },
+      take: parseInt(limit),
+      skip: (parseInt(page) - 1) * parseInt(limit)
+    });
 
     // Get total count for pagination
-    const count = await Product.countDocuments(query);
+    const count = await prisma.product.count({ where });
 
     res.json({
       success: true,
@@ -93,8 +107,21 @@ router.get('/', adminAuth, async (req, res) => {
 // @access  Private (Admin only)
 router.get('/:id', adminAuth, async (req, res) => {
   try {
-    const product = await Product.findById(req.params.id)
-      .populate('seller', 'email phone sellerDetails isVerified isSuspended');
+    const product = await prisma.product.findUnique({
+      where: { id: req.params.id },
+      include: {
+        seller: {
+          select: {
+            id: true,
+            email: true,
+            phone: true,
+            isVerified: true,
+            isSuspended: true,
+            sellerDetails: true
+          }
+        }
+      }
+    });
 
     if (!product) {
       return res.status(404).json({

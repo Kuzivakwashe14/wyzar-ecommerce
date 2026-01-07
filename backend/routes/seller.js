@@ -4,7 +4,7 @@ const express = require('express');
 const router = express.Router();
 const auth = require('../middleware/auth');
 const verificationUploadOptimized = require('../middleware/verificationUploadOptimized');
-const User = require('../models/User');
+const prisma = require('../config/prisma');
 const multer = require('multer');
 const path = require('path');
 const { getStoragePath, getPublicUrl } = require('../config/localStorage');
@@ -93,7 +93,10 @@ router.post('/apply', auth, flexibleUpload, async (req, res) => {
     }
 
     // Find the user
-    const user = await User.findById(req.user.id);
+    const user = await prisma.user.findUnique({
+      where: { id: req.user.id },
+      include: { sellerDetails: true }
+    });
     if (!user) {
       return res.status(404).json({ msg: 'User not found.' });
     }
@@ -118,29 +121,77 @@ router.post('/apply', auth, flexibleUpload, async (req, res) => {
     }
 
     // Update the user with seller information
-    user.isSeller = true;
-    user.isVerified = false; // Admin must approve this
+    await prisma.user.update({
+      where: { id: req.user.id },
+      data: { isSeller: true, isVerified: false }
+    });
 
-    if (!user.sellerDetails) {
-      user.sellerDetails = {};
-    }
-
-    user.sellerDetails.businessName = businessName;
-    user.sellerDetails.sellerType = sellerType;
-    user.sellerDetails.phoneNumber = phoneNumber || user.sellerDetails.phoneNumber;
-    user.sellerDetails.address = parsedAddress || user.sellerDetails.address;
-    user.sellerDetails.verificationDocuments = verificationDocuments;
-    user.sellerDetails.verificationStatus = 'under_review';
-
-    // Keep legacy field for backwards compatibility
-    if (filesArray.length > 0) {
-      user.sellerDetails.verificationDocument = filesArray[0].path;
-    }
-
-    await user.save();
+    // Create or update seller details with documents
+    await prisma.sellerDetails.upsert({
+      where: { userId: req.user.id },
+      create: {
+        userId: req.user.id,
+        businessName,
+        sellerType: sellerType.toUpperCase(),
+        phoneNumber,
+        streetAddress: parsedAddress?.street || null,
+        city: parsedAddress?.city || null,
+        state: parsedAddress?.state || null,
+        country: parsedAddress?.country || null,
+        postalCode: parsedAddress?.postalCode || null,
+        verificationStatus: 'UNDER_REVIEW',
+        verificationDocuments: {
+          create: verificationDocuments.map((doc, index) => ({
+            documentType: docTypes[index].toUpperCase().replace('-', '_'),
+            documentPath: doc.documentPath,
+            documentName: doc.documentName,
+            status: 'PENDING'
+          }))
+        }
+      },
+      update: {
+        businessName,
+        sellerType: sellerType.toUpperCase(),
+        phoneNumber,
+        streetAddress: parsedAddress?.street || undefined,
+        city: parsedAddress?.city || undefined,
+        state: parsedAddress?.state || undefined,
+        country: parsedAddress?.country || undefined,
+        postalCode: parsedAddress?.postalCode || undefined,
+        verificationStatus: 'UNDER_REVIEW',
+        verificationDocuments: {
+          create: verificationDocuments.map((doc, index) => ({
+            documentType: docTypes[index].toUpperCase().replace('-', '_'),
+            documentPath: doc.documentPath,
+            documentName: doc.documentName,
+            status: 'PENDING'
+          }))
+        }
+      }
+    });
 
     // Send back the updated user data (excluding password)
-    const userResponse = await User.findById(req.user.id).select('-password');
+    const userResponse = await prisma.user.findUnique({
+      where: { id: req.user.id },
+      select: {
+        id: true,
+        email: true,
+        phone: true,
+        isPhoneVerified: true,
+        isEmailVerified: true,
+        isSeller: true,
+        isVerified: true,
+        role: true,
+        isSuspended: true,
+        createdAt: true,
+        updatedAt: true,
+        sellerDetails: {
+          include: {
+            verificationDocuments: true
+          }
+        }
+      }
+    });
     res.json({
       msg: `Application submitted successfully with ${filesArray.length} document(s)!`,
       user: userResponse
@@ -173,7 +224,10 @@ router.post('/upload-document', auth, (req, res) => {
     }
 
     try {
-      const user = await User.findById(req.user.id);
+      const user = await prisma.user.findUnique({
+        where: { id: req.user.id },
+        include: { sellerDetails: true }
+      });
       if (!user) {
         return res.status(404).json({ msg: 'User not found.' });
       }
@@ -182,29 +236,32 @@ router.post('/upload-document', auth, (req, res) => {
         return res.status(403).json({ msg: 'Only sellers can upload verification documents.' });
       }
 
-      if (!user.sellerDetails.verificationDocuments) {
-        user.sellerDetails.verificationDocuments = [];
+      if (!user.sellerDetails) {
+        return res.status(400).json({ msg: 'Seller details not found.' });
       }
 
       // Add new document
-      user.sellerDetails.verificationDocuments.push({
-        documentType,
-        documentPath: req.file.path,
-        documentName: req.file.originalname,
-        uploadedAt: new Date(),
-        status: 'pending'
+      const newDocument = await prisma.verificationDocument.create({
+        data: {
+          sellerDetailsId: user.sellerDetails.id,
+          documentType: documentType.toUpperCase().replace('-', '_'),
+          documentPath: req.file.path,
+          documentName: req.file.originalname,
+          status: 'PENDING'
+        }
       });
 
       // Update verification status if it was rejected
-      if (user.sellerDetails.verificationStatus === 'rejected') {
-        user.sellerDetails.verificationStatus = 'under_review';
+      if (user.sellerDetails.verificationStatus === 'REJECTED') {
+        await prisma.sellerDetails.update({
+          where: { id: user.sellerDetails.id },
+          data: { verificationStatus: 'UNDER_REVIEW' }
+        });
       }
-
-      await user.save();
 
       res.json({
         msg: 'Document uploaded successfully',
-        document: user.sellerDetails.verificationDocuments[user.sellerDetails.verificationDocuments.length - 1]
+        document: newDocument
       });
 
     } catch (err) {
@@ -225,27 +282,55 @@ router.put('/profile', auth, async (req, res) => {
   }
 
   try {
-    const user = await User.findById(req.user.id);
+    const user = await prisma.user.findUnique({
+      where: { id: req.user.id },
+      include: { sellerDetails: true }
+    });
 
     if (!user || !user.isSeller) {
       return res.status(401).json({ msg: 'Not authorized.' });
     }
 
+    if (!user.sellerDetails) {
+      return res.status(400).json({ msg: 'Seller details not found.' });
+    }
+
     // Update the sellerDetails
-    user.sellerDetails.businessName = businessName;
-
-    if (phoneNumber) {
-      user.sellerDetails.phoneNumber = phoneNumber;
-    }
-
-    if (address) {
-      user.sellerDetails.address = address;
-    }
-
-    await user.save();
+    await prisma.sellerDetails.update({
+      where: { id: user.sellerDetails.id },
+      data: {
+        businessName,
+        phoneNumber: phoneNumber || undefined,
+        streetAddress: address?.street || undefined,
+        city: address?.city || undefined,
+        state: address?.state || undefined,
+        country: address?.country || undefined,
+        postalCode: address?.postalCode || undefined
+      }
+    });
 
     // Send back the updated user data (excluding password)
-    const userResponse = await User.findById(req.user.id).select('-password');
+    const userResponse = await prisma.user.findUnique({
+      where: { id: req.user.id },
+      select: {
+        id: true,
+        email: true,
+        phone: true,
+        isPhoneVerified: true,
+        isEmailVerified: true,
+        isSeller: true,
+        isVerified: true,
+        role: true,
+        isSuspended: true,
+        createdAt: true,
+        updatedAt: true,
+        sellerDetails: {
+          include: {
+            verificationDocuments: true
+          }
+        }
+      }
+    });
     res.json({ msg: 'Profile updated successfully!', user: userResponse });
 
   } catch (err) {

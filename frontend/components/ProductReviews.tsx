@@ -81,7 +81,7 @@ export default function ProductReviews({ productId }: ProductReviewsProps) {
     try {
       const { data } = await api.get('/reviews/user/me');
       const review = data.reviews.find((r: any) => {
-        const rProductId = typeof r.product === 'object' ? r.product._id : r.product;
+        const rProductId = typeof r.product === 'object' ? r.product.id : r.product;
         return rProductId === productId;
       });
       setUserReview(review || null);
@@ -367,5 +367,6 @@ export default function ProductReviews({ productId }: ProductReviewsProps) {
     </div>
   );
 }
+
 
 

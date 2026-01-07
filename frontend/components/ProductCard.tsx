@@ -15,7 +15,7 @@ import { Heart, ShoppingCart, Star, Eye } from "lucide-react";
 
 // Define the Product type to match our API response
 export interface Product {
-  _id: string;
+  id: string;
   name: string;
   description: string;
   price: number;
@@ -23,7 +23,7 @@ export interface Product {
   category: string;
   images: string[];
   seller: {
-    _id: string;
+    id: string;
     sellerDetails: {
       businessName: string;
     };
@@ -50,7 +50,7 @@ export default function ProductCard({ product }: ProductCardProps) {
   const imageUrl = getImageUrl(product.images[0]);
   const rating = product.rating?.average || 0;
   const reviewCount = product.rating?.count || 0;
-  const isWishlisted = isInWishlist(product._id);
+  const isWishlisted = isInWishlist(product.id);
 
   const handleAddToCart = (e: React.MouseEvent) => {
     e.preventDefault();
@@ -72,11 +72,11 @@ export default function ProductCard({ product }: ProductCardProps) {
   const handleQuickView = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    router.push(`/products/${product._id}`);
+    router.push(`/products/${product.id}`);
   };
 
   const handleImageClick = () => {
-    router.push(`/products/${product._id}`);
+    router.push(`/products/${product.id}`);
   };
 
   return (
@@ -168,7 +168,7 @@ export default function ProductCard({ product }: ProductCardProps) {
         </Link>
 
         {/* Product Name */}
-        <Link href={`/products/${product._id}`}>
+        <Link href={`/products/${product.id}`}>
           <h3 className="mt-1 font-semibold text-gray-900 line-clamp-2 hover:text-shop_dark_green transition-colors">
             {product.name}
           </h3>
@@ -232,3 +232,4 @@ export default function ProductCard({ product }: ProductCardProps) {
     </div>
   );
 }
+

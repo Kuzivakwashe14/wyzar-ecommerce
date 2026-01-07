@@ -388,7 +388,9 @@ function validateObjectId(id, fieldName = 'ID') {
     return { isValid: false, errors };
   }
 
-  if (!/^[0-9a-fA-F]{24}$/.test(id)) {
+  // UUID format validation (PostgreSQL/Prisma uses UUIDs)
+  // Format: 8-4-4-4-12 hexadecimal characters
+  if (!/^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/i.test(id)) {
     errors.push(`${fieldName} is not a valid ID format`);
   }
 

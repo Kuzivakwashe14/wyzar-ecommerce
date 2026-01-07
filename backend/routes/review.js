@@ -1,14 +1,10 @@
 // backend/routes/review.js
 
 const express = require('express');
-const mongoose = require('mongoose');
 const router = express.Router();
 const auth = require('../middleware/auth');
 const adminAuth = require('../middleware/adminAuth');
-const Review = require('../models/Review');
-const Product = require('../models/Product');
-const Order = require('../models/Order');
-const User = require('../models/User');
+const prisma = require('../config/prisma');
 
 // ===== Input Validation =====
 const { validateReviewCreation, validateObjectIdParam } = require('../middleware/validateInput');
@@ -25,59 +21,70 @@ router.get('/product/:productId', validateObjectIdParam('productId'), async (req
     const { page = 1, limit = 10, sort = 'newest' } = req.query;
     const skip = (parseInt(page) - 1) * parseInt(limit);
 
-    let sortOption = { createdAt: -1 }; // Default: newest first
-    if (sort === 'oldest') sortOption = { createdAt: 1 };
-    if (sort === 'highest') sortOption = { rating: -1, createdAt: -1 };
-    if (sort === 'lowest') sortOption = { rating: 1, createdAt: -1 };
-    if (sort === 'helpful') sortOption = { helpful: -1, createdAt: -1 };
+    let orderBy = { createdAt: 'desc' }; // Default: newest first
+    if (sort === 'oldest') orderBy = { createdAt: 'asc' };
+    if (sort === 'highest') orderBy = [{ rating: 'desc' }, { createdAt: 'desc' }];
+    if (sort === 'lowest') orderBy = [{ rating: 'asc' }, { createdAt: 'desc' }];
+    if (sort === 'helpful') orderBy = [{ helpful: 'desc' }, { createdAt: 'desc' }];
 
-    const reviews = await Review.find({
-      product: req.params.productId,
-      isApproved: true
-    })
-      .populate('user', 'email')
-      .sort(sortOption)
-      .limit(parseInt(limit))
-      .skip(skip);
+    const reviews = await prisma.review.findMany({
+      where: {
+        productId: req.params.productId,
+        isApproved: true
+      },
+      include: {
+        user: {
+          select: {
+            id: true,
+            email: true
+          }
+        }
+      },
+      orderBy: Array.isArray(orderBy) ? orderBy : [orderBy],
+      take: parseInt(limit),
+      skip: skip
+    });
 
-    const total = await Review.countDocuments({
-      product: req.params.productId,
-      isApproved: true
+    const total = await prisma.review.count({
+      where: {
+        productId: req.params.productId,
+        isApproved: true
+      }
     });
 
     // Calculate rating distribution
-    const ratingDistribution = await Review.aggregate([
-      {
-        $match: {
-          product: new mongoose.Types.ObjectId(req.params.productId),
-          isApproved: true
-        }
+    const ratingGroups = await prisma.review.groupBy({
+      by: ['rating'],
+      where: {
+        productId: req.params.productId,
+        isApproved: true
       },
-      {
-        $group: {
-          _id: '$rating',
-          count: { $sum: 1 }
-        }
+      _count: {
+        rating: true
       },
-      { $sort: { _id: -1 } }
-    ]);
+      orderBy: {
+        rating: 'desc'
+      }
+    });
+
+    const ratingDistribution = ratingGroups.map(g => ({
+      _id: g.rating,
+      count: g._count.rating
+    }));
 
     // Calculate average rating
-    const avgRating = await Review.aggregate([
-      {
-        $match: {
-          product: new mongoose.Types.ObjectId(req.params.productId),
-          isApproved: true
-        }
+    const avgRating = await prisma.review.aggregate({
+      where: {
+        productId: req.params.productId,
+        isApproved: true
       },
-      {
-        $group: {
-          _id: null,
-          average: { $avg: '$rating' },
-          count: { $sum: 1 }
-        }
+      _avg: {
+        rating: true
+      },
+      _count: {
+        rating: true
       }
-    ]);
+    });
 
     res.json({
       success: true,
@@ -89,8 +96,8 @@ router.get('/product/:productId', validateObjectIdParam('productId'), async (req
         limit: parseInt(limit)
       },
       ratingStats: {
-        average: avgRating[0]?.average || 0,
-        count: avgRating[0]?.count || 0,
+        average: avgRating._avg.rating || 0,
+        count: avgRating._count.rating || 0,
         distribution: ratingDistribution
       }
     });

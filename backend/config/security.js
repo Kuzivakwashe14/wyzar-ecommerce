@@ -1,7 +1,7 @@
 // backend/config/security.js
 const helmet = require('helmet');
 const rateLimit = require('express-rate-limit');
-const mongoSanitize = require('express-mongo-sanitize');
+// Removed: express-mongo-sanitize (no longer needed with PostgreSQL)
 const hpp = require('hpp');
 const cors = require('cors');
 
@@ -89,18 +89,16 @@ const generalLimiter = rateLimit({
 });
 
 /**
- * MongoDB sanitization to prevent NoSQL injection
- * Removes $ and . from user input
- * Note: In Express 5, we can't sanitize req.query (read-only), so we only sanitize body and params
+ * MongoDB sanitization (NO LONGER USED - PostgreSQL with Prisma provides SQL injection protection)
+ * Kept for reference only - commented out
  */
-const mongoSanitizeConfig = mongoSanitize({
-  replaceWith: '_',
-  allowDots: false,
-  // Express 5 compatibility: only sanitize body and params, skip query
-  onSanitize: ({ req, key }) => {
-    console.warn(`Sanitized key: ${key} in request from ${req.ip}`);
-  },
-});
+// const mongoSanitizeConfig = mongoSanitize({
+//   replaceWith: '_',
+//   allowDots: false,
+//   onSanitize: ({ req, key }) => {
+//     console.warn(`Sanitized key: ${key} in request from ${req.ip}`);
+//   },
+// });
 
 /**
  * HPP (HTTP Parameter Pollution) protection
@@ -147,7 +145,7 @@ module.exports = {
   authLimiter,
   otpLimiter,
   generalLimiter,
-  mongoSanitizeConfig,
+  // mongoSanitizeConfig, // Removed - no longer needed with PostgreSQL
   hppConfig,
   securityHeaders,
   cookieConfig

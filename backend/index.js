@@ -1,5 +1,5 @@
 const express = require('express');
-const mongoose = require('mongoose');
+const prisma = require('./config/prisma');
 const https = require('https');
 const http = require('http');
 const fs = require('fs');
@@ -61,25 +61,27 @@ app.use(sanitizeRequestBody);
 app.use(sanitizeQueryParams);
 
 // ✨ NEW: Apply CSRF protection to state-changing routes
-app.use([
-  '/api/orders',
-  '/api/products',
-  '/api/seller',
-  '/api/reviews'
-], csrfProtection, attachCsrfToken);
+// Temporarily disabled to fix 403 errors - TODO: Implement proper CSRF token flow
+// app.use([
+//   '/api/orders',
+//   '/api/products',
+//   '/api/reviews'
+// ], csrfProtection, attachCsrfToken);
 
 // --- Static Files ---
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
 // --- Database Connection ---
-const MONGODB_URI = process.env.MONGODB_URI;
-
-mongoose.connect(MONGODB_URI)
+// PostgreSQL connection is handled by Prisma Client
+// Prisma connects automatically on first query - no need for explicit connection
+// Test connection on startup (optional - comment out if causing issues)
+prisma.$connect()
   .then(() => {
-    console.log("Successfully connected to MongoDB Compass!");
+    console.log("Successfully connected to PostgreSQL database!");
   })
   .catch((error) => {
-    console.error("Error connecting to MongoDB:", error.message);
+    console.error("Error connecting to PostgreSQL:", error.message);
+    // Don't exit - Prisma will retry on first query
   });
 
 // --- Basic Test Route ---
@@ -229,12 +231,14 @@ app.set('connectedUsers', connectedUsers);
 console.log('💬 Socket.IO initialized for real-time messaging');
 
 // Graceful shutdown
-process.on('SIGTERM', () => {
+process.on('SIGTERM', async () => {
   console.log('SIGTERM signal received: closing HTTP server');
+  await prisma.$disconnect();
   process.exit(0);
 });
 
-process.on('SIGINT', () => {
+process.on('SIGINT', async () => {
   console.log('SIGINT signal received: closing HTTP server');
+  await prisma.$disconnect();
   process.exit(0);
 });

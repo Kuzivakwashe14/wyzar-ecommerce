@@ -4,9 +4,7 @@
 const express = require('express');
 const router = express.Router();
 const adminAuth = require('../middleware/adminAuth');
-const User = require('../models/User');
-const Product = require('../models/Product');
-const Order = require('../models/Order');
+const prisma = require('../config/prisma');
 const { sendEmail } = require('../services/emailService');
 
 // ==========================================
@@ -18,13 +16,31 @@ const { sendEmail } = require('../services/emailService');
 // @access  Private (Admin only)
 router.get('/pending', adminAuth, async (req, res) => {
   try {
-    const pendingSellers = await User.find({
-      isSeller: true,
-      isVerified: false,
-      isSuspended: false
-    })
-      .select('-password')
-      .sort({ createdAt: 1 }); // Oldest first (FIFO)
+    const pendingSellers = await prisma.user.findMany({
+      where: {
+        isSeller: true,
+        isVerified: false,
+        isSuspended: false
+      },
+      select: {
+        id: true,
+        email: true,
+        phone: true,
+        isPhoneVerified: true,
+        isEmailVerified: true,
+        isSeller: true,
+        isVerified: true,
+        role: true,
+        createdAt: true,
+        updatedAt: true,
+        sellerDetails: {
+          include: {
+            verificationDocuments: true
+          }
+        }
+      },
+      orderBy: { createdAt: 'asc' } // Oldest first (FIFO)
+    });
 
     res.json({
       success: true,
@@ -48,25 +64,43 @@ router.get('/verified', adminAuth, async (req, res) => {
   try {
     const { page = 1, limit = 20, search = '' } = req.query;
 
-    const query = {
+    const where = {
       isSeller: true,
       isVerified: true
     };
 
     if (search) {
-      query.$or = [
-        { email: { $regex: search, $options: 'i' } },
-        { 'sellerDetails.businessName': { $regex: search, $options: 'i' } }
+      where.OR = [
+        { email: { contains: search, mode: 'insensitive' } },
+        { sellerDetails: { businessName: { contains: search, mode: 'insensitive' } } }
       ];
     }
 
-    const sellers = await User.find(query)
-      .select('-password')
-      .sort({ createdAt: -1 })
-      .limit(limit * 1)
-      .skip((page - 1) * limit);
+    const sellers = await prisma.user.findMany({
+      where,
+      select: {
+        id: true,
+        email: true,
+        phone: true,
+        isPhoneVerified: true,
+        isEmailVerified: true,
+        isSeller: true,
+        isVerified: true,
+        role: true,
+        createdAt: true,
+        updatedAt: true,
+        sellerDetails: {
+          include: {
+            verificationDocuments: true
+          }
+        }
+      },
+      orderBy: { createdAt: 'desc' },
+      take: limit * 1,
+      skip: (page - 1) * limit
+    });
 
-    const count = await User.countDocuments(query);
+    const count = await prisma.user.count({ where });
 
     res.json({
       success: true,
@@ -90,7 +124,28 @@ router.get('/verified', adminAuth, async (req, res) => {
 // @access  Private (Admin only)
 router.get('/:id', adminAuth, async (req, res) => {
   try {
-    const seller = await User.findById(req.params.id).select('-password');
+    const seller = await prisma.user.findUnique({
+      where: { id: req.params.id },
+      select: {
+        id: true,
+        email: true,
+        phone: true,
+        isPhoneVerified: true,
+        isEmailVerified: true,
+        isSeller: true,
+        isVerified: true,
+        role: true,
+        isSuspended: true,
+        suspensionReason: true,
+        createdAt: true,
+        updatedAt: true,
+        sellerDetails: {
+          include: {
+            verificationDocuments: true
+          }
+        }
+      }
+    });
 
     if (!seller) {
       return res.status(404).json({
@@ -107,91 +162,62 @@ router.get('/:id', adminAuth, async (req, res) => {
     }
 
     // Get seller's products
-    const products = await Product.find({ seller: seller._id })
-      .sort({ createdAt: -1 })
-      .limit(10);
+    const products = await prisma.product.findMany({
+      where: { sellerId: seller.id },
+      orderBy: { createdAt: 'desc' },
+      take: 10
+    });
 
-    // Get seller's orders and revenue
-    const orders = await Order.aggregate([
-      { $unwind: '$orderItems' },
-      {
-        $lookup: {
-          from: 'products',
-          localField: 'orderItems.product',
-          foreignField: '_id',
-          as: 'productInfo'
-        }
+    // Get seller revenue and orders from OrderItems
+    const orderItemsStats = await prisma.orderItem.aggregate({
+      where: {
+        product: { sellerId: seller.id },
+        order: { status: { in: ['PAID', 'SHIPPED', 'DELIVERED'] } }
       },
-      { $unwind: '$productInfo' },
-      {
-        $match: {
-          'productInfo.seller': seller._id
-        }
+      _sum: {
+        price: true
       },
-      {
-        $group: {
-          _id: '$_id',
-          orderDate: { $first: '$createdAt' },
-          status: { $first: '$status' },
-          total: { $sum: '$orderItems.price' },
-          items: { $sum: 1 }
-        }
-      },
-      { $sort: { orderDate: -1 } },
-      { $limit: 10 }
-    ]);
-
-    // Calculate total revenue
-    const revenueData = await Order.aggregate([
-      {
-        $match: {
-          status: { $in: ['Paid', 'Shipped', 'Delivered'] }
-        }
-      },
-      { $unwind: '$orderItems' },
-      {
-        $lookup: {
-          from: 'products',
-          localField: 'orderItems.product',
-          foreignField: '_id',
-          as: 'productInfo'
-        }
-      },
-      { $unwind: '$productInfo' },
-      {
-        $match: {
-          'productInfo.seller': seller._id
-        }
-      },
-      {
-        $group: {
-          _id: null,
-          totalRevenue: {
-            $sum: {
-              $multiply: ['$orderItems.quantity', '$orderItems.price']
-            }
-          },
-          totalOrders: { $sum: 1 }
-        }
+      _count: {
+        id: true
       }
-    ]);
+    });
 
     const stats = {
-      products: await Product.countDocuments({ seller: seller._id }),
-      revenue: revenueData[0]?.totalRevenue || 0,
-      orders: revenueData[0]?.totalOrders || 0,
-      commission: (revenueData[0]?.totalRevenue || 0) * 0.10
+      products: await prisma.product.count({ where: { sellerId: seller.id } }),
+      revenue: orderItemsStats._sum.price || 0,
+      orders: orderItemsStats._count.id || 0,
+      commission: (orderItemsStats._sum.price || 0) * 0.10
     };
+
+    // Get recent orders for this seller
+    const recentOrders = await prisma.order.findMany({
+      where: {
+        orderItems: {
+          some: {
+            product: { sellerId: seller.id }
+          }
+        }
+      },
+      include: {
+        orderItems: {
+          where: {
+            product: { sellerId: seller.id }
+          }
+        }
+      },
+      orderBy: { createdAt: 'desc' },
+      take: 10
+    });
 
     // Include verification documents information
     const verificationDocuments = seller.sellerDetails?.verificationDocuments || [];
     const documentSummary = {
       totalDocuments: verificationDocuments.length,
-      approvedDocuments: verificationDocuments.filter(doc => doc.status === 'approved').length,
-      pendingDocuments: verificationDocuments.filter(doc => doc.status === 'pending').length,
-      rejectedDocuments: verificationDocuments.filter(doc => doc.status === 'rejected').length,
+      approvedDocuments: verificationDocuments.filter(doc => doc.status === 'APPROVED').length,
+      pendingDocuments: verificationDocuments.filter(doc => doc.status === 'PENDING').length,
+      rejectedDocuments: verificationDocuments.filter(doc => doc.status === 'REJECTED').length,
       documents: verificationDocuments.map(doc => ({
-        _id: doc._id,
+        id: doc.id,
         documentType: doc.documentType,
         documentName: doc.documentName,
         uploadedAt: doc.uploadedAt,
@@ -204,7 +230,7 @@ router.get('/:id', adminAuth, async (req, res) => {
       success: true,
       seller,
       products,
-      recentOrders: orders,
+      recentOrders,
       stats,
       verificationDocuments: documentSummary
     });
@@ -225,7 +251,12 @@ router.put('/:id/verify', adminAuth, async (req, res) => {
   try {
     const { approve, reason } = req.body; // approve: true/false, reason: string for rejection
 
-    const seller = await User.findById(req.params.id);
+    const seller = await prisma.user.findUnique({
+      where: { id: req.params.id },
+      include: {
+        sellerDetails: true
+      }
+    });
 
     if (!seller) {
       return res.status(404).json({
@@ -250,8 +281,23 @@ router.put('/:id/verify', adminAuth, async (req, res) => {
 
     if (approve) {
       // Approve seller
-      seller.isVerified = true;
-      await seller.save();
+      const updatedSeller = await prisma.user.update({
+        where: { id: seller.id },
+        data: { isVerified: true },
+        select: {
+          id: true,
+          email: true,
+          phone: true,
+          isPhoneVerified: true,
+          isEmailVerified: true,
+          isSeller: true,
+          isVerified: true,
+          role: true,
+          createdAt: true,
+          updatedAt: true,
+          sellerDetails: true
+        }
+      });
 
       // Send approval email
       try {
@@ -275,13 +321,17 @@ router.put('/:id/verify', adminAuth, async (req, res) => {
       res.json({
         success: true,
         msg: 'Seller approved successfully',
-        seller: await User.findById(seller._id).select('-password')
+        seller: updatedSeller
       });
     } else {
       // Reject seller
-      seller.isSeller = false;
-      seller.isVerified = false;
-      await seller.save();
+      await prisma.user.update({
+        where: { id: seller.id },
+        data: {
+          isSeller: false,
+          isVerified: false
+        }
+      });
 
       // Send rejection email
       try {

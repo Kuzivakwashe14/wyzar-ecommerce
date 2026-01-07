@@ -4,7 +4,7 @@ const router = express.Router();
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const auth = require('../middleware/auth');
-const User = require('../models/User');
+const prisma = require('../config/prisma');
 const { sendWelcomeNotification, sendLoginAlert } = require('../services/notificationService');
 const { authLimiter } = require('../config/security');
 
@@ -20,10 +20,12 @@ const { validatePasswordMiddleware } = require('../utils/passwordSecurity');
 router.post('/register', authLimiter, sanitizeRequestBody, validateRegistration, validatePasswordMiddleware, async (req, res) => {
   // 1. Get email and password from the request body
   const { email, password } = req.body;
+  console.log('Registration request received:', { email, passwordLength: password?.length });
 
   try {
     // Validate input
     if (!email || !password) {
+      console.log('Validation failed: missing email or password');
       return res.status(400).json({
         success: false,
         msg: 'Email and password are required'
@@ -31,7 +33,7 @@ router.post('/register', authLimiter, sanitizeRequestBody, validateRegistration,
     }
 
     // 2. Check if the email already exists
-    let existingEmail = await User.findOne({ email });
+    let existingEmail = await prisma.user.findUnique({ where: { email } });
     if (existingEmail) {
       return res.status(400).json({
         success: false,
@@ -44,23 +46,22 @@ router.post('/register', authLimiter, sanitizeRequestBody, validateRegistration,
     // For now, we'll create the user and mark email as unverified
     // The user will verify it in the next step
 
-    // 4. Create a new user instance
-    // Auto-assign admin role if email contains @wyzar
-    const role = email.toLowerCase().includes('@wyzar') ? 'admin' : 'user';
-
-    const user = new User({
-      email,
-      password,
-      isEmailVerified: false, // Will be set to true after OTP verification
-      role: role
-    });
-
-    // 5. Hash the password
+    // 4. Hash the password
     const salt = await bcrypt.genSalt(10);
-    user.password = await bcrypt.hash(password, salt);
+    const hashedPassword = await bcrypt.hash(password, salt);
 
-    // 6. Save the user to the database
-    await user.save();
+    // 5. Create a new user instance
+    // Auto-assign admin role if email contains @wyzar
+    const role = email.toLowerCase().includes('@wyzar') ? 'ADMIN' : 'USER';
+
+    const user = await prisma.user.create({
+      data: {
+        email,
+        password: hashedPassword,
+        isEmailVerified: false, // Will be set to true after OTP verification
+        role: role
+      }
+    });
 
     // 7. Send welcome notification (email) - Don't wait for it
     sendWelcomeNotification(user).catch(err => {
@@ -127,7 +128,16 @@ router.post('/login', authLimiter, sanitizeRequestBody,  validateLogin,  async (
     }
 
     // 2. Find user by email
-    const user = await User.findOne({ email });
+    const user = await prisma.user.findUnique({ 
+      where: { email },
+      include: {
+        sellerDetails: {
+          include: {
+            verificationDocuments: true
+          }
+        }
+      }
+    });
 
     if (!user) {
       return res.status(400).json({
@@ -214,7 +224,27 @@ router.get('/me', auth, async (req, res) => {
   try {
     // req.user.id comes from the auth middleware
     // We find the user by ID but exclude the password
-    const user = await User.findById(req.user.id).select('-password');
+    const user = await prisma.user.findUnique({
+      where: { id: req.user.id },
+      select: {
+        id: true,
+        email: true,
+        phone: true,
+        isPhoneVerified: true,
+        isEmailVerified: true,
+        isSeller: true,
+        isVerified: true,
+        role: true,
+        isSuspended: true,
+        suspensionReason: true,
+        createdAt: true,
+        sellerDetails: {
+          include: {
+            verificationDocuments: true
+          }
+        }
+      }
+    });
     res.json(user);
   } catch (err) {
     console.error(err.message);

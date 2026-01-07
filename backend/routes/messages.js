@@ -1,11 +1,7 @@
 // routes/messages.js
 const express = require('express');
 const router = express.Router();
-const Message = require('../models/Message');
-const Conversation = require('../models/Conversation');
-const Product = require('../models/Product');
-const User = require('../models/User');
-const Report = require('../models/Report');
+const prisma = require('../config/prisma');
 const auth = require('../middleware/auth');
 const multer = require('multer');
 const path = require('path');
@@ -17,27 +13,59 @@ const { sendMessageNotificationEmail } = require('../services/emailService');
 // @access  Private
 router.get('/conversations', auth, async (req, res) => {
   try {
-    const conversations = await Conversation.find({
-      participants: req.user.id
-    })
-      .populate('participants', 'email sellerDetails')
-      .populate('product', 'name images price')
-      .populate('lastMessage')
-      .sort({ lastMessageAt: -1 });
+    const conversations = await prisma.conversation.findMany({
+      where: {
+        participants: {
+          some: {
+            userId: req.user.id
+          }
+        }
+      },
+      include: {
+        participants: {
+          include: {
+            user: {
+              select: {
+                id: true,
+                email: true,
+                sellerDetails: {
+                  select: {
+                    businessName: true
+                  }
+                }
+              }
+            }
+          }
+        },
+        product: {
+          select: {
+            id: true,
+            name: true,
+            images: true,
+            price: true
+          }
+        },
+        lastMessage: true
+      },
+      orderBy: { lastMessageAt: 'desc' }
+    });
 
     // Format conversations with unread count
     const formattedConversations = conversations.map(conv => {
+      const currentUserParticipant = conv.participants.find(
+        p => p.userId === req.user.id
+      );
       const otherParticipant = conv.participants.find(
-        p => p._id.toString() !== req.user.id
+        p => p.userId !== req.user.id
       );
 
       return {
-        _id: conv._id,
-        otherUser: otherParticipant,
+        id: conv.id,
+        otherUser: otherParticipant?.user,
         product: conv.product,
         lastMessage: conv.lastMessage,
         lastMessageAt: conv.lastMessageAt,
-        unreadCount: conv.getUnreadCount(req.user.id),
+        unreadCount: currentUserParticipant?.unreadCount || 0,
         createdAt: conv.createdAt
       };
     });
@@ -54,39 +82,72 @@ router.get('/conversations', auth, async (req, res) => {
 // @access  Private
 router.get('/conversation/:conversationId', auth, async (req, res) => {
   try {
-    const conversation = await Conversation.findById(req.params.conversationId);
+    const conversation = await prisma.conversation.findUnique({
+      where: { id: req.params.conversationId },
+      include: {
+        participants: true
+      }
+    });
 
     if (!conversation) {
       return res.status(404).json({ msg: 'Conversation not found' });
     }
 
     // Check if user is a participant
-    if (!conversation.participants.includes(req.user.id)) {
+    const isParticipant = conversation.participants.some(p => p.userId === req.user.id);
+    if (!isParticipant) {
       return res.status(403).json({ msg: 'Access denied' });
     }
 
     // Get messages
-    const messages = await Message.find({ conversation: conversation._id })
-      .populate('sender', 'email sellerDetails')
-      .populate('receiver', 'email sellerDetails')
-      .sort({ createdAt: 1 });
+    const messages = await prisma.message.findMany({
+      where: { conversationId: conversation.id },
+      include: {
+        sender: {
+          select: {
+            id: true,
+            email: true,
+            sellerDetails: {
+              select: { businessName: true }
+            }
+          }
+        },
+        receiver: {
+          select: {
+            id: true,
+            email: true,
+            sellerDetails: {
+              select: { businessName: true }
+            }
+          }
+        }
+      },
+      orderBy: { createdAt: 'asc' }
+    });
 
     // Mark messages as read
-    await Message.updateMany(
-      {
-        conversation: conversation._id,
-        receiver: req.user.id,
+    await prisma.message.updateMany({
+      where: {
+        conversationId: conversation.id,
+        receiverId: req.user.id,
         isRead: false
       },
-      {
+      data: {
         isRead: true,
         readAt: new Date()
       }
-    );
+    });
 
     // Reset unread count for this user
-    conversation.resetUnread(req.user.id);
-    await conversation.save();
+    await prisma.conversationParticipant.updateMany({
+      where: {
+        conversationId: conversation.id,
+        userId: req.user.id
+      },
+      data: {
+        unreadCount: 0
+      }
+    });
 
     res.json(messages);
   } catch (error) {
@@ -114,54 +175,96 @@ router.post('/send', auth, async (req, res) => {
     // Verify product exists if provided
     let product = null;
     if (productId) {
-      product = await Product.findById(productId);
+      product = await prisma.product.findUnique({ where: { id: productId } });
       if (!product) {
         return res.status(404).json({ msg: 'Product not found' });
       }
     }
 
     // Find or create conversation (one conversation per pair of users)
-    let conversation = await Conversation.findOne({
-      participants: { $all: [req.user.id, receiverId] }
+    let conversation = await prisma.conversation.findFirst({
+      where: {
+        AND: [
+          { participants: { some: { userId: req.user.id } } },
+          { participants: { some: { userId: receiverId } } }
+        ]
+      },
+      include: { participants: true }
     });
 
     if (!conversation) {
-      conversation = new Conversation({
-        participants: [req.user.id, receiverId],
-        product: productId || null
+      conversation = await prisma.conversation.create({
+        data: {
+          productId: productId || null,
+          participants: {
+            create: [
+              { userId: req.user.id },
+              { userId: receiverId }
+            ]
+          }
+        },
+        include: { participants: true }
       });
-      await conversation.save();
-    } else if (productId && !conversation.product) {
+    } else if (productId && !conversation.productId) {
       // Update conversation with product if it didn't have one
-      conversation.product = productId;
-      await conversation.save();
+      conversation = await prisma.conversation.update({
+        where: { id: conversation.id },
+        data: { productId },
+        include: { participants: true }
+      });
     }
 
     // Create message
-    const newMessage = new Message({
-      conversation: conversation._id,
-      sender: req.user.id,
-      receiver: receiverId,
-      message: message.trim()
+    const newMessage = await prisma.message.create({
+      data: {
+        conversationId: conversation.id,
+        senderId: req.user.id,
+        receiverId,
+        message: message.trim()
+      },
+      include: {
+        sender: {
+          select: {
+            id: true,
+            email: true,
+            sellerDetails: { select: { businessName: true } }
+          }
+        },
+        receiver: {
+          select: {
+            id: true,
+            email: true,
+            sellerDetails: { select: { businessName: true } }
+          }
+        }
+      }
     });
 
-    await newMessage.save();
-
     // Update conversation
-    conversation.lastMessage = newMessage._id;
-    conversation.lastMessageAt = new Date();
-    conversation.incrementUnread(receiverId);
-    await conversation.save();
+    await prisma.conversation.update({
+      where: { id: conversation.id },
+      data: {
+        lastMessageId: newMessage.id,
+        lastMessageAt: new Date()
+      }
+    });
 
-    // Populate sender info for response
-    await newMessage.populate('sender', 'email sellerDetails');
-    await newMessage.populate('receiver', 'email sellerDetails');
+    // Increment unread count for receiver
+    await prisma.conversationParticipant.updateMany({
+      where: {
+        conversationId: conversation.id,
+        userId: receiverId
+      },
+      data: {
+        unreadCount: { increment: 1 }
+      }
+    });
 
     // Emit socket event for real-time update (if socket.io is set up)
     if (req.app.get('io')) {
       req.app.get('io').to(receiverId).emit('new_message', {
         message: newMessage,
-        conversationId: conversation._id
+        conversationId: conversation.id
       });
     }
 
@@ -171,8 +274,20 @@ router.post('/send', auth, async (req, res) => {
 
     if (!isReceiverOnline) {
       // Get receiver user object
-      const receiver = await User.findById(receiverId).select('email sellerDetails');
-      const sender = await User.findById(req.user.id).select('email sellerDetails');
+      const receiver = await prisma.user.findUnique({
+        where: { id: receiverId },
+        select: {
+          email: true,
+          sellerDetails: { select: { businessName: true } }
+        }
+      });
+      const sender = await prisma.user.findUnique({
+        where: { id: req.user.id },
+        select: {
+          email: true,
+          sellerDetails: { select: { businessName: true } }
+        }
+      });
 
       if (receiver && sender) {
         // Send email notification asynchronously (don't wait for it)
@@ -184,7 +299,7 @@ router.post('/send', auth, async (req, res) => {
 
     res.json({
       message: newMessage,
-      conversationId: conversation._id
+      conversationId: conversation.id
     });
   } catch (error) {
     console.error('Error sending message:', error);
@@ -197,14 +312,12 @@ router.post('/send', auth, async (req, res) => {
 // @access  Private
 router.get('/unread-count', auth, async (req, res) => {
   try {
-    const conversations = await Conversation.find({
-      participants: req.user.id
+    const participants = await prisma.conversationParticipant.findMany({
+      where: { userId: req.user.id },
+      select: { unreadCount: true }
     });
 
-    let totalUnread = 0;
-    conversations.forEach(conv => {
-      totalUnread += conv.getUnreadCount(req.user.id);
-    });
+    const totalUnread = participants.reduce((sum, p) => sum + p.unreadCount, 0);
 
     res.json({ unreadCount: totalUnread });
   } catch (error) {
@@ -218,30 +331,39 @@ router.get('/unread-count', auth, async (req, res) => {
 // @access  Private
 router.post('/mark-read/:conversationId', auth, async (req, res) => {
   try {
-    const conversation = await Conversation.findById(req.params.conversationId);
+    const conversation = await prisma.conversation.findUnique({
+      where: { id: req.params.conversationId },
+      include: { participants: true }
+    });
 
     if (!conversation) {
       return res.status(404).json({ msg: 'Conversation not found' });
     }
 
-    if (!conversation.participants.includes(req.user.id)) {
+    const isParticipant = conversation.participants.some(p => p.userId === req.user.id);
+    if (!isParticipant) {
       return res.status(403).json({ msg: 'Access denied' });
     }
 
-    await Message.updateMany(
-      {
-        conversation: conversation._id,
-        receiver: req.user.id,
+    await prisma.message.updateMany({
+      where: {
+        conversationId: conversation.id,
+        receiverId: req.user.id,
         isRead: false
       },
-      {
+      data: {
         isRead: true,
         readAt: new Date()
       }
-    );
+    });
 
-    conversation.resetUnread(req.user.id);
-    await conversation.save();
+    await prisma.conversationParticipant.updateMany({
+      where: {
+        conversationId: conversation.id,
+        userId: req.user.id
+      },
+      data: { unreadCount: 0 }
+    });
 
     res.json({ msg: 'Messages marked as read' });
   } catch (error) {
@@ -318,10 +440,23 @@ router.post('/block/:userId', auth, async (req, res) => {
       return res.status(400).json({ msg: 'Cannot block yourself' });
     }
 
-    const user = await User.findById(req.user.id);
-    if (!user.blockedUsers.includes(userIdToBlock)) {
-      user.blockedUsers.push(userIdToBlock);
-      await user.save();
+    // Check if already blocked
+    const existing = await prisma.userBlock.findUnique({
+      where: {
+        blockerId_blockedId: {
+          blockerId: req.user.id,
+          blockedId: userIdToBlock
+        }
+      }
+    });
+
+    if (!existing) {
+      await prisma.userBlock.create({
+        data: {
+          blockerId: req.user.id,
+          blockedId: userIdToBlock
+        }
+      });
     }
 
     res.json({ msg: 'User blocked successfully' });
@@ -338,11 +473,12 @@ router.post('/unblock/:userId', auth, async (req, res) => {
   try {
     const userIdToUnblock = req.params.userId;
 
-    const user = await User.findById(req.user.id);
-    user.blockedUsers = user.blockedUsers.filter(
-      id => id.toString() !== userIdToUnblock
-    );
-    await user.save();
+    await prisma.userBlock.deleteMany({
+      where: {
+        blockerId: req.user.id,
+        blockedId: userIdToUnblock
+      }
+    });
 
     res.json({ msg: 'User unblocked successfully' });
   } catch (error) {
@@ -356,8 +492,19 @@ router.post('/unblock/:userId', auth, async (req, res) => {
 // @access  Private
 router.get('/blocked-users', auth, async (req, res) => {
   try {
-    const user = await User.findById(req.user.id).populate('blockedUsers', 'email sellerDetails');
-    res.json(user.blockedUsers || []);
+    const blockedUsers = await prisma.userBlock.findMany({
+      where: { blockerId: req.user.id },
+      include: {
+        blocked: {
+          select: {
+            id: true,
+            email: true,
+            sellerDetails: { select: { businessName: true } }
+          }
+        }
+      }
+    });
+    res.json(blockedUsers.map(b => b.blocked));
   } catch (error) {
     console.error('Error fetching blocked users:', error);
     res.status(500).json({ msg: 'Server error' });
@@ -369,9 +516,15 @@ router.get('/blocked-users', auth, async (req, res) => {
 // @access  Private
 router.get('/is-blocked/:userId', auth, async (req, res) => {
   try {
-    const user = await User.findById(req.user.id);
-    const isBlocked = user.blockedUsers.includes(req.params.userId);
-    res.json({ isBlocked });
+    const block = await prisma.userBlock.findUnique({
+      where: {
+        blockerId_blockedId: {
+          blockerId: req.user.id,
+          blockedId: req.params.userId
+        }
+      }
+    });
+    res.json({ isBlocked: !!block });
   } catch (error) {
     console.error('Error checking block status:', error);
     res.status(500).json({ msg: 'Server error' });
@@ -395,18 +548,18 @@ router.post('/report', auth, async (req, res) => {
       return res.status(400).json({ msg: 'Cannot report yourself' });
     }
 
-    const report = new Report({
-      reporter: req.user.id,
-      reportedUser: reportedUserId,
-      reason,
-      description,
-      relatedMessage: messageId || null,
-      relatedConversation: conversationId || null
+    const report = await prisma.report.create({
+      data: {
+        reporterId: req.user.id,
+        reportedUserId,
+        reason: reason.toUpperCase().replace('-', '_'),
+        description,
+        relatedMessageId: messageId || null,
+        relatedConversationId: conversationId || null
+      }
     });
 
-    await report.save();
-
-    res.json({ msg: 'Report submitted successfully', reportId: report._id });
+    res.json({ msg: 'Report submitted successfully', reportId: report.id });
   } catch (error) {
     console.error('Error submitting report:', error);
     res.status(500).json({ msg: 'Server error' });
@@ -418,9 +571,19 @@ router.post('/report', auth, async (req, res) => {
 // @access  Private
 router.get('/my-reports', auth, async (req, res) => {
   try {
-    const reports = await Report.find({ reporter: req.user.id })
-      .populate('reportedUser', 'email sellerDetails')
-      .sort({ createdAt: -1 });
+    const reports = await prisma.report.findMany({
+      where: { reporterId: req.user.id },
+      include: {
+        reportedUser: {
+          select: {
+            id: true,
+            email: true,
+            sellerDetails: { select: { businessName: true } }
+          }
+        }
+      },
+      orderBy: { createdAt: 'desc' }
+    });
 
     res.json(reports);
   } catch (error) {
@@ -443,23 +606,45 @@ router.get('/search', auth, async (req, res) => {
     }
 
     const searchFilter = {
-      $or: [
-        { sender: req.user.id },
-        { receiver: req.user.id }
-      ],
-      message: { $regex: query, $options: 'i' }
+      AND: [
+        {
+          OR: [
+            { senderId: req.user.id },
+            { receiverId: req.user.id }
+          ]
+        },
+        {
+          message: { contains: query, mode: 'insensitive' }
+        }
+      ]
     };
 
     if (conversationId) {
-      searchFilter.conversation = conversationId;
+      searchFilter.AND.push({ conversationId });
     }
 
-    const messages = await Message.find(searchFilter)
-      .populate('sender', 'email sellerDetails')
-      .populate('receiver', 'email sellerDetails')
-      .populate('conversation')
-      .sort({ createdAt: -1 })
-      .limit(50);
+    const messages = await prisma.message.findMany({
+      where: searchFilter,
+      include: {
+        sender: {
+          select: {
+            id: true,
+            email: true,
+            sellerDetails: { select: { businessName: true } }
+          }
+        },
+        receiver: {
+          select: {
+            id: true,
+            email: true,
+            sellerDetails: { select: { businessName: true } }
+          }
+        },
+        conversation: true
+      },
+      orderBy: { createdAt: 'desc' },
+      take: 50
+    });
 
     res.json(messages);
   } catch (error) {
@@ -526,51 +711,93 @@ router.post('/send-with-images', auth, (req, res) => {
       }
 
       // Find or create conversation (one conversation per pair of users)
-      let conversation = await Conversation.findOne({
-        participants: { $all: [req.user.id, receiverId] }
+      let conversation = await prisma.conversation.findFirst({
+        where: {
+          AND: [
+            { participants: { some: { userId: req.user.id } } },
+            { participants: { some: { userId: receiverId } } }
+          ]
+        },
+        include: { participants: true }
       });
 
       if (!conversation) {
-        conversation = new Conversation({
-          participants: [req.user.id, receiverId],
-          product: productId || null
+        conversation = await prisma.conversation.create({
+          data: {
+            productId: productId || null,
+            participants: {
+              create: [
+                { userId: req.user.id },
+                { userId: receiverId }
+              ]
+            }
+          },
+          include: { participants: true }
         });
-        await conversation.save();
-      } else if (productId && !conversation.product) {
+      } else if (productId && !conversation.productId) {
         // Update conversation with product if it didn't have one
-        conversation.product = productId;
-        await conversation.save();
+        conversation = await prisma.conversation.update({
+          where: { id: conversation.id },
+          data: { productId },
+          include: { participants: true }
+        });
       }
 
       // Convert uploaded files to public URLs
       const attachments = req.files ? req.files.map(file => getPublicUrl(file.path)) : [];
 
       // Create message
-      const newMessage = new Message({
-        conversation: conversation._id,
-        sender: req.user.id,
-        receiver: receiverId,
-        message: message || '',
-        attachments
+      const newMessage = await prisma.message.create({
+        data: {
+          conversationId: conversation.id,
+          senderId: req.user.id,
+          receiverId,
+          message: message || '',
+          attachments
+        },
+        include: {
+          sender: {
+            select: {
+              id: true,
+              email: true,
+              sellerDetails: { select: { businessName: true } }
+            }
+          },
+          receiver: {
+            select: {
+              id: true,
+              email: true,
+              sellerDetails: { select: { businessName: true } }
+            }
+          }
+        }
       });
 
-      await newMessage.save();
-
       // Update conversation
-      conversation.lastMessage = newMessage._id;
-      conversation.lastMessageAt = new Date();
-      conversation.incrementUnread(receiverId);
-      await conversation.save();
+      await prisma.conversation.update({
+        where: { id: conversation.id },
+        data: {
+          lastMessageId: newMessage.id,
+          lastMessageAt: new Date()
+        }
+      });
 
-      // Populate sender info for response
-      await newMessage.populate('sender', 'email sellerDetails');
-      await newMessage.populate('receiver', 'email sellerDetails');
+      // Increment unread count for receiver
+      await prisma.conversationParticipant.updateMany({
+        where: {
+          conversationId: conversation.id,
+          userId: receiverId
+        },
+        data: {
+          unreadCount: { increment: 1 }
+        }
+      });
 
       // Emit socket event for real-time update
       if (req.app.get('io')) {
         req.app.get('io').emit('new_message', {
           message: newMessage,
-          conversationId: conversation._id
+          conversationId: conversation.id
         });
       }
 
@@ -580,8 +807,20 @@ router.post('/send-with-images', auth, (req, res) => {
 
       if (!isReceiverOnline) {
         // Get receiver user object
-        const receiver = await User.findById(receiverId).select('email sellerDetails');
-        const sender = await User.findById(req.user.id).select('email sellerDetails');
+        const receiver = await prisma.user.findUnique({
+          where: { id: receiverId },
+          select: {
+            email: true,
+            sellerDetails: { select: { businessName: true } }
+          }
+        });
+        const sender = await prisma.user.findUnique({
+          where: { id: req.user.id },
+          select: {
+            email: true,
+            sellerDetails: { select: { businessName: true } }
+          }
+        });
 
         if (receiver && sender) {
           // Create message preview
@@ -597,7 +836,7 @@ router.post('/send-with-images', auth, (req, res) => {
 
       res.json({
         message: newMessage,
-        conversationId: conversation._id
+        conversationId: conversation.id
       });
     } catch (error) {
       console.error('Error sending message with images:', error);

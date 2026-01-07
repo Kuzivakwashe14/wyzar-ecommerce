@@ -17,23 +17,27 @@ const {
  * Validate user registration input
  */
 const validateRegistration = (req, res, next) => {
+  console.log('validateRegistration middleware:', req.body);
   try {
     const { email, password, phone } = req.body;
 
     // Validate email
     if (email) {
       req.body.email = validateEmail(email);
+      console.log('Email validated:', req.body.email);
     }
 
     // Validate phone (if provided)
     if (phone) {
       req.body.phone = validatePhone(phone);
+      console.log('Phone validated:', req.body.phone);
     }
 
     // Password validation happens in passwordSecurity middleware
-    
+    console.log('validateRegistration passed');
     next();
   } catch (error) {
+    console.log('validateRegistration error:', error.message, error.field);
     if (error instanceof ValidationError) {
       return res.status(400).json({
         success: false,

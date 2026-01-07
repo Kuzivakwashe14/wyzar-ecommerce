@@ -1,7 +1,7 @@
 // backend/routes/search.js
 const express = require('express');
 const router = express.Router();
-const Product = require('../models/Product');
+const prisma = require('../config/prisma');
 
 /**
  * @route   GET /api/search
@@ -27,48 +27,53 @@ router.get('/', async (req, res) => {
     } = req.query;
 
     // Build query object
-    const query = {};
+    const where = {};
 
-    // Text search
+    // Text search - Prisma supports search on indexed fields
     if (q && q.trim()) {
-      query.$text = { $search: q.trim() };
+      where.OR = [
+        { name: { contains: q.trim(), mode: 'insensitive' } },
+        { description: { contains: q.trim(), mode: 'insensitive' } },
+        { category: { contains: q.trim(), mode: 'insensitive' } },
+        { brand: { contains: q.trim(), mode: 'insensitive' } }
+      ];
     }
 
     // Category filter
     if (category) {
-      query.category = new RegExp(category, 'i'); // Case-insensitive
+      where.category = { contains: category, mode: 'insensitive' };
     }
 
     // Price range filter
     if (minPrice || maxPrice) {
-      query.price = {};
-      if (minPrice) query.price.$gte = parseFloat(minPrice);
-      if (maxPrice) query.price.$lte = parseFloat(maxPrice);
+      where.price = {};
+      if (minPrice) where.price.gte = parseFloat(minPrice);
+      if (maxPrice) where.price.lte = parseFloat(maxPrice);
     }
 
     // Location filter
     if (location) {
-      query['location.city'] = new RegExp(location, 'i');
+      where.city = { contains: location, mode: 'insensitive' };
     }
 
     // Condition filter
     if (condition) {
-      query.condition = condition;
+      where.condition = condition.toUpperCase();
     }
 
     // Brand filter
     if (brand) {
-      query.brand = new RegExp(brand, 'i');
+      where.brand = { contains: brand, mode: 'insensitive' };
     }
 
     // In stock filter
     if (inStock === 'true') {
-      query.quantity = { $gt: 0 };
+      where.quantity = { gt: 0 };
     }
 
     // Featured filter
     if (featured === 'true') {
-      query.featured = true;
+      where.featured = true;
     }
 
     // Calculate pagination
@@ -76,28 +81,36 @@ router.get('/', async (req, res) => {
     const limitNum = parseInt(limit);
 
     // Build sort object
-    let sortObj = {};
+    let orderBy = {};
     if (sort.startsWith('-')) {
-      sortObj[sort.substring(1)] = -1; // Descending
+      orderBy[sort.substring(1)] = 'desc';
     } else {
-      sortObj[sort] = 1; // Ascending
-    }
-
-    // If text search is used, sort by text score
-    if (query.$text) {
-      sortObj = { score: { $meta: 'textScore' }, ...sortObj };
+      orderBy[sort] = 'asc';
     }
 
     // Execute query with pagination
-    const products = await Product.find(query)
-      .select(query.$text ? { score: { $meta: 'textScore' } } : {})
-      .populate('seller', 'email sellerDetails.businessName')
-      .sort(sortObj)
-      .skip(skip)
-      .limit(limitNum);
+    const products = await prisma.product.findMany({
+      where,
+      include: {
+        seller: {
+          select: {
+            id: true,
+            email: true,
+            sellerDetails: {
+              select: {
+                businessName: true
+              }
+            }
+          }
+        }
+      },
+      orderBy,
+      skip,
+      take: limitNum
+    });
 
     // Get total count for pagination
-    const total = await Product.countDocuments(query);
+    const total = await prisma.product.count({ where });
 
     // Calculate pagination info
     const totalPages = Math.ceil(total / limitNum);
@@ -158,16 +171,22 @@ router.get('/suggestions', async (req, res) => {
     }
 
     // Search for matching products (limit to 10)
-    const products = await Product.find({
-      $or: [
-        { name: new RegExp(q, 'i') },
-        { category: new RegExp(q, 'i') },
-        { brand: new RegExp(q, 'i') },
-        { tags: new RegExp(q, 'i') }
-      ]
-    })
-    .select('name category brand')
-    .limit(10);
+    const products = await prisma.product.findMany({
+      where: {
+        OR: [
+          { name: { contains: q, mode: 'insensitive' } },
+          { category: { contains: q, mode: 'insensitive' } },
+          { brand: { contains: q, mode: 'insensitive' } },
+          { tags: { has: q } }
+        ]
+      },
+      select: {
+        name: true,
+        category: true,
+        brand: true
+      },
+      take: 10
+    });
 
     // Extract unique suggestions
     const suggestions = [];
@@ -211,39 +230,39 @@ router.get('/suggestions', async (req, res) => {
 router.get('/filters', async (req, res) => {
   try {
     // Get all unique categories
-    const categories = await Product.distinct('category');
+    const categoryGroups = await prisma.product.groupBy({
+      by: ['category'],
+      _count: { category: true }
+    });
+    const categories = categoryGroups.map(g => g.category).filter(c => c);
 
     // Get all unique brands
-    const brands = await Product.distinct('brand').then(
-      brands => brands.filter(b => b) // Remove null/undefined
-    );
+    const brandGroups = await prisma.product.groupBy({
+      by: ['brand'],
+      _count: { brand: true }
+    });
+    const brands = brandGroups.map(g => g.brand).filter(b => b);
 
     // Get all unique locations
-    const locations = await Product.distinct('location.city').then(
-      locs => locs.filter(l => l) // Remove null/undefined
-    );
+    const cityGroups = await prisma.product.groupBy({
+      by: ['city'],
+      _count: { city: true }
+    });
+    const locations = cityGroups.map(g => g.city).filter(l => l);
 
     // Get price range
-    const priceStats = await Product.aggregate([
-      {
-        $group: {
-          _id: null,
-          minPrice: { $min: '$price' },
-          maxPrice: { $max: '$price' },
-          avgPrice: { $avg: '$price' }
-        }
-      }
-    ]);
+    const priceStats = await prisma.product.aggregate({
+      _min: { price: true },
+      _max: { price: true },
+      _avg: { price: true }
+    });
 
     // Get product counts by condition
-    const conditionCounts = await Product.aggregate([
-      {
-        $group: {
-          _id: '$condition',
-          count: { $sum: 1 }
-        }
-      }
-    ]);
+    const conditionCounts = await prisma.product.groupBy({
+      by: ['condition'],
+      _count: { condition: true },
+      orderBy: { condition: 'desc' }
+    });
 
     res.json({
       success: true,
@@ -251,10 +270,14 @@ router.get('/filters', async (req, res) => {
         categories: categories.sort(),
         brands: brands.sort(),
         locations: locations.sort(),
-        priceRange: priceStats[0] || { minPrice: 0, maxPrice: 0, avgPrice: 0 },
+        priceRange: {
+          minPrice: priceStats._min.price || 0,
+          maxPrice: priceStats._max.price || 0,
+          avgPrice: priceStats._avg.price || 0
+        },
         conditions: conditionCounts.map(c => ({
-          value: c._id,
-          count: c.count
+          value: c.condition,
+          count: c._count.condition
         }))
       }
     });
@@ -279,22 +302,52 @@ router.get('/trending', async (req, res) => {
     const { limit = 10 } = req.query;
 
     // Get most viewed products
-    const mostViewed = await Product.find({ quantity: { $gt: 0 } })
-      .sort({ views: -1 })
-      .limit(parseInt(limit))
-      .populate('seller', 'sellerDetails.businessName');
+    const mostViewed = await prisma.product.findMany({
+      where: { quantity: { gt: 0 } },
+      include: {
+        seller: {
+          select: {
+            sellerDetails: {
+              select: { businessName: true }
+            }
+          }
+        }
+      },
+      orderBy: { views: 'desc' },
+      take: parseInt(limit)
+    });
 
     // Get recently added products
-    const recentlyAdded = await Product.find({ quantity: { $gt: 0 } })
-      .sort({ createdAt: -1 })
-      .limit(parseInt(limit))
-      .populate('seller', 'sellerDetails.businessName');
+    const recentlyAdded = await prisma.product.findMany({
+      where: { quantity: { gt: 0 } },
+      include: {
+        seller: {
+          select: {
+            sellerDetails: {
+              select: { businessName: true }
+            }
+          }
+        }
+      },
+      orderBy: { createdAt: 'desc' },
+      take: parseInt(limit)
+    });
 
     // Get featured products
-    const featured = await Product.find({ featured: true, quantity: { $gt: 0 } })
-      .sort({ createdAt: -1 })
-      .limit(parseInt(limit))
-      .populate('seller', 'sellerDetails.businessName');
+    const featured = await prisma.product.findMany({
+      where: { featured: true, quantity: { gt: 0 } },
+      include: {
+        seller: {
+          select: {
+            sellerDetails: {
+              select: { businessName: true }
+            }
+          }
+        }
+      },
+      orderBy: { createdAt: 'desc' },
+      take: parseInt(limit)
+    });
 
     res.json({
       success: true,
@@ -326,7 +379,9 @@ router.get('/related/:productId', async (req, res) => {
     const { limit = 8 } = req.query;
 
     // Get the current product
-    const currentProduct = await Product.findById(productId);
+    const currentProduct = await prisma.product.findUnique({
+      where: { id: productId }
+    });
     
     if (!currentProduct) {
       return res.status(404).json({
@@ -336,17 +391,30 @@ router.get('/related/:productId', async (req, res) => {
     }
 
     // Find related products (same category or brand, excluding current product)
-    const relatedProducts = await Product.find({
-      _id: { $ne: productId },
-      $or: [
-        { category: currentProduct.category },
-        { brand: currentProduct.brand }
+    const relatedProducts = await prisma.product.findMany({
+      where: {
+        id: { not: productId },
+        OR: [
+          { category: currentProduct.category },
+          { brand: currentProduct.brand }
+        ],
+        quantity: { gt: 0 }
+      },
+      include: {
+        seller: {
+          select: {
+            sellerDetails: {
+              select: { businessName: true }
+            }
+          }
+        }
+      },
+      orderBy: [
+        { views: 'desc' },
+        { createdAt: 'desc' }
       ],
-      quantity: { $gt: 0 }
-    })
-    .sort({ views: -1, createdAt: -1 })
-    .limit(parseInt(limit))
-    .populate('seller', 'sellerDetails.businessName');
+      take: parseInt(limit)
+    });
 
     res.json({
       success: true,

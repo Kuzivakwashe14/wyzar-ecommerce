@@ -290,7 +290,7 @@ export default function Navbar() {
                       </>
                     )}
 
-                    {user.role === 'admin' ? (
+                    {(user.role === 'admin' || user.role === 'ADMIN') ? (
                       <Link href="/admin">
                         <DropdownMenuItem>
                           <Shield className="mr-2 h-4 w-4" />

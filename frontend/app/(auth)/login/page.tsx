@@ -65,7 +65,7 @@ export default function LoginPage() {
 
       // Redirect based on user role
       // If user is admin, redirect to admin portal
-      if (user?.role === 'admin') {
+      if (user?.role === 'admin' || user?.role === 'ADMIN') {
         router.push('/admin');
       } else {
         // Regular users and sellers go to homepage
