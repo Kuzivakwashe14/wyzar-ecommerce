@@ -420,8 +420,10 @@ const sendOrderConfirmationEmail = async (order, user) => {
               </div>
 
               <p><strong>Delivery Address:</strong><br>
-              ${order.shippingAddress?.street || 'N/A'}<br>
-              ${order.shippingAddress?.city || ''}, ${order.shippingAddress?.state || ''} ${order.shippingAddress?.zipCode || ''}</p>
+              ${order.shippingFullName}<br>
+              ${order.shippingAddress}<br>
+              ${order.shippingCity}<br>
+              Phone: ${order.shippingPhone}</p>
 
               <p>We'll send you another email when your order ships. You can track your order status anytime by logging into your account.</p>
             </div>

@@ -8,6 +8,13 @@ const path = require('path');
 const { getStoragePath, getPublicUrl } = require('../config/localStorage');
 const { sendMessageNotificationEmail } = require('../services/emailService');
 
+// ===== Rate Limiting =====
+const { messageLimiter } = require('../config/security');
+
+// ===== Zod Validation =====
+const { validateBody } = require('../middleware/zodValidate');
+const { messageSchema } = require('../schemas');
+
 // @route   GET /api/messages/conversations
 // @desc    Get all conversations for the logged-in user
 // @access  Private
@@ -159,15 +166,11 @@ router.get('/conversation/:conversationId', auth, async (req, res) => {
 // @route   POST /api/messages/send
 // @desc    Send a message
 // @access  Private
-router.post('/send', auth, async (req, res) => {
+router.post('/send', auth, messageLimiter, validateBody(messageSchema), async (req, res) => {
   try {
     const { receiverId, productId, message } = req.body;
 
-    // Validation
-    if (!receiverId || !message) {
-      return res.status(400).json({ msg: 'Receiver and message are required' });
-    }
-
+    // Self-message check
     if (receiverId === req.user.id) {
       return res.status(400).json({ msg: 'Cannot send message to yourself' });
     }
@@ -685,7 +688,7 @@ const messageImageUpload = multer({
 // @route   POST /api/messages/send-with-images
 // @desc    Send a message with image attachments
 // @access  Private
-router.post('/send-with-images', auth, (req, res) => {
+router.post('/send-with-images', auth, messageLimiter, (req, res) => {
   messageImageUpload(req, res, async (err) => {
     if (err instanceof multer.MulterError) {
       if (err.code === 'LIMIT_FILE_SIZE') {

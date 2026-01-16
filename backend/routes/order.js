@@ -14,8 +14,12 @@ const {
   notifySellerOfOrder,
 } = require('../services/notificationService');
 
-// ===== Input Validation =====
-const { validateOrderCreation, validateObjectIdParam } = require('../middleware/validateInput');
+// ===== Zod Validation =====
+const { validateBody, validateParams } = require('../middleware/zodValidate');
+const { orderSchema, objectIdParamSchema } = require('../schemas');
+
+// ===== Rate Limiting =====
+const { orderLimiter } = require('../config/security');
 
 // Valid payment methods
 const VALID_PAYMENT_METHODS = ['EcoCash', 'BankTransfer', 'CashOnDelivery'];
@@ -24,7 +28,7 @@ const VALID_PAYMENT_METHODS = ['EcoCash', 'BankTransfer', 'CashOnDelivery'];
 // @route   POST /api/orders/create
 // @desc    Create a new order with manual payment (EcoCash, Bank Transfer, or COD)
 // @access  Private
-router.post('/create', auth, validateOrderCreation, async (req, res) => {
+router.post('/create', auth, orderLimiter, validateBody(orderSchema), async (req, res) => {
   try {
     const { shippingAddress, cartItems, paymentMethod = 'EcoCash' } = req.body;
     
@@ -39,7 +43,7 @@ router.post('/create', auth, validateOrderCreation, async (req, res) => {
     // --- A. Create Order in our DB ---
     
     // 1. Get product IDs from the cart
-    const productIds = cartItems.map(item => item._id);
+    const productIds = cartItems.map(item => item.id || item._id);
 
     // 2. Fetch the *real* product data from our DB (Security!)
     const dbProducts = await prisma.product.findMany({ 
@@ -51,7 +55,8 @@ router.post('/create', auth, validateOrderCreation, async (req, res) => {
 
     // 3. Loop and calculate total price
     for (const cartItem of cartItems) {
-      const dbProduct = dbProducts.find(p => p.id === cartItem._id);
+      const cartItemId = cartItem.id || cartItem._id;
+      const dbProduct = dbProducts.find(p => p.id === cartItemId);
       if (!dbProduct) {
         return res.status(404).json({ msg: `Product ${cartItem.name} not found` });
       }
@@ -271,7 +276,7 @@ router.post('/paynow/callback', async (req, res) => {
 // @route   POST /api/orders/:id/verify-payment
 // @desc    Manually verify payment status with Paynow (for when callbacks fail)
 // @access  Private (Seller only)
-router.post('/:id/verify-payment', auth, validateObjectIdParam('id'), async (req, res) => {
+router.post('/:id/verify-payment', auth, validateParams(objectIdParamSchema), async (req, res) => {
   try {
     const order = await prisma.order.findUnique({ where: { id: req.params.id } });
     
@@ -356,7 +361,7 @@ router.post('/:id/verify-payment', auth, validateObjectIdParam('id'), async (req
 // @route   POST /api/orders/:id/confirm-payment
 // @desc    Manually confirm payment was received (for when Paynow callbacks fail)
 // @access  Private (Seller only)
-router.post('/:id/confirm-payment', auth, validateObjectIdParam('id'), async (req, res) => {
+router.post('/:id/confirm-payment', auth, validateParams(objectIdParamSchema), async (req, res) => {
   try {
     const order = await prisma.order.findUnique({ 
       where: { id: req.params.id },
@@ -445,7 +450,7 @@ router.get('/myorders', auth, async (req, res) => {
 // @route   GET /api/orders/:id
 // @desc    Get a single order by its ID
 // @access  Private
-router.get('/:id', auth, validateObjectIdParam('id'), async (req, res) => {
+router.get('/:id', auth, validateParams(objectIdParamSchema), async (req, res) => {
   try {
     const order = await prisma.order.findUnique({
       where: { id: req.params.id },
@@ -472,7 +477,7 @@ router.get('/:id', auth, validateObjectIdParam('id'), async (req, res) => {
 // @route   GET /api/orders/:id/payment-info
 // @desc    Get order details with seller payment information for success page
 // @access  Private
-router.get('/:id/payment-info', auth, validateObjectIdParam('id'), async (req, res) => {
+router.get('/:id/payment-info', auth, validateParams(objectIdParamSchema), async (req, res) => {
   try {
     const order = await prisma.order.findUnique({
       where: { id: req.params.id },
@@ -556,7 +561,7 @@ router.get('/:id/payment-info', auth, validateObjectIdParam('id'), async (req, r
 // @route   PUT /api/orders/:id/status
 // @desc    Update order status (Shipped, Delivered, etc.)
 // @access  Private (Seller only)
-router.put('/:id/status', auth, validateObjectIdParam('id'), async (req, res) => {
+router.put('/:id/status', auth, validateParams(objectIdParamSchema), async (req, res) => {
   try {
     const { status, trackingNumber } = req.body;
 

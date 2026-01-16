@@ -237,13 +237,22 @@ router.post('/verify', async (req, res) => {
   }
 });
 
-// --- Resend OTP Route ---
 // @route   POST /api/otp/resend
 // @desc    Resend OTP (convenience endpoint)
 // @access  Public
-router.post('/resend', async (req, res) => {
-  // This is just a convenience wrapper around /send
-  // It provides a clearer API for resending
+router.post('/resend', otpLimiter, async (req, res) => {
+  // This forwards to /send logic
+  const { email, type } = req.body;
+  
+  if (!email || !type) {
+    return res.status(400).json({
+      success: false,
+      msg: 'Email address and type are required'
+    });
+  }
+  
+  // Redirect to send endpoint logic by forwarding the request
+  req.url = '/send';
   return router.handle(req, res);
 });
 

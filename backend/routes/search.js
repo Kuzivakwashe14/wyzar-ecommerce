@@ -3,13 +3,16 @@ const express = require('express');
 const router = express.Router();
 const prisma = require('../config/prisma');
 
+// ===== Rate Limiting =====
+const { searchLimiter } = require('../config/security');
+
 /**
  * @route   GET /api/search
  * @desc    Search products with filters
  * @access  Public
  * @query   q (search query), category, minPrice, maxPrice, location, condition, sort, page, limit
  */
-router.get('/', async (req, res) => {
+router.get('/', searchLimiter, async (req, res) => {
   try {
     const {
       q,              // Search query

@@ -158,7 +158,7 @@ export default function EditProductPage() {
 
   // 7. Build the form
   return (
-    <div className="container mx-auto max-w-2xl py-12">
+    <div className="container mx-auto max-w-2xl px-4 py-12">
       <Button variant="outline" size="sm" onClick={() => router.back()} className="mb-4">
         &larr; Back to Products
       </Button>

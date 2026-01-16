@@ -9,17 +9,17 @@ const papa = require('papaparse');
 const prisma = require('../config/prisma');
 const { getPublicUrl } = require('../config/localStorage');
 
-// ===== Input Validation =====
-const {
-  validateProductCreation,
-  validateProductUpdate,
-  validateObjectIdParam
-} = require('../middleware/validateInput');
+// ===== Zod Validation =====
+const { validateBody, validateParams } = require('../middleware/zodValidate');
+const { productSchema, productUpdateSchema, objectIdParamSchema } = require('../schemas');
+
+// ===== Rate Limiting =====
+const { uploadLimiter } = require('../config/security');
 
 // @route   POST /api/products/bulk-upload
 // @desc    Bulk upload products from CSV
 // @access  Private (Sellers Only)
-router.post('/bulk-upload', auth, csvUpload, async (req, res) => {
+router.post('/bulk-upload', auth, uploadLimiter, csvUpload, async (req, res) => {
   if (!req.file) {
     return res.status(400).json({ msg: 'No file uploaded. Please upload a CSV file.' });
   }
@@ -161,24 +161,35 @@ router.post('/', auth, (req, res) => {
       return res.status(400).json({ msg: 'No product images uploaded. At least one is required.' });
     }
 
-    // 3. Validate product input
-    return validateProductCreation(req, res, async () => {
-      const { name, description, price, category, quantity, deliveryTime, countryOfOrigin } = req.body;
+    // 3. Validate product input using Zod
+    const validation = productSchema.safeParse(req.body);
+    if (!validation.success) {
+      // Zod v4 uses 'issues', v3 uses 'errors'
+      const zodErrors = validation.error.issues || validation.error.errors || [];
+      const errors = zodErrors.map((err) => ({
+        field: err.path.join('.'),
+        message: err.message,
+      }));
+      return res.status(400).json({
+        success: false,
+        msg: errors[0]?.message || 'Validation failed',
+        errors,
+      });
+    }
 
-      try {
-      // 5. Check if user is a verified seller (we'll add verification later)
-      // For now, we just check if they are a seller 
+    const { name, description, price, category, quantity, deliveryTime, countryOfOrigin } = validation.data;
+
+    try {
+      // 4. Check if user is a verified seller
       const seller = await prisma.user.findUnique({ where: { id: req.user.id } });
       if (!seller.isSeller) {
         return res.status(401).json({ msg: 'Not authorized. Only sellers can create products.' });
       }
 
-      // (Later, we'll add: if (!seller.isVerified) ... )
-
-      // 6. Get image paths - convert to public URLs for Nginx
+      // 5. Get image paths - convert to public URLs for Nginx
       const images = req.files.map(file => getPublicUrl(file.path));
 
-      // 7. Create new product instance
+      // 6. Create new product instance
       const product = await prisma.product.create({
         data: {
           sellerId: req.user.id,
@@ -193,13 +204,12 @@ router.post('/', auth, (req, res) => {
         }
       });
 
-      res.status(201).json(product); // Send back the created product
+      res.status(201).json(product);
 
-      } catch (err) {
-        console.error(err.message);
-        res.status(500).send('Server Error');
-      }
-    });
+    } catch (err) {
+      console.error(err.message);
+      res.status(500).send('Server Error');
+    }
   });
 });
 
@@ -237,7 +247,7 @@ router.get('/', async (req, res) => {
 // @route   GET /api/products/:id
 // @desc    Get a single product by ID (with view tracking)
 // @access  Public
-router.get('/:id', validateObjectIdParam('id'), async (req, res) => {
+router.get('/:id', validateParams(objectIdParamSchema), async (req, res) => {
   try {
     const product = await prisma.product.findUnique({
       where: { id: req.params.id },
@@ -298,15 +308,29 @@ router.get('/seller/me', auth, async (req, res) => {
 // @route   PUT /api/products/:id
 // @desc    Update a product
 // @access  Private (Sellers Only)
-router.put('/:id', auth, validateObjectIdParam('id'), (req, res) => {
+router.put('/:id', auth, validateParams(objectIdParamSchema), (req, res) => {
   productUploadOptimized(req, res, async (err) => {
     if (err) {
       return res.status(400).json({ msg: err.message });
     }
 
     // Validate product update input
-    return validateProductUpdate(req, res, async () => {
-      const { name, description, price, category, quantity, deliveryTime, countryOfOrigin } = req.body;
+    const validation = productUpdateSchema.safeParse(req.body);
+    if (!validation.success) {
+      // Zod v4 uses 'issues', v3 uses 'errors'
+      const zodErrors = validation.error.issues || validation.error.errors || [];
+      const errors = zodErrors.map((err) => ({
+        field: err.path.join('.'),
+        message: err.message,
+      }));
+      return res.status(400).json({
+        success: false,
+        msg: errors[0]?.message || 'Validation failed',
+        errors,
+      });
+    }
+
+    const { name, description, price, category, quantity, deliveryTime, countryOfOrigin } = req.body;
 
       // Build product object
       const productFields = {};
@@ -358,14 +382,13 @@ router.put('/:id', auth, validateObjectIdParam('id'), (req, res) => {
         console.error(err.message);
         res.status(500).send('Server Error');
       }
-    });
   });
 });
 
 // @route   DELETE /api/products/:id
 // @desc    Delete a product
 // @access  Private (Sellers Only)
-router.delete('/:id', auth, validateObjectIdParam('id'), async (req, res) => {
+router.delete('/:id', auth, validateParams(objectIdParamSchema), async (req, res) => {
   try {
     let product = await prisma.product.findUnique({ where: { id: req.params.id } });
 

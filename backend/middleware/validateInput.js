@@ -303,6 +303,157 @@ const validateObjectIdParam = (paramName = 'id') => {
   };
 };
 
+/**
+ * Validate message sending input
+ */
+const validateMessage = (req, res, next) => {
+  try {
+    const { receiverId, message } = req.body;
+
+    // Validate receiver ID
+    if (!receiverId) {
+      return res.status(400).json({
+        success: false,
+        msg: 'Receiver ID is required'
+      });
+    }
+    req.body.receiverId = validateObjectId(receiverId, 'receiverId');
+
+    // Validate message content
+    if (!message || typeof message !== 'string') {
+      return res.status(400).json({
+        success: false,
+        msg: 'Message is required'
+      });
+    }
+
+    const trimmedMessage = message.trim();
+    
+    if (trimmedMessage.length < 1) {
+      return res.status(400).json({
+        success: false,
+        msg: 'Message cannot be empty'
+      });
+    }
+
+    if (trimmedMessage.length > 2000) {
+      return res.status(400).json({
+        success: false,
+        msg: 'Message cannot exceed 2000 characters'
+      });
+    }
+
+    req.body.message = sanitizeString(trimmedMessage, { maxLength: 2000 });
+
+    // Optional: productId validation
+    if (req.body.productId) {
+      req.body.productId = validateObjectId(req.body.productId, 'productId');
+    }
+
+    next();
+  } catch (error) {
+    if (error instanceof ValidationError) {
+      return res.status(400).json({
+        success: false,
+        msg: error.message,
+        field: error.field
+      });
+    }
+    next(error);
+  }
+};
+
+/**
+ * Validate seller application input
+ */
+const validateSellerApplication = (req, res, next) => {
+  try {
+    const { businessName, sellerType, phoneNumber } = req.body;
+
+    // Validate business name
+    if (!businessName || typeof businessName !== 'string') {
+      return res.status(400).json({
+        success: false,
+        msg: 'Business name is required'
+      });
+    }
+
+    const trimmedName = businessName.trim();
+    if (trimmedName.length < 3) {
+      return res.status(400).json({
+        success: false,
+        msg: 'Business name must be at least 3 characters'
+      });
+    }
+
+    if (trimmedName.length > 100) {
+      return res.status(400).json({
+        success: false,
+        msg: 'Business name cannot exceed 100 characters'
+      });
+    }
+
+    req.body.businessName = sanitizeString(trimmedName, { maxLength: 100 });
+
+    // Validate seller type
+    if (!sellerType || typeof sellerType !== 'string') {
+      return res.status(400).json({
+        success: false,
+        msg: 'Seller type is required'
+      });
+    }
+
+    const validTypes = ['individual', 'business'];
+    if (!validTypes.includes(sellerType.toLowerCase())) {
+      return res.status(400).json({
+        success: false,
+        msg: 'Seller type must be either "individual" or "business"'
+      });
+    }
+
+    req.body.sellerType = sellerType.toLowerCase();
+
+    // Validate phone number (optional but validated if provided)
+    if (phoneNumber) {
+      req.body.phoneNumber = validatePhone(phoneNumber);
+    }
+
+    // Sanitize optional fields
+    if (req.body.ecocashNumber) {
+      req.body.ecocashNumber = sanitizeString(req.body.ecocashNumber, { maxLength: 20 });
+    }
+    if (req.body.ecocashName) {
+      req.body.ecocashName = sanitizeString(req.body.ecocashName, { maxLength: 100 });
+    }
+    if (req.body.bankName) {
+      req.body.bankName = sanitizeString(req.body.bankName, { maxLength: 100 });
+    }
+    if (req.body.bankAccountName) {
+      req.body.bankAccountName = sanitizeString(req.body.bankAccountName, { maxLength: 100 });
+    }
+    if (req.body.bankAccountNumber) {
+      req.body.bankAccountNumber = sanitizeString(req.body.bankAccountNumber, { maxLength: 50 });
+    }
+    if (req.body.whatsappNumber) {
+      req.body.whatsappNumber = sanitizeString(req.body.whatsappNumber, { maxLength: 20 });
+    }
+    if (req.body.whatsappNumber2) {
+      req.body.whatsappNumber2 = sanitizeString(req.body.whatsappNumber2, { maxLength: 20 });
+    }
+
+    next();
+  } catch (error) {
+    if (error instanceof ValidationError) {
+      return res.status(400).json({
+        success: false,
+        msg: error.message,
+        field: error.field
+      });
+    }
+    next(error);
+  }
+};
+
 module.exports = {
   validateRegistration,
   validateLogin,
@@ -310,5 +461,7 @@ module.exports = {
   validateProductUpdate,
   validateOrderCreation,
   validateReviewCreation,
-  validateObjectIdParam
+  validateObjectIdParam,
+  validateMessage,
+  validateSellerApplication
 };

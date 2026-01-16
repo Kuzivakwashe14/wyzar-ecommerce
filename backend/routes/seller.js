@@ -9,6 +9,13 @@ const multer = require("multer");
 const path = require("path");
 const { getStoragePath, getPublicUrl } = require("../config/localStorage");
 
+// ===== Rate Limiting =====
+const { sellerAppLimiter, uploadLimiter } = require('../config/security');
+
+// ===== Zod Validation =====
+const { validateBody } = require('../middleware/zodValidate');
+const { sellerApplicationSchema } = require('../schemas');
+
 // Configure multer for multiple verification documents
 const verificationStorage = multer.diskStorage({
   destination: function (req, file, cb) {
@@ -52,7 +59,7 @@ const flexibleUpload = multer({
 // @route   POST /api/seller/apply
 // @desc    Apply to become a seller (supports both single and multiple documents)
 // @access  Private (only logged-in users)
-router.post("/apply", auth, flexibleUpload, async (req, res) => {
+router.post("/apply", auth, sellerAppLimiter, flexibleUpload, validateBody(sellerApplicationSchema), async (req, res) => {
   try {
     // Get form data from the request body
     const {
@@ -253,7 +260,7 @@ router.post("/apply", auth, flexibleUpload, async (req, res) => {
 // @route   POST /api/seller/upload-document
 // @desc    Upload additional verification document for existing seller
 // @access  Private (seller only)
-router.post("/upload-document", auth, (req, res) => {
+router.post("/upload-document", auth, uploadLimiter, (req, res) => {
   // Use single file upload
   verificationUploadOptimized(req, res, async (err) => {
     if (err) {

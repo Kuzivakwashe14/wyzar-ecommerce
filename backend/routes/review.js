@@ -6,8 +6,12 @@ const auth = require('../middleware/auth');
 const adminAuth = require('../middleware/adminAuth');
 const prisma = require('../config/prisma');
 
-// ===== Input Validation =====
-const { validateReviewCreation, validateObjectIdParam } = require('../middleware/validateInput');
+// ===== Zod Validation =====
+const { validateBody, validateParams } = require('../middleware/zodValidate');
+const { reviewSchema, objectIdParamSchema, productIdParamSchema } = require('../schemas');
+
+// ===== Rate Limiting =====
+const { reviewLimiter } = require('../config/security');
 
 // ==========================================
 // PUBLIC ROUTES
@@ -16,7 +20,7 @@ const { validateReviewCreation, validateObjectIdParam } = require('../middleware
 // @route   GET /api/reviews/product/:productId
 // @desc    Get all approved reviews for a product
 // @access  Public
-router.get('/product/:productId', validateObjectIdParam('productId'), async (req, res) => {
+router.get('/product/:productId', validateParams(productIdParamSchema), async (req, res) => {
   try {
     const { page = 1, limit = 10, sort = 'newest' } = req.query;
     const skip = (parseInt(page) - 1) * parseInt(limit);
@@ -121,24 +125,9 @@ router.get('/product/:productId', validateObjectIdParam('productId'), async (req
 // @route   POST /api/reviews
 // @desc    Create a new review
 // @access  Private
-router.post('/', auth, validateReviewCreation, async (req, res) => {
+router.post('/', auth, reviewLimiter, validateBody(reviewSchema), async (req, res) => {
   try {
     const { productId, rating, title, comment, orderId } = req.body;
-
-    // Validation
-    if (!productId || !rating || !comment) {
-      return res.status(400).json({
-        success: false,
-        msg: 'Product ID, rating, and comment are required'
-      });
-    }
-
-    if (rating < 1 || rating > 5) {
-      return res.status(400).json({
-        success: false,
-        msg: 'Rating must be between 1 and 5'
-      });
-    }
 
     // Check if product exists
     const product = await prisma.product.findUnique({
@@ -256,7 +245,7 @@ router.post('/', auth, validateReviewCreation, async (req, res) => {
 // @route   PUT /api/reviews/:id
 // @desc    Update a review
 // @access  Private (Review owner only)
-router.put('/:id', auth, validateObjectIdParam('id'), async (req, res) => {
+router.put('/:id', auth, validateParams(objectIdParamSchema), async (req, res) => {
   try {
     const { rating, title, comment } = req.body;
 
@@ -333,7 +322,7 @@ router.put('/:id', auth, validateObjectIdParam('id'), async (req, res) => {
 // @route   DELETE /api/reviews/:id
 // @desc    Delete a review
 // @access  Private (Review owner only)
-router.delete('/:id', auth, validateObjectIdParam('id'), async (req, res) => {
+router.delete('/:id', auth, validateParams(objectIdParamSchema), async (req, res) => {
   try {
     const review = await prisma.review.findUnique({
       where: { id: req.params.id }
@@ -418,7 +407,7 @@ router.get('/user/me', auth, async (req, res) => {
 // @route   POST /api/reviews/:id/helpful
 // @desc    Mark a review as helpful
 // @access  Private
-router.post('/:id/helpful', auth, validateObjectIdParam('id'), async (req, res) => {
+router.post('/:id/helpful', auth, validateParams(objectIdParamSchema), async (req, res) => {
   try {
     const review = await prisma.review.update({
       where: { id: req.params.id },
@@ -511,7 +500,7 @@ router.get('/admin/all', adminAuth, async (req, res) => {
 // @route   PUT /api/reviews/admin/:id/approve
 // @desc    Approve or reject a review
 // @access  Private (Admin only)
-router.put('/admin/:id/approve', adminAuth, validateObjectIdParam('id'), async (req, res) => {
+router.put('/admin/:id/approve', adminAuth, validateParams(objectIdParamSchema), async (req, res) => {
   try {
     const { approve } = req.body;
     
@@ -559,7 +548,7 @@ router.put('/admin/:id/approve', adminAuth, validateObjectIdParam('id'), async (
 // @route   DELETE /api/reviews/admin/:id
 // @desc    Delete a review (admin)
 // @access  Private (Admin only)
-router.delete('/admin/:id', adminAuth, validateObjectIdParam('id'), async (req, res) => {
+router.delete('/admin/:id', adminAuth, validateParams(objectIdParamSchema), async (req, res) => {
   try {
     const review = await prisma.review.findUnique({
       where: { id: req.params.id }

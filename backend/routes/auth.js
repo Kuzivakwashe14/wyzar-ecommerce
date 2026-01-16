@@ -8,8 +8,9 @@ const prisma = require('../config/prisma');
 const { sendWelcomeNotification, sendLoginAlert } = require('../services/notificationService');
 const { authLimiter } = require('../config/security');
 
-// ===== Input Validation & Sanitization =====
-const { validateRegistration, validateLogin } = require('../middleware/validateInput');
+// ===== Zod Validation =====
+const { validateBody } = require('../middleware/zodValidate');
+const { registrationSchema, loginSchema } = require('../schemas');
 const { sanitizeRequestBody } = require('../utils/security/inputValidation');
 const { validatePasswordMiddleware } = require('../utils/passwordSecurity');
 
@@ -17,7 +18,7 @@ const { validatePasswordMiddleware } = require('../utils/passwordSecurity');
 // @route   POST /api/auth/register
 // @desc    Register a new user (must verify email with OTP first)
 // @access  Public
-router.post('/register', authLimiter, sanitizeRequestBody, validateRegistration, validatePasswordMiddleware, async (req, res) => {
+router.post('/register', authLimiter, sanitizeRequestBody, validateBody(registrationSchema), validatePasswordMiddleware, async (req, res) => {
   // 1. Get email and password from the request body
   const { email, password } = req.body;
   console.log('Registration request received:', { email, passwordLength: password?.length });
@@ -114,19 +115,11 @@ router.post('/register', authLimiter, sanitizeRequestBody, validateRegistration,
 // @route   POST /api/auth/login
 // @desc    Authenticate user & get token (supports email)
 // @access  Public
-router.post('/login', authLimiter, sanitizeRequestBody,  validateLogin,  async (req, res) => {
+router.post('/login', authLimiter, sanitizeRequestBody, validateBody(loginSchema), async (req, res) => {
   // 1. Get credentials from request body
   const { email, password } = req.body;
 
   try {
-    // Validate that we have email and password
-    if (!email || !password) {
-      return res.status(400).json({
-        success: false,
-        msg: 'Please provide email and password'
-      });
-    }
-
     // 2. Find user by email
     const user = await prisma.user.findUnique({ 
       where: { email },
