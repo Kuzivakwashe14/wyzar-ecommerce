@@ -4,6 +4,19 @@ const mongoose = require('mongoose');
 const Schema = mongoose.Schema;
 
 const UserSchema = new Schema({
+  // Authentication IDs
+  clerkId: {
+    type: String,
+    unique: true,
+    sparse: true,
+    index: true
+  },
+  kindeId: { // Kept for legacy/migration purposes
+    type: String,
+    unique: true,
+    sparse: true, 
+    index: true
+  },
   email: {
     type: String,
     required: [true, 'Email is required'],
@@ -14,7 +27,7 @@ const UserSchema = new Schema({
   },
   password: {
     type: String,
-    required: [true, 'Password is required'],
+    required: false, // Not required for Kinde users
     minlength: [6, 'Password must be at least 6 characters long']
   },
   phone: {

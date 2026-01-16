@@ -13,6 +13,8 @@ import {
 } from "@/components/ui/accordion";
 import { Badge } from "@/components/ui/badge";
 
+import { getImageUrl } from "@/lib/utils";
+
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
 
 // Define the Order type
@@ -105,7 +107,7 @@ export default function MyOrdersPage() {
   };
 
   return (
-    <div className="container mx-auto max-w-3xl py-12">
+    <div className="container mx-auto max-w-3xl py-12 px-4">
       <h1 className="text-3xl font-bold mb-8 text-shop_dark_green">My Orders</h1>
 
       {orders.length === 0 ? (
@@ -141,7 +143,7 @@ export default function MyOrdersPage() {
                     <div key={item._id} className="flex items-center space-x-4">
                       <div className="relative h-16 w-16 rounded-md overflow-hidden border border-gray-200">
                         <Image
-                          src={`${API_BASE_URL}/${item.image.replace(/\\/g, '/')}`}
+                          src={getImageUrl(item.image)}
                           alt={item.name}
                           fill
                           style={{ objectFit: 'cover' }}

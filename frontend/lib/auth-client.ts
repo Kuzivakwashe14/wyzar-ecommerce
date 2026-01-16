@@ -9,6 +9,8 @@ export const authClient = createAuthClient({
     twoFactorClient(),
     adminClient(),
   ],
+  // Must match the server-side cookiePrefix in lib/auth.ts
+  cookiePrefix: "wyzar-auth",
 });
 
 // Export commonly used functions

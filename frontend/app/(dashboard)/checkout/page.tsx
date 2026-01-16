@@ -28,6 +28,8 @@ import Image from "next/image";
 import { toast } from "sonner";
 import { CreditCard, Banknote } from "lucide-react";
 
+import { getImageUrl } from "@/lib/utils";
+
 // Get the backend URL
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
 
@@ -132,7 +134,7 @@ export default function CheckoutPage() {
 
   // 6. Build the form component
   return (
-    <div className="container mx-auto max-w-4xl py-12">
+    <div className="container mx-auto max-w-4xl py-12 px-4">
       <h1 className="text-3xl font-bold text-center mb-8 text-shop_dark_green">Checkout</h1>
       
       <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
@@ -258,7 +260,7 @@ export default function CheckoutPage() {
                     <div className="flex items-center space-x-2">
                       <div className="relative h-12 w-12 rounded-md overflow-hidden border border-gray-200">
                         <Image
-                          src={`${API_BASE_URL}/${item.images[0].replace(/\\/g, '/')}`}
+                          src={getImageUrl(item.images[0])}
                           alt={item.name}
                           fill
                           style={{ objectFit: 'cover' }}

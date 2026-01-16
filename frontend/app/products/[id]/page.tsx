@@ -403,7 +403,7 @@ export default function ProductDetailPage() {
                     <ShoppingCart className="mr-2 h-5 w-5" />
                     {product.quantity > 0 ? 'Add to Cart' : 'Out of Stock'}
                   </Button>
-                  <div className="grid grid-cols-3 gap-2">
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
                     <Button variant="outline" size="lg" onClick={handleAskSeller} disabled={startingChat} className="border-shop_dark_green text-shop_dark_green hover:bg-shop_dark_green hover:text-white">
                       <MessageCircle className="mr-2 h-4 w-4" />
                       Ask Seller

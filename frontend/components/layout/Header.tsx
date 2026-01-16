@@ -3,6 +3,8 @@
 import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { useUser, SignInButton, SignUpButton, UserButton } from "@clerk/nextjs";
+// import { api } from "@/context/AuthContent"; // Keeping api for now if needed, or remove if unused in updated code
 import { api } from "@/context/AuthContent";
 import Container from "@/components/Container";
 import Logo from "@/components/Logo";
@@ -13,12 +15,9 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
   DropdownMenuTrigger,
+  DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { useAuth } from "@/context/AuthContent";
 import { useCart } from "@/context/CartContext";
 import { useWishlist } from "@/context/WishlistContext";
 import CartSheet from "./CartSheet";
@@ -46,12 +45,15 @@ const categories = [
 ];
 
 export default function Header() {
-  const { isAuthenticated, user, logout, loading } = useAuth();
+  const { isSignedIn, user, isLoaded } = useUser();
   const { itemCount } = useCart();
   const { wishlistCount } = useWishlist();
   const router = useRouter();
   const [searchQuery, setSearchQuery] = useState("");
   const [unreadMessages, setUnreadMessages] = useState(0);
+
+  const isAuthenticated = isSignedIn; // Mapping for easier refactor if needed, or just use isSignedIn
+  const loading = !isLoaded;
 
   const fetchUnreadCount = useCallback(async () => {
     // Only fetch if authenticated and loading is complete
@@ -153,14 +155,8 @@ export default function Header() {
                     placeholder="Search for products..."
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
-                    className="w-full pl-4 pr-12 py-5 rounded-full border-2 border-shop_dark_green/20 focus:border-shop_dark_green bg-white"
+                    className="w-full px-4 py-5 rounded-full border-2 border-shop_dark_green/20 focus:border-shop_dark_green bg-white"
                   />
-                  <button 
-                    type="submit"
-                    className="absolute right-1 bg-shop_dark_green hover:bg-shop_light_green text-white p-2.5 rounded-full transition-colors"
-                  >
-                    <Search className="h-4 w-4" />
-                  </button>
                 </div>
               </form>
             </div>
@@ -169,93 +165,15 @@ export default function Header() {
             <div className="flex items-center gap-1 sm:gap-3">
               {/* User Account */}
               {isAuthenticated && user ? (
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button 
-                      variant="ghost" 
-                      className="hoverEffect hover:bg-shop_dark_green/10 flex items-center gap-2"
-                    >
-                      <Avatar className="h-8 w-8">
-                        <AvatarFallback className="bg-shop_dark_green text-white text-sm">
-                          {user.email ? user.email.charAt(0).toUpperCase() : 'U'}
-                        </AvatarFallback>
-                      </Avatar>
-                      <span className="hidden lg:inline text-sm font-medium">
-                        {user.isSeller ? user.sellerDetails?.businessName : 'Account'}
-                      </span>
-                      <ChevronDown className="h-4 w-4 hidden lg:block" />
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent className="w-56" align="end">
-                    <DropdownMenuLabel>
-                      <div className="flex flex-col space-y-1">
-                        <p className="text-sm font-medium">
-                          {user.isSeller ? user.sellerDetails?.businessName : 'My Account'}
-                        </p>
-                        <p className="text-xs text-muted-foreground truncate">
-                          {user.email}
-                        </p>
-                      </div>
-                    </DropdownMenuLabel>
-                    <DropdownMenuSeparator />
-
-                    {user.isSeller && (
-                      <>
-                        <Link href="/dashboard">
-                          <DropdownMenuItem className="cursor-pointer">
-                            <LayoutDashboard className="mr-2 h-4 w-4" />
-                            Seller Dashboard
-                          </DropdownMenuItem>
-                        </Link>
-                        <Link href="/dashboard/orders">
-                          <DropdownMenuItem className="cursor-pointer">
-                            <Package className="mr-2 h-4 w-4" />
-                            My Sales
-                          </DropdownMenuItem>
-                        </Link>
-                        <Link href="/dashboard/settings">
-                          <DropdownMenuItem className="cursor-pointer">
-                            <Settings className="mr-2 h-4 w-4" />
-                            Seller Settings
-                          </DropdownMenuItem>
-                        </Link>
-                        <DropdownMenuSeparator />
-                      </>
-                    )}
-
-                    {user.role === 'admin' ? (
-                      <Link href="/admin">
-                        <DropdownMenuItem className="cursor-pointer">
-                          <Shield className="mr-2 h-4 w-4" />
-                          Admin Portal
-                        </DropdownMenuItem>
-                      </Link>
-                    ) : (
-                      <Link href="/my-orders">
-                        <DropdownMenuItem className="cursor-pointer">
-                          <ShoppingBag className="mr-2 h-4 w-4" />
-                          My Orders
-                        </DropdownMenuItem>
-                      </Link>
-                    )}
-
-                    <Link href="/dashboard/security">
-                      <DropdownMenuItem className="cursor-pointer">
-                        <Settings className="mr-2 h-4 w-4" />
-                        Security Settings
-                      </DropdownMenuItem>
-                    </Link>
-
-                    <DropdownMenuSeparator />
-                    <DropdownMenuItem onClick={() => logout()} className="cursor-pointer text-red-600">
-                      <LogOut className="mr-2 h-4 w-4" />
-                      Logout
-                    </DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
+                 <div className="flex items-center gap-2">
+                    <UserButton afterSignOutUrl="/" />
+                    <span className="hidden lg:inline text-sm font-medium">
+                        {user.fullName || user.primaryEmailAddress?.emailAddress}
+                    </span>
+                 </div>
               ) : (
                 <div className="hidden sm:flex items-center gap-2">
-                  <Link href="/login">
+                  <SignInButton mode="modal">
                     <Button 
                       variant="ghost" 
                       className="hoverEffect hover:bg-shop_dark_green/10"
@@ -263,17 +181,17 @@ export default function Header() {
                       <User className="h-5 w-5 mr-2" />
                       Login
                     </Button>
-                  </Link>
-                  <Link href="/sign-up">
+                  </SignInButton>
+                  <SignUpButton mode="modal">
                     <Button className="bg-shop_dark_green hover:bg-shop_light_green text-white">
                       Sign Up
                     </Button>
-                  </Link>
+                  </SignUpButton>
                 </div>
               )}
 
               {/* Wishlist */}
-              <Link href="/wishlist">
+              <Link href="/wishlist" className="hidden sm:inline-flex">
                 <Button 
                   variant="ghost" 
                   size="icon" 
@@ -290,7 +208,7 @@ export default function Header() {
 
               {/* Messages */}
               {isAuthenticated && user && (
-                <Link href="/messages">
+                <Link href="/messages" className="hidden sm:inline-flex">
                   <Button 
                     variant="ghost" 
                     size="icon" 
@@ -327,14 +245,8 @@ export default function Header() {
                   placeholder="Search for products..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full pl-4 pr-12 py-2 rounded-full border-2 border-shop_dark_green/20 focus:border-shop_dark_green"
+                  className="w-full px-4 py-2 rounded-full border-2 border-shop_dark_green/20 focus:border-shop_dark_green"
                 />
-                <button 
-                  type="submit"
-                  className="absolute right-1 bg-shop_dark_green hover:bg-shop_light_green text-white p-2 rounded-full transition-colors"
-                >
-                  <Search className="h-4 w-4" />
-                </button>
               </div>
             </form>
           </div>

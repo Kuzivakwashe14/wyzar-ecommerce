@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import { SignInButton, SignUpButton } from "@clerk/nextjs";
 import { useAuth } from "@/context/AuthContent";
 import Logo from "@/components/Logo";
 import { Button } from "@/components/ui/button";
@@ -34,6 +35,7 @@ import {
   LogOut,
   Shield,
   ChevronRight,
+  MessageCircle,
 } from "lucide-react";
 
 interface Category {
@@ -61,7 +63,7 @@ export default function MobileMenu({ categories }: MobileMenuProps) {
       <SheetContent side="left" className="w-80 p-0 overflow-y-auto">
         <SheetHeader className="p-4 bg-shop_dark_green text-white">
           <div className="flex items-center justify-between">
-            <Logo variant="sm" />
+            <Logo variant="footer" />
             <Button 
               variant="ghost" 
               size="icon" 
@@ -94,18 +96,18 @@ export default function MobileMenu({ categories }: MobileMenuProps) {
             </div>
           ) : (
             <div className="px-4 pb-4 border-b space-y-2">
-              <Link href="/login" onClick={handleClose}>
-                <Button variant="outline" className="w-full justify-start gap-2">
+              <SignInButton mode="modal">
+                <Button variant="outline" className="w-full justify-start gap-2" onClick={handleClose}>
                   <LogIn className="h-4 w-4" />
                   Login
                 </Button>
-              </Link>
-              <Link href="/sign-up" onClick={handleClose}>
-                <Button className="w-full justify-start gap-2 bg-shop_dark_green hover:bg-shop_light_green text-white">
+              </SignInButton>
+              <SignUpButton mode="modal">
+                <Button className="w-full justify-start gap-2 bg-shop_dark_green hover:bg-shop_light_green text-white" onClick={handleClose}>
                   <UserPlus className="h-4 w-4" />
                   Create Account
                 </Button>
-              </Link>
+              </SignUpButton>
             </div>
           )}
 
@@ -170,6 +172,13 @@ export default function MobileMenu({ categories }: MobileMenuProps) {
                 <p className="px-4 py-2 text-sm font-semibold text-muted-foreground">
                   My Account
                 </p>
+
+                <Link href="/messages" onClick={handleClose}>
+                  <Button variant="ghost" className="w-full justify-start gap-3 h-12">
+                    <MessageCircle className="h-5 w-5 text-shop_dark_green" />
+                    Messages
+                  </Button>
+                </Link>
 
                 {user.isSeller ? (
                   <>

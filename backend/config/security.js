@@ -36,7 +36,7 @@ const getCorsConfig = () => {
     },
     credentials: true, // Allow cookies to be sent
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization', 'x-auth-token'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'x-auth-token', 'X-CSRF-Token', 'x-csrf-token'],
     exposedHeaders: ['x-auth-token'],
     maxAge: 600 // Cache preflight requests for 10 minutes
   });

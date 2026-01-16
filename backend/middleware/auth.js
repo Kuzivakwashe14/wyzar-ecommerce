@@ -1,90 +1,109 @@
 // backend/middleware/auth.js
-// Authentication middleware that supports both legacy JWT tokens and BetterAuth sessions
+// Authentication middleware using Clerk
+// Replaces previous Kinde/JWT implementation
 
 const jwt = require('jsonwebtoken');
+const User = require('../models/User');
+const { ClerkExpressWithAuth } = require('@clerk/clerk-sdk-node');
 
-/**
- * Authentication middleware
- * Supports both:
- * 1. Legacy x-auth-token header (JWT)
- * 2. BetterAuth session via Authorization Bearer token
- * 3. BetterAuth session cookie
- */
-async function auth(req, res, next) {
-  try {
-    // Method 1: Check for legacy x-auth-token header
-    const legacyToken = req.header('x-auth-token');
-    if (legacyToken) {
-      try {
-        const decoded = jwt.verify(legacyToken, process.env.JWT_SECRET);
-        req.user = decoded.user;
-        return next();
-      } catch (err) {
-        // Token invalid, try other methods
-      }
+// Main authentication middleware
+// We wrap the Clerk middleware to add our custom user syncing logic
+const auth = async (req, res, next) => {
+  // 1. Run Clerk's middleware to verify the token
+  // ClerkExpressWithAuth populates req.auth
+  ClerkExpressWithAuth({
+    secretKey: process.env.CLERK_SECRET_KEY,
+    publishableKey: process.env.CLERK_PUBLISHABLE_KEY // Optional but good practice
+  })(req, res, async (err) => {
+    if (err) {
+      console.error('[Auth] Clerk middleware error:', err);
+      return res.status(401).json({ msg: 'Authentication error' });
     }
 
-    // Method 2: Check for Authorization Bearer token (BetterAuth session token)
-    const authHeader = req.header('Authorization');
-    if (authHeader && authHeader.startsWith('Bearer ')) {
-      const sessionToken = authHeader.substring(7);
+    try {
+      // Check if Clerk authenticated the user
+      if (!req.auth || !req.auth.userId) {
+        console.log('[Auth] No Clerk session found');
+        return res.status(401).json({ msg: 'No valid authentication found' });
+      }
+
+      const clerkId = req.auth.userId;
+      // Get claims to access email/metadata if available in session token
+      // Note: By default session token has limited claims. 
+      // For full user details we might need to fetch from Clerk API or use claims if configured.
+      const claims = req.auth.sessionClaims || {};
+
+      console.log(`[Auth] Authenticated via Clerk: ${clerkId}`);
+
+      // 2. Sync with MongoDB
+      // Find user by clerkId
+      let mongoUser = await User.findOne({ clerkId });
+
+      if (!mongoUser) {
+        // Fallback: Check if user exists by Kinde ID (migration) or Email
+        // We'll need user's email to link by email. 
+        // If email is not in claims, we might need to fetch it or rely on frontend to pass it (insecure for linking).
+        // Best approach: Use Clerk Backend API to fetch user details to get email safely.
+        
+        try {
+            const clerkClient = require('@clerk/clerk-sdk-node').clerkClient;
+            const clerkUser = await clerkClient.users.getUser(clerkId);
+            const email = clerkUser.emailAddresses.find(e => e.id === clerkUser.primaryEmailAddressId)?.emailAddress;
+
+            if (email) {
+                console.log(`[Auth] Looked up email for ${clerkId}: ${email}`);
+                // Try finding by email
+                mongoUser = await User.findOne({ email });
+
+                if (mongoUser) {
+                    // Link existing user
+                    mongoUser.clerkId = clerkId;
+                    await mongoUser.save();
+                    console.log(`[Auth] Linked existing user ${mongoUser._id} to Clerk ID ${clerkId}`);
+                } else {
+                    // Create new user
+                    mongoUser = await User.create({
+                        clerkId,
+                        email,
+                        isEmailVerified: true, // Clerk handles this
+                        name: `${clerkUser.firstName || ''} ${clerkUser.lastName || ''}`.trim(),
+                        role: 'user'
+                    });
+                    console.log(`[Auth] Created new user ${mongoUser._id} for Clerk ID ${clerkId}`);
+                }
+            }
+        } catch (clerkApiError) {
+             console.error('[Auth] Failed to fetch user details from Clerk:', clerkApiError);
+             // If we can't fetch details, we can't create/link safely. return 401 or 500?
+             // Proceeding without mongoUser will fail downstream.
+             return res.status(500).json({ msg: 'Failed to synchronize user profile' });
+        }
+      }
+
+      if (!mongoUser) {
+         return res.status(401).json({ msg: 'User profile could not be synchronized' });
+      }
+
+      // 3. Attach MongoDB user to request (standardizing for controllers)
+      req.user = {
+        id: mongoUser._id.toString(),
+        email: mongoUser.email,
+        role: mongoUser.role || 'user',
+        clerkId: clerkId,
+        isAdmin: mongoUser.role === 'admin',
+        isSeller: mongoUser.isSeller
+      };
       
-      // Validate the session by calling the BetterAuth API on the frontend
-      try {
-        const response = await fetch(`${process.env.FRONTEND_URL || 'http://localhost:3000'}/api/auth/get-session`, {
-          headers: {
-            'Cookie': `better-auth.session_token=${sessionToken}`,
-          },
-        });
+      // Also attach the full mongo document if needed by some controllers (req.userDoc?)
+      // req.userDoc = mongoUser; 
 
-        if (response.ok) {
-          const sessionData = await response.json();
-          if (sessionData && sessionData.user) {
-            req.user = {
-              id: sessionData.user.id,
-              email: sessionData.user.email,
-              role: sessionData.user.role || 'user',
-            };
-            return next();
-          }
-        }
-      } catch (fetchError) {
-        console.error('Error validating BetterAuth session:', fetchError);
-      }
+      next();
+
+    } catch (error) {
+      console.error('[Auth] Error in custom auth logic:', error);
+      res.status(500).json({ msg: 'Internal server error during authentication' });
     }
-
-    // Method 3: Check for session cookie (for direct requests with cookies)
-    const sessionCookie = req.cookies?.['better-auth.session_token'];
-    if (sessionCookie) {
-      try {
-        const response = await fetch(`${process.env.FRONTEND_URL || 'http://localhost:3000'}/api/auth/get-session`, {
-          headers: {
-            'Cookie': `better-auth.session_token=${sessionCookie}`,
-          },
-        });
-
-        if (response.ok) {
-          const sessionData = await response.json();
-          if (sessionData && sessionData.user) {
-            req.user = {
-              id: sessionData.user.id,
-              email: sessionData.user.email,
-              role: sessionData.user.role || 'user',
-            };
-            return next();
-          }
-        }
-      } catch (fetchError) {
-        console.error('Error validating session cookie:', fetchError);
-      }
-    }
-
-    // No valid authentication found
-    return res.status(401).json({ msg: 'No valid authentication, authorization denied' });
-  } catch (err) {
-    console.error('Auth middleware error:', err);
-    return res.status(401).json({ msg: 'Authentication error' });
-  }
-}
+  });
+};
 
 module.exports = auth;

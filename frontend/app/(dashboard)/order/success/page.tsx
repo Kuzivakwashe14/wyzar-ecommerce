@@ -18,7 +18,7 @@ export default function OrderSuccessPage() {
   }
   
   return (
-    <div className="container mx-auto max-w-2xl py-24 text-center">
+    <div className="container mx-auto max-w-2xl py-24 px-4 text-center">
       <CheckCircle2 className="h-20 w-20 text-green-500 mx-auto mb-6" />
       
       <h1 className="text-3xl font-bold mb-4">

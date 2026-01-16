@@ -72,23 +72,23 @@ export default function DashboardPage() {
 
   // --- Main Dashboard Content ---
   return (
-    <div className="container mx-auto py-12">
-      <h1 className="text-3xl font-bold mb-4 text-shop_dark_green">
+    <div className="container mx-auto py-6 md:py-12 px-4">
+      <h1 className="text-2xl md:text-3xl font-bold mb-4 text-shop_dark_green break-words">
         Welcome, {user.email}
       </h1>
       
       {/* We'll add a check for verification later */}
-      <div className="border-2 p-4 border-shop_light_green/30 bg-shop_light_green/5 rounded-lg mb-6">
+      <div className="border-2 p-4 border-shop_light_green/30 bg-shop_light_green/5 rounded-lg mb-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
         <p className="font-semibold text-shop_dark_green">Your Seller Account</p>
         <p className="text-sm">
           Status: {user.isVerified ? 
-            <span className="text-shop_light_green font-bold">Verified</span> : 
-            <span className="text-shop_orange font-bold">Pending Approval</span>
+            <span className="text-shop_light_green font-bold ml-1">Verified</span> : 
+            <span className="text-shop_orange font-bold ml-1">Pending Approval</span>
           }
         </p>
       </div>
 
-      <h2 className="text-2xl font-semibold mb-4 text-shop_dark_green">Seller Tools</h2>
+      <h2 className="text-xl md:text-2xl font-semibold mb-4 text-shop_dark_green">Seller Tools</h2>
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         
         {/* Card 1: Add Product */}

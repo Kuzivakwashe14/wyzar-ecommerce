@@ -41,12 +41,13 @@ export default function MessagesPage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState<any[]>([]);
   const [isSearching, setIsSearching] = useState(false);
+  const [showChat, setShowChat] = useState(false);
   const { user } = useAuth();
   const router = useRouter();
 
   useEffect(() => {
     if (!user) {
-      router.push('/login');
+      login();
       return;
     }
 
@@ -58,11 +59,6 @@ export default function MessagesPage() {
       setLoading(true);
       const response = await api.get('/messages/conversations');
       setConversations(response.data);
-
-      // Auto-select first conversation if none selected
-      if (response.data.length > 0 && !selectedConversation) {
-        setSelectedConversation(response.data[0]._id);
-      }
     } catch (error) {
       console.error('Error fetching conversations:', error);
     } finally {
@@ -74,6 +70,12 @@ export default function MessagesPage() {
     setSelectedConversation(conversationId);
     setSearchQuery('');
     setSearchResults([]);
+    setShowChat(true);
+  };
+
+  const handleBackToConversations = () => {
+    setShowChat(false);
+    setSelectedConversation(null); 
   };
 
   const handleSearch = async (e: React.FormEvent) => {
@@ -104,8 +106,8 @@ export default function MessagesPage() {
 
   return (
     <div className="container mx-auto px-4 py-8">
-      <div className="mb-6">
-        <div className="flex items-center justify-between">
+      <div className={`mb-6 ${showChat ? 'hidden md:block' : 'block'}`}>
+        <div className="flex items-center justify-between flex-wrap gap-4">
           <div>
             <div className="flex items-center gap-4">
               <div>
@@ -129,12 +131,12 @@ export default function MessagesPage() {
           </div>
 
           {/* Search Bar */}
-          <form onSubmit={handleSearch} className="flex gap-2 max-w-md">
+          <form onSubmit={handleSearch} className="flex gap-2 max-w-md w-full md:w-auto">
             <Input
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder="Search messages..."
-              className="w-64 border-gray-300 focus:border-shop_dark_green"
+              className="w-full md:w-64 border-gray-300 focus:border-shop_dark_green"
             />
             <Button type="submit" disabled={isSearching || searchQuery.length < 2} className="bg-shop_dark_green hover:bg-shop_light_green text-white">
               <Search className="h-4 w-4" />
@@ -158,6 +160,7 @@ export default function MessagesPage() {
                   onClick={() => {
                     setSelectedConversation(msg.conversation._id);
                     clearSearch();
+                    setShowChat(true);
                   }}
                   className="w-full text-left p-3 hover:bg-white rounded-lg transition-colors"
                 >
@@ -177,7 +180,7 @@ export default function MessagesPage() {
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         {/* Conversations List */}
-        <div className="md:col-span-1">
+        <div className={`md:col-span-1 ${showChat ? 'hidden md:block' : 'block'}`}>
           <ConversationList
             conversations={conversations}
             selectedConversation={selectedConversation}
@@ -187,15 +190,16 @@ export default function MessagesPage() {
         </div>
 
         {/* Chat Box */}
-        <div className="md:col-span-2">
+        <div className={`md:col-span-2 ${showChat ? 'block' : 'hidden md:block'}`}>
           {selectedConv && user ? (
             <ChatBoxEnhanced
               conversationId={selectedConv._id}
               otherUser={selectedConv.otherUser}
               currentUserId={user._id || user.id}
+              onBack={handleBackToConversations}
             />
           ) : (
-            <Card className="h-[600px] flex items-center justify-center border-gray-200">
+            <Card className="h-[600px] hidden md:flex items-center justify-center border-gray-200">
               <CardContent className="text-center">
                 <MessageCircle className="h-16 w-16 text-shop_dark_green/50 mx-auto mb-4" />
                 <h3 className="text-xl font-semibold mb-2 text-shop_dark_green">Select a conversation</h3>

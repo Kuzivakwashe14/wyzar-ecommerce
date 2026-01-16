@@ -22,6 +22,8 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Shield, ChevronRight } from "lucide-react";
+import Link from "next/link";
 
 // 1. Define the form schema
 const formSchema = z.object({
@@ -97,8 +99,8 @@ export default function SettingsPage() {
   }
 
   return (
-    <div className="container mx-auto max-w-2xl py-12">
-      <h1 className="text-3xl font-bold mb-8">Seller Settings</h1>
+    <div className="container mx-auto max-w-2xl py-6 md:py-12 px-4">
+      <h1 className="text-2xl md:text-3xl font-bold mb-6 md:mb-8">Seller Settings</h1>
 
       <Card>
         <CardHeader>
@@ -133,6 +135,27 @@ export default function SettingsPage() {
               </Button>
             </form>
           </Form>
+        </CardContent>
+      </Card>
+
+      {/* Security Settings Link */}
+      <Card className="mt-6">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Shield className="h-5 w-5" />
+            Security
+          </CardTitle>
+          <CardDescription>
+            Manage your account security and two-factor authentication
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <Button asChild variant="outline" className="w-full justify-between">
+            <Link href="/settings/security">
+              Security Settings
+              <ChevronRight className="h-4 w-4" />
+            </Link>
+          </Button>
         </CardContent>
       </Card>
     </div>

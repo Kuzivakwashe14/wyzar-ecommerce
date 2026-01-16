@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { api } from "@/context/AuthContent";
+import { SignInButton, SignUpButton } from "@clerk/nextjs";
 import {
   NavigationMenu,
   NavigationMenuContent,
@@ -319,15 +320,19 @@ export default function Navbar() {
               </>
             ) : (
               <>
-                <Link href="/login" className="hidden sm:block">
-                  <Button variant="ghost" size="sm">Login</Button>
-                </Link>
-                <Link href="/sign-up">
+              <>
+                <div className="hidden sm:block">
+                  <SignInButton mode="modal">
+                    <Button variant="ghost" size="sm">Login</Button>
+                  </SignInButton>
+                </div>
+                <SignUpButton mode="modal">
                   <Button size="sm" className="gap-1">
                     <span className="hidden sm:inline">Sign Up</span>
                     <span className="sm:hidden">Join</span>
                   </Button>
-                </Link>
+                </SignUpButton>
+              </>
               </>
             )}
 

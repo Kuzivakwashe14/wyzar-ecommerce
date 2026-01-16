@@ -197,24 +197,7 @@ export default function HomePage() {
         </Container>
       </section>
 
-      {/* Features Bar */}
-      <section className="bg-white border-b py-6">
-        <Container>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
-            {features.map((feature, index) => (
-              <div key={index} className="flex items-center gap-3 group">
-                <div className="h-12 w-12 rounded-full bg-shop_light_pink flex items-center justify-center group-hover:bg-shop_dark_green transition-colors">
-                  <feature.icon className="h-6 w-6 text-shop_dark_green group-hover:text-gray-900 transition-colors" />
-                </div>
-                <div>
-                  <h3 className="font-semibold text-sm">{feature.title}</h3>
-                  <p className="text-xs text-gray-500">{feature.description}</p>
-                </div>
-              </div>
-            ))}
-          </div>
-        </Container>
-      </section>
+
 
       {/* Categories Section */}
       <section className="py-16 bg-gray-50">
@@ -247,11 +230,11 @@ export default function HomePage() {
                     {/* Overlay */}
                     <div className="absolute inset-0 bg-linear-to-t from-black/60 via-black/20 to-transparent" />
                   </div>
-                  <div className="absolute bottom-0 left-0 right-0 p-4 text-center text-gray-900">
-                    <h3 className="font-semibold text-lg drop-shadow-lg">
+                  <div className="absolute bottom-0 left-0 right-0 p-4 text-center text-white">
+                    <h3 className="font-semibold text-lg drop-shadow-md">
                       {category.name}
                     </h3>
-                    <p className="text-sm text-gray-900/80 mt-1 drop-shadow-md">{category.description}</p>
+                    <p className="text-sm text-white/90 mt-1 drop-shadow-sm">{category.description}</p>
                   </div>
                 </div>
               </Link>
@@ -341,66 +324,7 @@ export default function HomePage() {
         </Container>
       </section>
 
-      {/* CTA Banner */}
-      <section className="py-16 bg-shop_dark_green text-white">
-        <Container>
-          <div className="grid md:grid-cols-2 gap-8 items-center">
-            <div className="space-y-6">
-              <Badge className="bg-white/20 text-white border-white/30">
-                <Star className="h-3 w-3 mr-1 fill-white" />
-                Start Your Business
-              </Badge>
-              <h2 className="text-3xl md:text-4xl font-bold">
-                Turn Your Products Into Profit
-              </h2>
-              <p className="text-lg text-white/80">
-                Join thousands of successful sellers on Zimbabwe&apos;s fastest-growing marketplace. 
-                Start your business journey with zero upfront costs.
-              </p>
-              <div className="flex flex-wrap gap-4">
-                <Link href="/become-a-seller">
-                  <Button 
-                    size="lg" 
-                    className="bg-shop_orange hover:bg-shop_orange/90 text-white px-8 h-12"
-                  >
-                    Become a Seller
-                    <ArrowRight className="ml-2 h-5 w-5" />
-                  </Button>
-                </Link>
-                <Link href="/help/seller">
-                  <Button 
-                    size="lg" 
-                    variant="outline" 
-                    className="border-white/50 text-white bg-transparent hover:bg-white/10 hover:text-white px-8 h-12"
-                  >
-                    Learn More
-                  </Button>
-                </Link>
-              </div>
-            </div>
-            <div className="hidden md:flex justify-center">
-              <div className="grid grid-cols-2 gap-4">
-                <div className="bg-white/10 rounded-xl p-6 text-center">
-                  <div className="text-4xl font-bold">0%</div>
-                  <div className="text-white/70 text-sm mt-1">Upfront Fees</div>
-                </div>
-                <div className="bg-white/10 rounded-xl p-6 text-center">
-                  <div className="text-4xl font-bold">24/7</div>
-                  <div className="text-white/70 text-sm mt-1">Support</div>
-                </div>
-                <div className="bg-white/10 rounded-xl p-6 text-center">
-                  <div className="text-4xl font-bold">5K+</div>
-                  <div className="text-white/70 text-sm mt-1">Active Sellers</div>
-                </div>
-                <div className="bg-white/10 rounded-xl p-6 text-center">
-                  <div className="text-4xl font-bold">Fast</div>
-                  <div className="text-white/70 text-sm mt-1">Payouts</div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </Container>
-      </section>
+
     </div>
   );
 }

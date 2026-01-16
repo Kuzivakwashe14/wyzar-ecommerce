@@ -30,8 +30,12 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   const [sidebarOpen, setSidebarOpen] = useState(true);
 
   useEffect(() => {
-    if (!loading && (!user || user.role !== 'admin')) {
-      router.push('/login');
+    if (!loading) {
+      if (!user) {
+        login();
+      } else if (user.role !== 'admin') {
+        router.push('/');
+      }
     }
   }, [user, loading, router]);
 
@@ -65,7 +69,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
   const handleLogout = () => {
     logout();
-    router.push('/login');
+    router.push('/');
   };
 
   return (

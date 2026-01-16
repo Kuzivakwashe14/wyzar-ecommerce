@@ -4,11 +4,47 @@ import { ShoppingCart } from "lucide-react";
 
 interface Props {
   className?: string;
-  variant?: "default" | "sm";
+  variant?: "default" | "sm" | "footer";
 }
 
 const Logo = ({ className, variant = "default" }: Props) => {
-  // Small variant for footer
+  // Footer variant (Light text for dark backgrounds)
+  if (variant === "footer") {
+    return (
+      <Link href="/">
+        <div className={cn("flex items-center gap-1.5 group hoverEffect", className)}>
+          {/* Cart Icon */}
+          <div className="relative">
+            <div className="absolute -top-0.5 -right-0.5 w-2 h-2 bg-shop_orange rounded-full animate-pulse group-hover:bg-shop_light_green hoverEffect"></div>
+            <ShoppingCart
+              className="w-5 h-5 text-white group-hover:text-shop_orange hoverEffect transform group-hover:scale-110"
+              strokeWidth={2.5}
+            />
+          </div>
+
+          {/* Text Logo */}
+          <div className="flex items-center">
+            <h1 className="text-sm font-black tracking-wider uppercase font-sans">
+              <span className="text-white group-hover:text-shop_orange hoverEffect">
+                Wy
+              </span>
+              <span className="bg-linear-to-r from-shop_orange to-shop_light_green bg-clip-text text-transparent group-hover:from-white group-hover:to-white hoverEffect">
+                Zar
+              </span>
+            </h1>
+
+            {/* Decorative Elements */}
+            <div className="ml-0.5 flex flex-col gap-0.5">
+              <div className="w-0.5 h-0.5 bg-shop_orange rounded-full group-hover:bg-white hoverEffect"></div>
+              <div className="w-0.5 h-0.5 bg-shop_light_green rounded-full group-hover:bg-shop_orange hoverEffect"></div>
+            </div>
+          </div>
+        </div>
+      </Link>
+    );
+  }
+
+  // Small variant for mobile menu
   if (variant === "sm") {
     return (
       <Link href="/">
@@ -57,16 +93,16 @@ const Logo = ({ className, variant = "default" }: Props) => {
       >
         {/* Cart Icon with Creative Styling */}
         <div className="relative">
-          <div className="absolute -top-1 -right-1 w-3 h-3 bg-shop_orange rounded-full animate-pulse group-hover:bg-shop_light_green hoverEffect"></div>
+          <div className="absolute -top-1 -right-1 w-2.5 h-2.5 md:w-3 md:h-3 bg-shop_orange rounded-full animate-pulse group-hover:bg-shop_light_green hoverEffect"></div>
           <ShoppingCart
-            className="w-8 h-8 text-shop_dark_green group-hover:text-shop_light_green hoverEffect transform group-hover:scale-110"
+            className="w-6 h-6 md:w-8 md:h-8 text-shop_dark_green group-hover:text-shop_light_green hoverEffect transform group-hover:scale-110"
             strokeWidth={2.5}
           />
         </div>
 
         {/* Text Logo */}
         <div className="flex items-center">
-          <h1 className="text-2xl font-black tracking-wider uppercase font-sans">
+          <h1 className="text-xl md:text-2xl font-black tracking-wider uppercase font-sans">
             <span className="text-shop_dark_green group-hover:text-shop_light_green hoverEffect">
               Wy
             </span>
@@ -77,8 +113,8 @@ const Logo = ({ className, variant = "default" }: Props) => {
 
           {/* Decorative Elements */}
           <div className="ml-1 flex flex-col gap-0.5">
-            <div className="w-1 h-1 bg-shop_orange rounded-full group-hover:bg-shop_light_green hoverEffect"></div>
-            <div className="w-1 h-1 bg-shop_light_green rounded-full group-hover:bg-shop_orange hoverEffect"></div>
+            <div className="w-0.5 h-0.5 md:w-1 md:h-1 bg-shop_orange rounded-full group-hover:bg-shop_light_green hoverEffect"></div>
+            <div className="w-0.5 h-0.5 md:w-1 md:h-1 bg-shop_light_green rounded-full group-hover:bg-shop_orange hoverEffect"></div>
           </div>
         </div>
       </div>

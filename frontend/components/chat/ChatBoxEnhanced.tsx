@@ -30,7 +30,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Send, Loader2, MoreVertical, Ban, Flag, Image as ImageIcon, X } from 'lucide-react';
+import { Send, Loader2, MoreVertical, Ban, Flag, Image as ImageIcon, X, ChevronLeft } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import { toast } from 'sonner';
 import { getImageUrl } from '@/lib/utils';
@@ -64,9 +64,10 @@ interface ChatBoxProps {
     };
   };
   currentUserId: string;
+  onBack?: () => void;
 }
 
-export default function ChatBoxEnhanced({ conversationId, otherUser, currentUserId }: ChatBoxProps) {
+export default function ChatBoxEnhanced({ conversationId, otherUser, currentUserId, onBack }: ChatBoxProps) {
   const [messages, setMessages] = useState<Message[]>([]);
   const [newMessage, setNewMessage] = useState('');
   const [loading, setLoading] = useState(true);
@@ -310,18 +311,28 @@ export default function ChatBoxEnhanced({ conversationId, otherUser, currentUser
 
   return (
     <>
-      <Card className="h-[600px] flex flex-col">
-        <CardHeader className="border-b">
+      <Card className="h-[600px] flex flex-col border-0 md:border">
+        <CardHeader className="border-b px-4 py-3">
           <div className="flex items-center justify-between">
-            <CardTitle className="flex items-center gap-3">
+            <div className="flex items-center gap-3">
+              {onBack && (
+                <Button 
+                  variant="ghost" 
+                  size="icon" 
+                  className="md:hidden mr-1 -ml-2"
+                  onClick={onBack}
+                >
+                  <ChevronLeft className="h-5 w-5" />
+                </Button>
+              )}
               <Avatar>
                 <AvatarFallback>{getInitials(otherUser)}</AvatarFallback>
               </Avatar>
               <div>
-                <div className="text-lg font-semibold">{getUserDisplayName(otherUser)}</div>
-                <div className="text-sm text-muted-foreground font-normal">{otherUser.email}</div>
+                <div className="text-lg font-semibold leading-none">{getUserDisplayName(otherUser)}</div>
+                <div className="text-sm text-muted-foreground font-normal mt-1">{otherUser.email}</div>
               </div>
-            </CardTitle>
+            </div>
 
             <DropdownMenu>
               <DropdownMenuTrigger asChild>

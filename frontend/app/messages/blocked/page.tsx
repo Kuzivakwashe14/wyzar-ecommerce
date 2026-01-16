@@ -29,7 +29,7 @@ export default function BlockedUsersPage() {
 
   useEffect(() => {
     if (!user) {
-      router.push('/login');
+      login();
       return;
     }
 

@@ -183,7 +183,7 @@ export default function AdminDashboard() {
       </div>
 
       {/* Revenue Cards */}
-      <div className="grid grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         {/* Today's Revenue */}
         <div className="bg-linear-to-br from-shop_dark_green to-shop_light_green rounded-lg p-4">
           <div className="flex items-center justify-between mb-2">

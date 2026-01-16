@@ -35,7 +35,7 @@ interface Order {
   user: {
     email: string;
     phone?: string;
-  };
+  } | null;
   orderItems: OrderItem[];
   paymentMethod?: 'Paynow' | 'CashOnDelivery';
   status: 'Pending' | 'Confirmed' | 'Paid' | 'Shipped' | 'Delivered' | 'Cancelled';
@@ -168,113 +168,115 @@ const SellerOrdersPage = () => {
           {orders.length === 0 ? (
             <p>You have no sales yet.</p>
           ) : (
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Order ID</TableHead>
-                  <TableHead>Date</TableHead>
-                  <TableHead>Customer</TableHead>
-                  <TableHead>Products</TableHead>
-                  <TableHead className="text-right">My Revenue</TableHead>
-                  <TableHead className="text-center">Status</TableHead>
-                  <TableHead className="text-right">Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {orders.map(order => {
-                  // Calculate revenue from this order that belongs to the seller
-                  const sellerRevenue = order.orderItems.reduce(
-                    (acc, item) => acc + item.price * item.quantity,
-                    0
-                  );
+            <div className="overflow-x-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Order ID</TableHead>
+                    <TableHead>Date</TableHead>
+                    <TableHead>Customer</TableHead>
+                    <TableHead>Products</TableHead>
+                    <TableHead className="text-right">My Revenue</TableHead>
+                    <TableHead className="text-center">Status</TableHead>
+                    <TableHead className="text-right">Actions</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {orders.map(order => {
+                    // Calculate revenue from this order that belongs to the seller
+                    const sellerRevenue = order.orderItems.reduce(
+                      (acc, item) => acc + item.price * item.quantity,
+                      0
+                    );
 
-                  return (
-                    <TableRow key={order._id}>
-                      <TableCell className="font-medium">
-                        #{order._id.substring(0, 7)}...
-                      </TableCell>
-                      <TableCell>
-                        {new Date(order.createdAt).toLocaleDateString()}
-                      </TableCell>
-                      <TableCell>{order.user.email}</TableCell>
-                      <TableCell>
-                        <ul>
-                          {order.orderItems.map((item, index) => (
-                            <li key={index}>
-                              {item.name} (x{item.quantity})
-                            </li>
-                          ))}
-                        </ul>
-                      </TableCell>
-                      <TableCell className="text-right">
-                        ${sellerRevenue.toFixed(2)}
-                      </TableCell>
-                      <TableCell className="text-center">
-                        <Badge variant={getStatusBadgeVariant(order.status)}>
-                          {order.status}
-                        </Badge>
-                      </TableCell>
-                      <TableCell className="text-right">
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" className="h-8 w-8 p-0">
-                              <span className="sr-only">Open menu</span>
-                              <MoreHorizontal className="h-4 w-4" />
-                            </Button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end">
-                            {/* Confirm Payment - for Pending Paynow orders (when callback fails) */}
-                            {order.status === 'Pending' && order.paymentMethod !== 'CashOnDelivery' && (
+                    return (
+                      <TableRow key={order._id}>
+                        <TableCell className="font-medium">
+                          #{order._id.substring(0, 7)}...
+                        </TableCell>
+                        <TableCell>
+                          {new Date(order.createdAt).toLocaleDateString()}
+                        </TableCell>
+                        <TableCell>{order.user?.email || "Unknown"}</TableCell>
+                        <TableCell>
+                          <ul>
+                            {order.orderItems.map((item, index) => (
+                              <li key={index}>
+                                {item.name} (x{item.quantity})
+                              </li>
+                            ))}
+                          </ul>
+                        </TableCell>
+                        <TableCell className="text-right">
+                          ${sellerRevenue.toFixed(2)}
+                        </TableCell>
+                        <TableCell className="text-center">
+                          <Badge variant={getStatusBadgeVariant(order.status)}>
+                            {order.status}
+                          </Badge>
+                        </TableCell>
+                        <TableCell className="text-right">
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <Button variant="ghost" className="h-8 w-8 p-0">
+                                <span className="sr-only">Open menu</span>
+                                <MoreHorizontal className="h-4 w-4" />
+                              </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end">
+                              {/* Confirm Payment - for Pending Paynow orders (when callback fails) */}
+                              {order.status === 'Pending' && order.paymentMethod !== 'CashOnDelivery' && (
+                                <DropdownMenuItem
+                                  onClick={() => handleConfirmPayment(order._id)}
+                                  className="text-green-600"
+                                >
+                                  ✓ Confirm Paynow Payment
+                                </DropdownMenuItem>
+                              )}
+                              {/* Mark as Paid - for COD orders that are Confirmed, Shipped, or Delivered */}
+                              {order.paymentMethod === 'CashOnDelivery' &&
+                               ['Confirmed', 'Shipped', 'Delivered'].includes(order.status) && (
+                                <DropdownMenuItem
+                                  onClick={() => handleStatusUpdate(order._id, 'Paid')}
+                                >
+                                  ✓ Confirm Payment Received
+                                </DropdownMenuItem>
+                              )}
                               <DropdownMenuItem
-                                onClick={() => handleConfirmPayment(order._id)}
-                                className="text-green-600"
+                                onClick={() => handleStatusUpdate(order._id, 'Shipped')}
+                                disabled={
+                                  order.status === 'Shipped' ||
+                                  order.status === 'Delivered' ||
+                                  order.status === 'Pending' // Must be Paid or Confirmed first
+                                }
                               >
-                                ✓ Confirm Paynow Payment
+                                Mark as Shipped
                               </DropdownMenuItem>
-                            )}
-                            {/* Mark as Paid - for COD orders that are Confirmed, Shipped, or Delivered */}
-                            {order.paymentMethod === 'CashOnDelivery' && 
-                             ['Confirmed', 'Shipped', 'Delivered'].includes(order.status) && (
                               <DropdownMenuItem
-                                onClick={() => handleStatusUpdate(order._id, 'Paid')}
+                                onClick={() => handleStatusUpdate(order._id, 'Delivered')}
+                                disabled={order.status !== 'Shipped'}
                               >
-                                ✓ Confirm Payment Received
+                                Mark as Delivered
                               </DropdownMenuItem>
-                            )}
-                            <DropdownMenuItem
-                              onClick={() => handleStatusUpdate(order._id, 'Shipped')}
-                              disabled={
-                                order.status === 'Shipped' || 
-                                order.status === 'Delivered' ||
-                                order.status === 'Pending' // Must be Paid or Confirmed first
-                              }
-                            >
-                              Mark as Shipped
-                            </DropdownMenuItem>
-                            <DropdownMenuItem
-                              onClick={() => handleStatusUpdate(order._id, 'Delivered')}
-                              disabled={order.status !== 'Shipped'}
-                            >
-                              Mark as Delivered
-                            </DropdownMenuItem>
-                            <DropdownMenuItem
-                              onClick={() => handleStatusUpdate(order._id, 'Cancelled')}
-                              disabled={
-                                order.status === 'Cancelled' || 
-                                order.status === 'Delivered' ||
-                                order.status === 'Shipped'
-                              }
-                            >
-                              Cancel Order
-                            </DropdownMenuItem>
-                          </DropdownMenuContent>
-                        </DropdownMenu>
-                      </TableCell>
-                    </TableRow>
-                  );
-                })}
-              </TableBody>
-            </Table>
+                              <DropdownMenuItem
+                                onClick={() => handleStatusUpdate(order._id, 'Cancelled')}
+                                disabled={
+                                  order.status === 'Cancelled' ||
+                                  order.status === 'Delivered' ||
+                                  order.status === 'Shipped'
+                                }
+                              >
+                                Cancel Order
+                              </DropdownMenuItem>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })}
+                </TableBody>
+              </Table>
+            </div>
           )}
         </CardContent>
       </Card>

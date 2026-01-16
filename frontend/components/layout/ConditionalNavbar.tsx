@@ -9,8 +9,6 @@ export default function ConditionalNavbar() {
   // Don't show navbar on admin routes or auth pages
   if (
     pathname?.startsWith('/admin') ||
-    pathname === '/login' ||
-    pathname === '/sign-up' ||
     pathname === '/forgot-password' ||
     pathname === '/reset-password'
   ) {

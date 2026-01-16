@@ -111,7 +111,7 @@ const BulkUploadPage = () => {
   }
 
   return (
-    <div className="container mx-auto py-10">
+    <div className="container mx-auto py-6 md:py-10 px-4">
       <Card className="max-w-2xl mx-auto">
         <CardHeader>
           <CardTitle>Bulk Upload Products</CardTitle>

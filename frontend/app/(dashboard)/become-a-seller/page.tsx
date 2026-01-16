@@ -46,7 +46,7 @@ const formSchema = z.object({
 
 export default function BecomeASellerPage() {
   const router = useRouter();
-  const { user, isAuthenticated, loading, refreshSession } = useAuth();
+  const { user, isAuthenticated, loading, refreshSession, login } = useAuth();
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   // 2. Define the form
@@ -64,7 +64,7 @@ export default function BecomeASellerPage() {
   useEffect(() => {
     if (!loading) {
       if (!isAuthenticated) {
-        router.push("/login"); // Not logged in, go to login
+        login(); // Not logged in, open login modal
       }
       if (isAuthenticated && user?.isSeller) {
         router.push("/dashboard"); // Already a seller, go to dashboard
@@ -103,7 +103,7 @@ export default function BecomeASellerPage() {
       // Send them to their new (but pending) dashboard
       router.push("/dashboard"); 
 
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error("Application failed:", error);
       let errorMessage = "Application failed. Please try again.";
       if (axios.isAxiosError(error) && error.response) {
@@ -132,8 +132,8 @@ export default function BecomeASellerPage() {
 
   // 6. Build the form component
   return (
-    <div className="container mx-auto max-w-2xl py-12">
-      <h2 className="text-3xl font-bold text-center mb-8 text-shop_dark_green">Become a Seller</h2>
+    <div className="container mx-auto max-w-2xl py-6 md:py-12 px-4">
+      <h2 className="text-2xl md:text-3xl font-bold text-center mb-6 md:mb-8 text-shop_dark_green">Become a Seller</h2>
       <p className="text-center text-gray-600 mb-8">
         Apply to sell on WyZar by filling out the form below. 
         Your application will be reviewed within 3-5 business days.

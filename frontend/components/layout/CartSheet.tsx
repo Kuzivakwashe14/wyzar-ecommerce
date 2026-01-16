@@ -17,6 +17,8 @@ import { Badge } from "@/components/ui/badge";
 import { useCart } from "@/context/CartContext";
 import { ShoppingCart, Trash2, Plus, Minus, ShoppingBag } from "lucide-react";
 
+import { getImageUrl } from "@/lib/utils";
+
 // Get the backend URL
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
 
@@ -78,7 +80,7 @@ export default function CartSheet() {
                 <div key={item._id} className="flex items-start gap-4 py-4">
                   <div className="relative h-20 w-20 rounded-lg overflow-hidden border bg-shop_light_pink/30 shrink-0">
                     <Image
-                      src={`${API_BASE_URL}/${item.images[0].replace(/\\/g, '/')}`}
+                      src={getImageUrl(item.images[0])}
                       alt={item.name}
                       fill
                       style={{ objectFit: 'contain' }}

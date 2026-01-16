@@ -165,9 +165,14 @@ router.post('/create', auth, validateOrderCreation, async (req, res) => {
     
     // Handle Paynow payment
     if (isPaynowConfigured) {
+      // Use test email in development, or user's email in production
+      const paymentEmail = process.env.NODE_ENV === 'production' 
+        ? user.email 
+        : (process.env.PAYNOW_TEST_EMAIL || 'kuzivakwashekubiku@gmail.com');
+      
       // Production: Use Paynow payment gateway
       // 1. Create a new payment
-      const payment = paynow.createPayment(savedOrder._id.toString(), user.email);
+      const payment = paynow.createPayment(savedOrder._id.toString(), paymentEmail);
 
       // 2. Add total as a single item
       payment.add("WyZar Order", savedOrder.totalPrice);

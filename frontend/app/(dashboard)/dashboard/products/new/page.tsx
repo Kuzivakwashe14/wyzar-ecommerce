@@ -130,7 +130,7 @@ export default function NewProductPage() {
 
   // 6. Build the form
   return (
-    <div className="container mx-auto max-w-2xl py-12">
+    <div className="container mx-auto max-w-2xl py-6 md:py-12 px-4">
       <Button variant="outline" size="sm" onClick={() => router.back()} className="mb-4">
         &larr; Back to Dashboard
       </Button>

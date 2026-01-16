@@ -91,15 +91,15 @@ export default function MyProductsPage() {
   }
 
   return (
-    <div className="container mx-auto py-8">
-      <div className="flex justify-between items-center mb-6">
-        <h1 className="text-3xl font-bold">My Products</h1>
-        <div className="flex gap-2">
-          <Link href="/dashboard/products/bulk-upload" passHref>
-            <Button variant="outline">Bulk Upload</Button>
+    <div className="container mx-auto py-4 md:py-8 px-4">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
+        <h1 className="text-2xl md:text-3xl font-bold">My Products</h1>
+        <div className="flex gap-2 w-full sm:w-auto">
+          <Link href="/dashboard/products/bulk-upload" passHref className="flex-1 sm:flex-none">
+            <Button variant="outline" className="w-full sm:w-auto">Bulk Upload</Button>
           </Link>
-          <Link href="/dashboard/products/new" passHref>
-            <Button>Add New Product</Button>
+          <Link href="/dashboard/products/new" passHref className="flex-1 sm:flex-none">
+            <Button className="w-full sm:w-auto">Add New</Button>
           </Link>
         </div>
       </div>
