@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { SignInButton, SignUpButton, UserButton, useUser } from "@clerk/nextjs";
 import { api } from "@/context/AuthContent";
 import Container from "@/components/Container";
 import Logo from "@/components/Logo";
@@ -17,7 +18,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useAuth } from "@/context/AuthContent";
 import { useCart } from "@/context/CartContext";
 import { useWishlist } from "@/context/WishlistContext";
@@ -47,6 +48,7 @@ const categories = [
 
 export default function Header() {
   const { isAuthenticated, user, logout } = useAuth();
+  const { user: clerkUser } = useUser();
   const { itemCount } = useCart();
   const { wishlistCount } = useWishlist();
   const router = useRouter();
@@ -168,6 +170,9 @@ export default function Header() {
                       className="hoverEffect hover:bg-shop_dark_green/10 flex items-center gap-2"
                     >
                       <Avatar className="h-8 w-8">
+                        {clerkUser?.imageUrl && (
+                          <AvatarImage src={clerkUser.imageUrl} alt={user.email || ''} />
+                        )}
                         <AvatarFallback className="bg-shop_dark_green text-white text-sm">
                           {user.email ? user.email.charAt(0).toUpperCase() : 'U'}
                         </AvatarFallback>
@@ -240,7 +245,7 @@ export default function Header() {
                 </DropdownMenu>
               ) : (
                 <div className="hidden sm:flex items-center gap-2">
-                  <Link href="/login">
+                  <SignInButton mode="modal">
                     <Button 
                       variant="ghost" 
                       className="hoverEffect hover:bg-shop_dark_green/10"
@@ -248,12 +253,12 @@ export default function Header() {
                       <User className="h-5 w-5 mr-2" />
                       Login
                     </Button>
-                  </Link>
-                  <Link href="/sign-up">
+                  </SignInButton>
+                  <SignUpButton mode="modal">
                     <Button className="bg-shop_dark_green hover:bg-shop_light_green text-white">
                       Sign Up
                     </Button>
-                  </Link>
+                  </SignUpButton>
                 </div>
               )}
 

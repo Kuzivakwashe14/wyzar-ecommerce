@@ -208,11 +208,13 @@ const validateOrderCreation = (req, res, next) => {
 
     // Validate cart items
     req.body.cartItems = cartItems.map(item => {
-      if (!item._id || !item.cartQuantity) {
+      // Support both 'id' (Prisma/PostgreSQL) and '_id' (MongoDB) formats
+      const itemId = item._id || item.id;
+      if (!itemId || !item.cartQuantity) {
         throw new ValidationError('Invalid cart item format', 'cartItems');
       }
       return {
-        _id: validateObjectId(item._id, 'product'),
+        _id: validateObjectId(itemId, 'product'),
         cartQuantity: validateQuantity(item.cartQuantity)
       };
     });

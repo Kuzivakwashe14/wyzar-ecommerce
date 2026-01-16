@@ -35,6 +35,14 @@ const formSchema = z.object({
   sellerType: z.enum(["individual", "business", "international"]).refine((val) => val !== undefined, {
     message: "You need to select a seller type.",
   }),
+  // Payment details
+  ecocashNumber: z.string().min(9, "Please enter a valid EcoCash number").optional().or(z.literal("")),
+  ecocashName: z.string().optional().or(z.literal("")),
+  bankName: z.string().optional().or(z.literal("")),
+  bankAccountName: z.string().optional().or(z.literal("")),
+  bankAccountNumber: z.string().optional().or(z.literal("")),
+  whatsappNumber: z.string().min(9, "Please enter a valid WhatsApp number").optional().or(z.literal("")),
+  whatsappNumber2: z.string().optional().or(z.literal("")),
   verificationDocument: z.any()
     .refine((files) => files?.length === 1, "Verification document is required.")
     .refine((files) => files?.[0]?.size <= 5000000, `Max file size is 5MB.`)
@@ -54,6 +62,13 @@ export default function BecomeASellerPage() {
     resolver: zodResolver(formSchema),
     defaultValues: {
       businessName: "",
+      ecocashNumber: "",
+      ecocashName: "",
+      bankName: "",
+      bankAccountName: "",
+      bankAccountNumber: "",
+      whatsappNumber: "",
+      whatsappNumber2: "",
     },
   });
   
@@ -80,7 +95,15 @@ export default function BecomeASellerPage() {
     const formData = new FormData();
     formData.append("businessName", values.businessName);
     formData.append("sellerType", values.sellerType);
-    formData.append("verificationDocument", values.verificationDocument[0]); // Append the file
+    formData.append("verificationDocument", values.verificationDocument[0]);
+    // Payment details
+    if (values.ecocashNumber) formData.append("ecocashNumber", values.ecocashNumber);
+    if (values.ecocashName) formData.append("ecocashName", values.ecocashName);
+    if (values.bankName) formData.append("bankName", values.bankName);
+    if (values.bankAccountName) formData.append("bankAccountName", values.bankAccountName);
+    if (values.bankAccountNumber) formData.append("bankAccountNumber", values.bankAccountNumber);
+    if (values.whatsappNumber) formData.append("whatsappNumber", values.whatsappNumber);
+    if (values.whatsappNumber2) formData.append("whatsappNumber2", values.whatsappNumber2);
 
     try {
       // We must use 'api.post' from our context to send the auth token
@@ -200,6 +223,127 @@ export default function BecomeASellerPage() {
               </FormItem>
             )}
           />
+
+          {/* Payment Details Section */}
+          <div className="space-y-4 pt-4 border-t border-gray-200">
+            <h3 className="font-semibold text-shop_dark_green">Payment Details</h3>
+            <p className="text-sm text-gray-600">
+              Enter your payment details so customers can pay you directly.
+            </p>
+            
+            {/* EcoCash Section */}
+            <div className="space-y-3 bg-gray-50 p-4 rounded-lg">
+              <h4 className="font-medium text-gray-700">EcoCash</h4>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <FormField
+                  control={form.control}
+                  name="ecocashNumber"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>EcoCash Number</FormLabel>
+                      <FormControl>
+                        <Input placeholder="e.g., 0772123456" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="ecocashName"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Account Name</FormLabel>
+                      <FormControl>
+                        <Input placeholder="e.g., John Doe" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+            </div>
+
+            {/* Bank Transfer Section */}
+            <div className="space-y-3 bg-gray-50 p-4 rounded-lg">
+              <h4 className="font-medium text-gray-700">Bank Transfer (Optional)</h4>
+              <FormField
+                control={form.control}
+                name="bankName"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Bank Name</FormLabel>
+                    <FormControl>
+                      <Input placeholder="e.g., CBZ Bank" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <FormField
+                  control={form.control}
+                  name="bankAccountName"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Account Name</FormLabel>
+                      <FormControl>
+                        <Input placeholder="e.g., John Doe" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="bankAccountNumber"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Account Number</FormLabel>
+                      <FormControl>
+                        <Input placeholder="e.g., 1234567890" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+            </div>
+
+            {/* WhatsApp Section */}
+            <div className="space-y-3 bg-gray-50 p-4 rounded-lg">
+              <h4 className="font-medium text-gray-700">WhatsApp Contact</h4>
+              <p className="text-xs text-gray-500">Customers can confirm payment via WhatsApp</p>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <FormField
+                  control={form.control}
+                  name="whatsappNumber"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Primary WhatsApp</FormLabel>
+                      <FormControl>
+                        <Input placeholder="e.g., +263772123456" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="whatsappNumber2"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Secondary WhatsApp (Optional)</FormLabel>
+                      <FormControl>
+                        <Input placeholder="e.g., +263772654321" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+            </div>
+          </div>
 
           <FormField
             control={form.control}

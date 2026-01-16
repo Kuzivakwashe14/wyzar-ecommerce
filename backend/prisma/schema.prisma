@@ -9,8 +9,12 @@ datasource db {
 
 model User {
   id               String                    @id @default(uuid())
+  clerkId          String?                   @unique
   email            String                    @unique
-  password         String
+  password         String?
+  firstName        String?
+  lastName         String?
+  imageUrl         String?
   phone            String?                   @unique
   isPhoneVerified  Boolean                   @default(false)
   isEmailVerified  Boolean                   @default(false)
@@ -38,6 +42,7 @@ model User {
   @@index([email])
   @@index([phone])
   @@index([role])
+  @@index([clerkId])
   @@map("users")
 }
 
@@ -47,6 +52,14 @@ model SellerDetails {
   businessName          String?
   sellerType            SellerType?
   phoneNumber           String?
+  // Payment Details
+  ecocashNumber         String?
+  ecocashName           String?
+  bankName              String?
+  bankAccountName       String?
+  bankAccountNumber     String?
+  whatsappNumber        String?
+  whatsappNumber2       String?
   streetAddress         String?
   city                  String?
   state                 String?
@@ -140,7 +153,7 @@ model Order {
   shippingAddress   String
   shippingCity      String
   shippingPhone     String
-  paymentMethod     PaymentMethod @default(PAYNOW)
+  paymentMethod     PaymentMethod @default(ECOCASH)
   paymentResultId   String?
   paymentStatus     String?
   paymentUpdateTime String?
@@ -349,7 +362,8 @@ enum Condition {
 }
 
 enum PaymentMethod {
-  PAYNOW
+  ECOCASH
+  BANK_TRANSFER
   CASH_ON_DELIVERY
 }
 

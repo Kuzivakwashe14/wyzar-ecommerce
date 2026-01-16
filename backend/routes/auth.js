@@ -217,7 +217,7 @@ router.post('/login', authLimiter, sanitizeRequestBody,  validateLogin,  async (
 
 // --- Get Logged In User Route ---
 // @route   GET /api/auth/me
-// @desc    Get the logged-in user's data
+// @desc    Get the logged-in user's data (works with Clerk auth)
 // @access  Private (Thanks to our 'auth' middleware)
 
 router.get('/me', auth, async (req, res) => {
@@ -228,7 +228,11 @@ router.get('/me', auth, async (req, res) => {
       where: { id: req.user.id },
       select: {
         id: true,
+        clerkId: true,
         email: true,
+        firstName: true,
+        lastName: true,
+        imageUrl: true,
         phone: true,
         isPhoneVerified: true,
         isEmailVerified: true,
@@ -252,4 +256,57 @@ router.get('/me', auth, async (req, res) => {
   }
 });
 
+// --- Clerk User Sync Route ---
+// @route   POST /api/auth/clerk-sync
+// @desc    Sync Clerk user with database
+// @access  Private (requires Clerk token)
+router.post('/clerk-sync', auth, async (req, res) => {
+  try {
+    const { clerkId, email, firstName, lastName, imageUrl } = req.body;
+
+    // Validate clerkId matches the authenticated user
+    if (clerkId !== req.user.clerkId) {
+      return res.status(403).json({ 
+        success: false, 
+        msg: 'Clerk ID mismatch' 
+      });
+    }
+
+    // Update user with latest Clerk data
+    const user = await prisma.user.update({
+      where: { clerkId },
+      data: {
+        email: email || undefined,
+        firstName: firstName || undefined,
+        lastName: lastName || undefined,
+        imageUrl: imageUrl || undefined,
+      },
+      include: { sellerDetails: true }
+    });
+
+    res.json({
+      success: true,
+      user: {
+        id: user.id,
+        clerkId: user.clerkId,
+        email: user.email,
+        firstName: user.firstName,
+        lastName: user.lastName,
+        imageUrl: user.imageUrl,
+        isSeller: user.isSeller,
+        isVerified: user.isVerified,
+        role: user.role,
+        sellerDetails: user.sellerDetails
+      }
+    });
+  } catch (err) {
+    console.error('Clerk sync error:', err.message);
+    res.status(500).json({ 
+      success: false, 
+      msg: 'Failed to sync user' 
+    });
+  }
+});
+
 module.exports = router;
+

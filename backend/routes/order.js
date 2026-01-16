@@ -3,7 +3,6 @@
 const express = require('express');
 const router = express.Router();
 const auth = require('../middleware/auth');
-const { Paynow } = require('paynow');
 
 // Import Prisma client
 const prisma = require('../config/prisma');
@@ -18,40 +17,20 @@ const {
 // ===== Input Validation =====
 const { validateOrderCreation, validateObjectIdParam } = require('../middleware/validateInput');
 
-// --- 1. Initialize Paynow ---
-// Check if Paynow is configured (for production) or if we're in development mode
-const isPaynowConfigured =
-  process.env.PAYNOW_INTEGRATION_ID &&
-  process.env.PAYNOW_INTEGRATION_ID !== 'your_id' &&
-  process.env.PAYNOW_INTEGRATION_KEY &&
-  process.env.PAYNOW_INTEGRATION_KEY !== 'your_key';
+// Valid payment methods
+const VALID_PAYMENT_METHODS = ['EcoCash', 'BankTransfer', 'CashOnDelivery'];
 
-let paynow;
-if (isPaynowConfigured) {
-  paynow = new Paynow(
-    process.env.PAYNOW_INTEGRATION_ID,
-    process.env.PAYNOW_INTEGRATION_KEY
-  );
-  // Set the return and result URLs
-  paynow.returnUrl = process.env.PAYNOW_RETURN_URL;
-  paynow.resultUrl = process.env.PAYNOW_RESULT_URL;
-  console.log('✅ Paynow payment integration enabled');
-} else {
-  console.log('⚠️ Paynow not configured - running in DEVELOPMENT mode (orders will be auto-approved)');
-}
-
-// --- 2. Create Order & Initiate Payment Route ---
+// --- 2. Create Order Route ---
 // @route   POST /api/orders/create
-// @desc    Create a new order and get Paynow redirect URL
+// @desc    Create a new order with manual payment (EcoCash, Bank Transfer, or COD)
 // @access  Private
 router.post('/create', auth, validateOrderCreation, async (req, res) => {
   try {
-    const { shippingAddress, cartItems, paymentMethod = 'Paynow' } = req.body;
+    const { shippingAddress, cartItems, paymentMethod = 'EcoCash' } = req.body;
     
     // Validate payment method
-    const validPaymentMethods = ['Paynow', 'CashOnDelivery'];
-    if (!validPaymentMethods.includes(paymentMethod)) {
-      return res.status(400).json({ msg: 'Invalid payment method' });
+    if (!VALID_PAYMENT_METHODS.includes(paymentMethod)) {
+      return res.status(400).json({ msg: 'Invalid payment method. Valid options: EcoCash, BankTransfer, CashOnDelivery' });
     }
     
     // Get the logged-in user
@@ -92,6 +71,13 @@ router.post('/create', auth, validateOrderCreation, async (req, res) => {
       });
     }
 
+    // Map payment method to Prisma enum
+    const paymentMethodMap = {
+      'EcoCash': 'ECOCASH',
+      'BankTransfer': 'BANK_TRANSFER',
+      'CashOnDelivery': 'CASH_ON_DELIVERY'
+    };
+
     // 4. Create new order instance
     const savedOrder = await prisma.order.create({
       data: {
@@ -100,7 +86,7 @@ router.post('/create', auth, validateOrderCreation, async (req, res) => {
         shippingAddress: shippingAddress.address,
         shippingCity: shippingAddress.city,
         shippingPhone: shippingAddress.phone,
-        paymentMethod: paymentMethod === 'CashOnDelivery' ? 'CASH_ON_DELIVERY' : 'PAYNOW',
+        paymentMethod: paymentMethodMap[paymentMethod],
         totalPrice,
         status: paymentMethod === 'CashOnDelivery' ? 'CONFIRMED' : 'PENDING',
         orderItems: {
@@ -178,56 +164,14 @@ router.post('/create', auth, validateOrderCreation, async (req, res) => {
       });
     }
     
-    // Handle Paynow payment
-    if (isPaynowConfigured) {
-      // Production: Use Paynow payment gateway
-      // 1. Create a new payment
-      const payment = paynow.createPayment(savedOrder.id, user.email);
-
-      // 2. Add total as a single item
-      payment.add("WyZar Order", savedOrder.totalPrice);
-
-      // 3. Send the payment to Paynow
-      const response = await paynow.send(payment);
-
-      if (response.success) {
-        // 4. Send back the redirect URL to the frontend
-        res.json({
-          orderId: savedOrder.id,
-          paynowRedirectUrl: response.redirectUrl,
-        });
-      } else {
-        console.error("Paynow error:", response.error);
-        return res.status(500).json({ msg: "Paynow initiation failed", error: response.error });
-      }
-    } else {
-      // Development mode: Auto-approve the order and update stock
-      const updatedOrder = await prisma.order.update({
-        where: { id: savedOrder.id },
-        data: {
-          status: 'PAID',
-          paidAt: new Date(),
-          paymentResultId: 'DEV_' + Date.now(),
-          paymentStatus: 'Development Mode - Auto Approved',
-          paymentUpdateTime: new Date().toISOString()
-        }
-      });
-
-      // Update product stock
-      for (const item of savedOrder.orderItems) {
-        await prisma.product.update({
-          where: { id: item.productId },
-          data: { quantity: { decrement: item.quantity } }
-        });
-      }
-
-      // Return success without payment URL
-      res.json({
-        orderId: savedOrder.id,
-        message: 'Order created successfully (Development mode - payment skipped)',
-        redirectUrl: `/order/success?orderId=${savedOrder.id}`,
-      });
-    }
+    // Handle EcoCash and Bank Transfer - Orders are created as PENDING
+    // Customer will make manual payment and seller will confirm
+    res.json({
+      orderId: savedOrder.id,
+      message: 'Order placed successfully! Please follow the payment instructions.',
+      redirectUrl: `/order/success?orderId=${savedOrder.id}`,
+      paymentMethod: paymentMethod
+    });
 
   } catch (err) {
     console.error("Create Order Error:", err.message);
@@ -521,6 +465,90 @@ router.get('/:id', auth, validateObjectIdParam('id'), async (req, res) => {
   } catch (err) {
     console.error(err.message);
     return res.status(404).json({ msg: 'Order not found' });
+  }
+});
+
+// --- 5.5 Get Order with Seller Payment Info ---
+// @route   GET /api/orders/:id/payment-info
+// @desc    Get order details with seller payment information for success page
+// @access  Private
+router.get('/:id/payment-info', auth, validateObjectIdParam('id'), async (req, res) => {
+  try {
+    const order = await prisma.order.findUnique({
+      where: { id: req.params.id },
+      include: { 
+        orderItems: {
+          include: {
+            product: {
+              include: {
+                seller: {
+                  include: {
+                    sellerDetails: true
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    });
+
+    if (!order) {
+      return res.status(404).json({ msg: 'Order not found' });
+    }
+
+    // Security check: Make sure the user viewing the order is the one who made it
+    if (order.userId !== req.user.id) {
+      return res.status(401).json({ msg: 'Not authorized' });
+    }
+
+    // Collect unique sellers from order items and their payment details
+    const sellersMap = new Map();
+    for (const item of order.orderItems) {
+      if (item.product?.seller?.sellerDetails) {
+        const seller = item.product.seller;
+        const details = seller.sellerDetails;
+        if (!sellersMap.has(seller.id)) {
+          sellersMap.set(seller.id, {
+            id: seller.id,
+            businessName: details.businessName,
+            ecocashNumber: details.ecocashNumber,
+            ecocashName: details.ecocashName,
+            bankName: details.bankName,
+            bankAccountName: details.bankAccountName,
+            bankAccountNumber: details.bankAccountNumber,
+            whatsappNumber: details.whatsappNumber,
+            whatsappNumber2: details.whatsappNumber2
+          });
+        }
+      }
+    }
+
+    // Format response
+    res.json({
+      order: {
+        id: order.id,
+        totalPrice: order.totalPrice,
+        paymentMethod: order.paymentMethod,
+        status: order.status,
+        createdAt: order.createdAt,
+        shippingFullName: order.shippingFullName,
+        shippingAddress: order.shippingAddress,
+        shippingCity: order.shippingCity,
+        shippingPhone: order.shippingPhone,
+        orderItems: order.orderItems.map(item => ({
+          id: item.id,
+          name: item.name,
+          quantity: item.quantity,
+          price: item.price,
+          image: item.image
+        }))
+      },
+      sellers: Array.from(sellersMap.values())
+    });
+  } catch (err) {
+    console.error('Get order payment info error:', err.message);
+    return res.status(500).json({ msg: 'Server Error', error: err.message });
   }
 });
 
