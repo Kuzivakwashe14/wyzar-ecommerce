@@ -46,6 +46,30 @@ const categories = [
     image: "https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?w=400&q=80",
     description: "Phones & accessories"
   },
+  { 
+    name: "Beauty & Health", 
+    href: "/products?category=Beauty",
+    image: "https://images.unsplash.com/photo-1596462502278-27bfdd403348?w=400&q=80",
+    description: "Skincare & wellness"
+  },
+  { 
+    name: "Sports & Outdoors", 
+    href: "/products?category=Sports",
+    image: "https://images.unsplash.com/photo-1517649763962-0c623066013b?w=400&q=80",
+    description: "Active gear & equipment"
+  },
+  { 
+    name: "Books & Media", 
+    href: "/products?category=Books",
+    image: "https://images.unsplash.com/photo-1495446815901-a7297e633e8d?w=400&q=80",
+    description: "Read, listen & watch"
+  },
+  { 
+    name: "Toys & Games", 
+    href: "/products?category=Toys",
+    image: "https://images.unsplash.com/photo-1566576912321-d58ddd7a6088?w=400&q=80",
+    description: "Fun for all ages"
+  },
 ];
 
 // Trust features
@@ -202,9 +226,9 @@ export default function HomePage() {
         <Container>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
             {features.map((feature, index) => (
-              <div key={index} className="flex items-center gap-3 group">
-                <div className="h-12 w-12 rounded-full bg-shop_light_pink flex items-center justify-center group-hover:bg-shop_dark_green transition-colors">
-                  <feature.icon className="h-6 w-6 text-shop_dark_green group-hover:text-gray-900 transition-colors" />
+              <div key={index} className="flex items-center gap-3 group select-none">
+                <div className="h-12 w-12 rounded-full bg-shop_light_pink flex items-center justify-center transition-transform group-hover:scale-110 duration-300">
+                  <feature.icon className="h-6 w-6 text-shop_dark_green" />
                 </div>
                 <div>
                   <h3 className="font-semibold text-sm">{feature.title}</h3>
@@ -233,7 +257,7 @@ export default function HomePage() {
           </div>
 
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6">
-            {categories.map((category, index) => (
+            {categories.slice(0, 4).map((category, index) => (
               <Link key={index} href={category.href}>
                 <div className="group relative bg-white rounded-2xl overflow-hidden border border-gray-200 hover:shadow-xl transition-all duration-300 hover:-translate-y-1">
                   <div className="aspect-square relative overflow-hidden">
@@ -245,13 +269,13 @@ export default function HomePage() {
                       sizes="(max-width: 768px) 50vw, 25vw"
                     />
                     {/* Overlay */}
-                    <div className="absolute inset-0 bg-linear-to-t from-black/60 via-black/20 to-transparent" />
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent" />
                   </div>
-                  <div className="absolute bottom-0 left-0 right-0 p-4 text-center text-gray-900">
+                  <div className="absolute bottom-0 left-0 right-0 p-4 text-center text-white">
                     <h3 className="font-semibold text-lg drop-shadow-lg">
                       {category.name}
                     </h3>
-                    <p className="text-sm text-gray-900/80 mt-1 drop-shadow-md">{category.description}</p>
+                    <p className="text-sm text-white/90 mt-1 drop-shadow-md">{category.description}</p>
                   </div>
                 </div>
               </Link>

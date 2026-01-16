@@ -61,7 +61,7 @@ export default function MessagesPage() {
 
       // Auto-select first conversation if none selected
       if (response.data.length > 0 && !selectedConversation) {
-        setSelectedConversation(response.data[0].id);
+        setSelectedConversation(response.data[0]._id);
       }
     } catch (error) {
       console.error('Error fetching conversations:', error);
@@ -96,7 +96,7 @@ export default function MessagesPage() {
     setSearchResults([]);
   };
 
-  const selectedConv = conversations.find(c => c.id === selectedConversation);
+  const selectedConv = conversations.find(c => c._id === selectedConversation);
 
   if (!user) {
     return null;
@@ -156,7 +156,7 @@ export default function MessagesPage() {
                 <button
                   key={msg.id}
                   onClick={() => {
-                    setSelectedConversation(msg.conversation.id);
+                    setSelectedConversation(msg.conversation._id);
                     clearSearch();
                   }}
                   className="w-full text-left p-3 hover:bg-white rounded-lg transition-colors"
@@ -190,7 +190,7 @@ export default function MessagesPage() {
         <div className="md:col-span-2">
           {selectedConv ? (
             <ChatBoxEnhanced
-              conversationId={selectedConv.id}
+              conversationId={selectedConv._id}
               otherUser={selectedConv.otherUser}
               currentUserId={user.id}
             />

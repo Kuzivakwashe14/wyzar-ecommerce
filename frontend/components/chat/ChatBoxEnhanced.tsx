@@ -57,7 +57,7 @@ interface Message {
 interface ChatBoxProps {
   conversationId: string;
   otherUser: {
-    id: string;
+    _id: string;
     email: string;
     sellerDetails?: {
       businessName: string;
@@ -102,13 +102,13 @@ export default function ChatBoxEnhanced({ conversationId, otherUser, currentUser
     };
 
     const handleUserTyping = (data: any) => {
-      if (data.conversationId === conversationId && data.userId === otherUser.id) {
+      if (data.conversationId === conversationId && data.userId === otherUser._id) {
         setIsTyping(true);
       }
     };
 
     const handleUserStopTyping = (data: any) => {
-      if (data.conversationId === conversationId && data.userId === otherUser.id) {
+      if (data.conversationId === conversationId && data.userId === otherUser._id) {
         setIsTyping(false);
       }
     };
@@ -122,7 +122,7 @@ export default function ChatBoxEnhanced({ conversationId, otherUser, currentUser
       socket.off('user_typing', handleUserTyping);
       socket.off('user_stop_typing', handleUserStopTyping);
     };
-  }, [socket, conversationId, otherUser.id]);
+  }, [socket, conversationId, otherUser._id]);
 
   const fetchMessages = async () => {
     if (!conversationId) return; // Guard against undefined conversationId
@@ -141,7 +141,7 @@ export default function ChatBoxEnhanced({ conversationId, otherUser, currentUser
 
   const checkBlockStatus = async () => {
     try {
-      const response = await api.get(`/messages/is-blocked/${otherUser.id}`);
+      const response = await api.get(`/messages/is-blocked/${otherUser._id}`);
       setIsBlocked(response.data.isBlocked);
     } catch (error) {
       console.error('Error checking block status:', error);
@@ -157,7 +157,7 @@ export default function ChatBoxEnhanced({ conversationId, otherUser, currentUser
 
     socket.emit('typing', {
       conversationId,
-      receiverId: otherUser.id
+      receiverId: otherUser._id
     });
 
     if (typingTimeoutRef.current) {
@@ -167,7 +167,7 @@ export default function ChatBoxEnhanced({ conversationId, otherUser, currentUser
     typingTimeoutRef.current = setTimeout(() => {
       socket.emit('stop_typing', {
         conversationId,
-        receiverId: otherUser.id
+        receiverId: otherUser._id
       });
     }, 2000);
   };
@@ -208,7 +208,7 @@ export default function ChatBoxEnhanced({ conversationId, otherUser, currentUser
       if (selectedImages.length > 0) {
         // Send with images
         const formData = new FormData();
-        formData.append('receiverId', otherUser.id);
+        formData.append('receiverId', otherUser._id);
         formData.append('message', newMessage.trim());
         selectedImages.forEach(file => {
           formData.append('images', file);
@@ -224,7 +224,7 @@ export default function ChatBoxEnhanced({ conversationId, otherUser, currentUser
       } else {
         // Send text only
         const response = await api.post('/messages/send', {
-          receiverId: otherUser.id,
+          receiverId: otherUser._id,
           message: newMessage.trim()
         });
 
@@ -235,7 +235,7 @@ export default function ChatBoxEnhanced({ conversationId, otherUser, currentUser
       if (socket) {
         socket.emit('stop_typing', {
           conversationId,
-          receiverId: otherUser.id
+          receiverId: otherUser._id
         });
       }
 
@@ -254,11 +254,11 @@ export default function ChatBoxEnhanced({ conversationId, otherUser, currentUser
   const handleBlockUser = async () => {
     try {
       if (isBlocked) {
-        await api.post(`/messages/unblock/${otherUser.id}`);
+        await api.post(`/messages/unblock/${otherUser._id}`);
         setIsBlocked(false);
         toast.success('User unblocked');
       } else {
-        await api.post(`/messages/block/${otherUser.id}`);
+        await api.post(`/messages/block/${otherUser._id}`);
         setIsBlocked(true);
         toast.success('User blocked');
       }
@@ -276,7 +276,7 @@ export default function ChatBoxEnhanced({ conversationId, otherUser, currentUser
 
     try {
       await api.post('/messages/report', {
-        reportedUserId: otherUser.id,
+        reportedUserId: otherUser._id,
         reason: reportReason,
         description: reportDescription,
         conversationId

@@ -49,8 +49,9 @@ export default function ProductCard({ product }: ProductCardProps) {
   const router = useRouter();
 
   const imageUrl = getImageUrl(product.images[0]);
-  const rating = product.rating?.average || 0;
-  const reviewCount = product.rating?.count || 0;
+  // Map backend fields to frontend expectation
+  const rating = product.rating?.average || (product as any).ratingAverage || 0;
+  const reviewCount = product.rating?.count || (product as any).ratingCount || 0;
   const isWishlisted = isInWishlist(product.id);
 
   const handleAddToCart = (e: React.MouseEvent) => {

@@ -31,6 +31,9 @@ import {
 } from "@/components/ui/select";
 
 // 1. Define the categories
+const MAX_FILE_SIZE = 5000000;
+const ACCEPTED_IMAGE_TYPES = ["image/jpeg", "image/jpg", "image/png", "image/webp"];
+
 const CATEGORIES = [
   "Electronics",
   "Fashion",

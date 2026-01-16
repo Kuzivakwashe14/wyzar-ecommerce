@@ -44,6 +44,10 @@ const categories = [
   { name: "Fashion", href: "/products?category=Fashion" },
   { name: "Home & Living", href: "/products?category=Home" },
   { name: "Mobile & Accessories", href: "/products?category=Mobile" },
+  { name: "Beauty & Health", href: "/products?category=Beauty" },
+  { name: "Sports & Outdoors", href: "/products?category=Sports" },
+  { name: "Books & Media", href: "/products?category=Books" },
+  { name: "Toys & Games", href: "/products?category=Toys" },
 ];
 
 export default function Header() {
@@ -147,14 +151,8 @@ export default function Header() {
                     placeholder="Search for products..."
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
-                    className="w-full pl-4 pr-12 py-5 rounded-full border-2 border-shop_dark_green/20 focus:border-shop_dark_green bg-white"
+                    className="w-full px-4 py-5 rounded-full border-2 border-shop_dark_green/20 focus:border-shop_dark_green bg-white"
                   />
-                  <button 
-                    type="submit"
-                    className="absolute right-1 bg-shop_dark_green hover:bg-shop_light_green text-white p-2.5 rounded-full transition-colors"
-                  >
-                    <Search className="h-4 w-4" />
-                  </button>
                 </div>
               </form>
             </div>
@@ -267,7 +265,7 @@ export default function Header() {
                 <Button 
                   variant="ghost" 
                   size="icon" 
-                  className="hoverEffect hover:bg-shop_dark_green/10 relative"
+                  className="hoverEffect hover:bg-shop_dark_green/10 relative hidden sm:flex"
                 >
                   <Heart className="h-5 w-5" />
                   {wishlistCount > 0 && (
@@ -284,7 +282,7 @@ export default function Header() {
                   <Button 
                     variant="ghost" 
                     size="icon" 
-                    className="hoverEffect hover:bg-shop_dark_green/10 relative"
+                    className="hoverEffect hover:bg-shop_dark_green/10 relative hidden sm:flex"
                   >
                     <MessageCircle className="h-5 w-5" />
                     {unreadMessages > 0 && (
@@ -317,14 +315,8 @@ export default function Header() {
                   placeholder="Search for products..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full pl-4 pr-12 py-2 rounded-full border-2 border-shop_dark_green/20 focus:border-shop_dark_green"
+                  className="w-full px-4 py-2 rounded-full border-2 border-shop_dark_green/20 focus:border-shop_dark_green"
                 />
-                <button 
-                  type="submit"
-                  className="absolute right-1 bg-shop_dark_green hover:bg-shop_light_green text-white p-2 rounded-full transition-colors"
-                >
-                  <Search className="h-4 w-4" />
-                </button>
               </div>
             </form>
           </div>
@@ -365,28 +357,22 @@ export default function Header() {
               </DropdownMenu>
 
               <Link 
-                href="/products" 
+                href="/products?sort=price-low" 
                 className="text-sm font-medium hover:text-shop_dark_green transition-colors hoverEffect"
               >
-                All Products
+                Deals
               </Link>
               <Link 
-                href="/products?featured=true" 
+                href="/become-a-seller" 
                 className="text-sm font-medium hover:text-shop_dark_green transition-colors hoverEffect"
               >
-                Featured
+                Sell on WyZar
               </Link>
               <Link 
-                href="/products?sort=newest" 
+                href="/help" 
                 className="text-sm font-medium hover:text-shop_dark_green transition-colors hoverEffect"
               >
-                New Arrivals
-              </Link>
-              <Link 
-                href="/products?sort=popular" 
-                className="text-sm font-medium hover:text-shop_dark_green transition-colors hoverEffect"
-              >
-                Trending
+                Customer Support
               </Link>
             </div>
 

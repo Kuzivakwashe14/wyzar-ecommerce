@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { useAuth, api } from "@/context/AuthContent";
@@ -48,7 +48,7 @@ interface OrderData {
   orderItems: OrderItem[];
 }
 
-export default function OrderSuccessPage() {
+function OrderSuccessContent() {
   const { loading: authLoading } = useAuth();
   const searchParams = useSearchParams();
   const orderId = searchParams.get("orderId");
@@ -373,5 +373,20 @@ export default function OrderSuccessPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function OrderSuccessPage() {
+  return (
+    <Suspense fallback={
+      <div className="flex justify-center items-center min-h-screen">
+        <div className="text-center">
+          <div className="h-12 w-12 animate-spin rounded-full border-4 border-shop_dark_green border-t-transparent mx-auto mb-4"></div>
+          <p className="text-gray-600">Loading order details...</p>
+        </div>
+      </div>
+    }>
+      <OrderSuccessContent />
+    </Suspense>
   );
 }

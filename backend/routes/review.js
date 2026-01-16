@@ -190,7 +190,7 @@ router.post('/', auth, validateReviewCreation, async (req, res) => {
       const userOrders = await prisma.order.findMany({
         where: {
           userId: req.user.id,
-          status: { in: ['Paid', 'Shipped', 'Delivered'] }
+          status: { in: ['PAID', 'SHIPPED', 'DELIVERED'] }
         },
         include: {
           orderItems: true
@@ -621,8 +621,8 @@ async function updateProductRating(productId) {
     await prisma.product.update({
       where: { id: productId },
       data: {
-        rating: Math.round(average * 10) / 10,
-        numReviews: count
+        ratingAverage: Math.round(average * 10) / 10,
+        ratingCount: count
       }
     });
   } catch (err) {

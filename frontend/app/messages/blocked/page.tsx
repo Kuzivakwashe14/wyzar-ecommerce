@@ -53,7 +53,7 @@ export default function BlockedUsersPage() {
     try {
       setUnblocking(userId);
       await api.post(`/messages/unblock/${userId}`);
-      setBlockedUsers(prev => prev.filter(u => u.id !== userId));
+      setBlockedUsers(prev => prev.filter(u => u._id !== userId));
       toast.success('User unblocked successfully');
     } catch (error) {
       console.error('Error unblocking user:', error);
@@ -122,7 +122,7 @@ export default function BlockedUsersPage() {
             <div className="space-y-4">
               {blockedUsers.map((blockedUser) => (
                 <div
-                  key={blockedUser.id}
+                  key={blockedUser._id}
                   className="flex items-center justify-between p-4 border rounded-lg hover:bg-muted/50 transition-colors"
                 >
                   <div className="flex items-center gap-4">
@@ -142,10 +142,10 @@ export default function BlockedUsersPage() {
 
                   <Button
                     variant="outline"
-                    onClick={() => handleUnblock(blockedUser.id)}
-                    disabled={unblocking === blockedUser.id}
+                    onClick={() => handleUnblock(blockedUser._id)}
+                    disabled={unblocking === blockedUser._id}
                   >
-                    {unblocking === blockedUser.id ? (
+                    {unblocking === blockedUser._id ? (
                       <Loader2 className="h-4 w-4 animate-spin mr-2" />
                     ) : (
                       <Ban className="h-4 w-4 mr-2" />

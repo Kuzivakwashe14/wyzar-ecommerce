@@ -124,7 +124,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   return (
     <AuthContext.Provider value={{
       user,
-      isAuthenticated: !!user && isSignedIn,
+      isAuthenticated: !!user && !!isSignedIn,
       loading: !clerkLoaded || loading,
       logout,
       refreshUser,

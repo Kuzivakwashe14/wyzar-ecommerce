@@ -111,66 +111,7 @@ export default function Footer() {
 
   return (
     <footer className="bg-shop_dark_green text-white">
-      {/* Features Section */}
-      <div className="border-b border-white/10">
-        <Container>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-6 py-8">
-            {features.map((feature, index) => (
-              <div key={index} className="flex items-center gap-4">
-                <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-white/10">
-                  <feature.icon className="h-6 w-6 text-shop_orange" />
-                </div>
-                <div>
-                  <h4 className="font-semibold text-sm">{feature.title}</h4>
-                  <p className="text-xs text-white/70">{feature.description}</p>
-                </div>
-              </div>
-            ))}
-          </div>
-        </Container>
-      </div>
 
-      {/* Newsletter Section */}
-      <div className="border-b border-white/10 bg-shop_dark_green/80">
-        <Container>
-          <div className="py-8 flex flex-col md:flex-row items-center justify-between gap-6">
-            <div className="text-center md:text-left">
-              <h3 className="text-xl font-bold mb-2">Subscribe to our Newsletter</h3>
-              <p className="text-white/70 text-sm">
-                Get the latest updates on new products and upcoming sales
-              </p>
-            </div>
-            <form onSubmit={handleSubscribe} className="flex w-full md:w-auto max-w-md gap-2">
-              <div className="relative flex-1">
-                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
-                <Input
-                  type="email"
-                  placeholder="Enter your email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  className="pl-10 bg-white/10 border-white/20 text-white placeholder:text-white/50 focus:border-shop_orange"
-                  required
-                  disabled={isSubmitting}
-                />
-              </div>
-              <Button 
-                type="submit" 
-                className="bg-shop_orange hover:bg-shop_orange/90 text-white shrink-0"
-                disabled={isSubmitting}
-              >
-                {isSubmitting ? (
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                ) : (
-                  <>
-                    <Send className="h-4 w-4 mr-2" />
-                    Subscribe
-                  </>
-                )}
-              </Button>
-            </form>
-          </div>
-        </Container>
-      </div>
 
       {/* Main Footer Content */}
       <Container>

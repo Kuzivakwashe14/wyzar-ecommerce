@@ -300,7 +300,7 @@ export default function UsersPage() {
                             </button>
                           ) : (
                             <button
-                              onClick={() => handleSuspend(user._id, false)}
+                              onClick={() => handleSuspend(user.id, false)}
                               className="px-3 py-1 bg-green-600 hover:bg-green-700 text-gray-900 text-sm rounded transition-all"
                             >
                               Unsuspend

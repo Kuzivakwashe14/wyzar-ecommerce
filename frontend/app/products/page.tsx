@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import { api } from "@/context/AuthContent";
 import ProductCard, { Product } from "@/components/ProductCard";
@@ -67,7 +67,7 @@ const ratingFilters = [
   { value: 1, label: "1 Star & Up" },
 ];
 
-export default function ProductsPage() {
+function ProductsContent() {
   const searchParams = useSearchParams();
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
@@ -658,6 +658,18 @@ export default function ProductsPage() {
         </div>
       </Container>
     </div>
+  );
+}
+
+export default function ProductsPage() {
+  return (
+    <Suspense fallback={
+      <div className="flex justify-center items-center min-h-screen">
+        <p>Loading products...</p>
+      </div>
+    }>
+      <ProductsContent />
+    </Suspense>
   );
 }
 

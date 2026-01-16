@@ -91,7 +91,7 @@ export default function MyProductsPage() {
   }
 
   return (
-    <div className="container mx-auto py-8">
+    <div className="container mx-auto py-8 px-4">
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-3xl font-bold">My Products</h1>
         <div className="flex gap-2">
@@ -104,7 +104,7 @@ export default function MyProductsPage() {
         </div>
       </div>
 
-      <div className="border rounded-lg">
+      <div className="border rounded-lg overflow-x-auto">
         <Table>
           <TableHeader>
             <TableRow>
@@ -135,7 +135,7 @@ export default function MyProductsPage() {
                       unoptimized
                     />
                   </TableCell>
-                  <TableCell className="font-medium">{product.name}</TableCell>
+                  <TableCell className="font-medium whitespace-nowrap">{product.name}</TableCell>
                   <TableCell>{product.quantity}</TableCell>
                   <TableCell>${product.price.toFixed(2)}</TableCell>
                   <TableCell>

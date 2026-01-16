@@ -44,8 +44,8 @@ export const SocketProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       setIsConnected(true);
 
       // Join with user ID
-      if (user._id) {
-        newSocket.emit('join', user._id);
+      if (user.id) {
+        newSocket.emit('join', user.id);
       }
     });
 
