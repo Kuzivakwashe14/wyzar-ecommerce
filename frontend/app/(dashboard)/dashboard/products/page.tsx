@@ -78,7 +78,7 @@ export default function MyProductsPage() {
     try {
       await api.delete(`/products/${productId}`);
       // Refresh list by filtering out the deleted product
-      setProducts(products.filter(p => p._id !== productId));
+      setProducts(products.filter(p => p.id !== productId));
       toast("Success", { description: "Product deleted." });
     } catch (err) {
       console.error(err);
@@ -124,7 +124,7 @@ export default function MyProductsPage() {
               </TableRow>
             ) : (
               products.map((product) => (
-                <TableRow key={product._id}>
+                <TableRow key={product.id}>
                   <TableCell className="hidden sm:table-cell">
                     <Image
                       alt={product.name}
@@ -149,7 +149,7 @@ export default function MyProductsPage() {
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
                           <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                          <Link href={`/dashboard/products/edit/${product._id}`}>
+                          <Link href={`/dashboard/products/edit/${product.id}`}>
                             <DropdownMenuItem>Edit</DropdownMenuItem>
                           </Link>
                           {/* This is now correctly inside the AlertDialog */}
@@ -172,7 +172,7 @@ export default function MyProductsPage() {
                         </AlertDialogHeader>
                         <AlertDialogFooter>
                           <AlertDialogCancel>Cancel</AlertDialogCancel>
-                          <AlertDialogAction onClick={() => handleDelete(product._id)}>
+                          <AlertDialogAction onClick={() => handleDelete(product.id)}>
                             Delete
                           </AlertDialogAction>
                         </AlertDialogFooter>

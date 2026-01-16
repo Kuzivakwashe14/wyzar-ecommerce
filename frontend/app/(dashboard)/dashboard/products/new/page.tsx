@@ -22,16 +22,31 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
-// 1. Define the form schema
-const MAX_FILE_SIZE = 5000000;
-const ACCEPTED_IMAGE_TYPES = ["image/jpeg", "image/jpg", "image/png"];
+// 1. Define the categories
+const CATEGORIES = [
+  "Electronics",
+  "Fashion",
+  "Home & Living",
+  "Mobile & Accessories",
+  "Beauty & Health",
+  "Sports & Outdoors",
+  "Books & Media",
+  "Toys & Games"
+];
 
 const formSchema = z.object({
   name: z.string().min(3, "Name must be at least 3 characters."),
   description: z.string().min(10, "Description must be at least 10 characters."),
   price: z.string().min(1, "Price is required."),
-  category: z.string().min(2, "Category is required."),
+  category: z.string().min(1, "Category is required."),
   quantity: z.string().min(1, "Quantity is required."),
   deliveryTime: z.string().optional(),
   countryOfOrigin: z.string().optional(),
@@ -209,7 +224,20 @@ export default function NewProductPage() {
             render={({ field }) => (
               <FormItem>
                 <FormLabel>Category</FormLabel>
-                <FormControl><Input placeholder="e.g., Electronics, Clothing, Groceries" {...field} /></FormControl>
+                <Select onValueChange={field.onChange} defaultValue={field.value}>
+                  <FormControl>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select a category" />
+                    </SelectTrigger>
+                  </FormControl>
+                  <SelectContent>
+                    {CATEGORIES.map((category) => (
+                      <SelectItem key={category} value={category}>
+                        {category}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
                 <FormMessage />
               </FormItem>
             )}

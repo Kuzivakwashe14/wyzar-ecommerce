@@ -18,7 +18,7 @@ import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
 
 interface Admin {
-  _id: string;
+  id: string;
   email: string;
   role: string;
   isEmailVerified: boolean;
@@ -116,7 +116,7 @@ export default function AccessControlPage() {
       const res = await axiosInstance.delete(`/admin/access-control/admins/${adminId}`);
 
       toast.success(res.data.msg);
-      setAdmins(admins.filter(a => a._id !== adminId));
+      setAdmins(admins.filter(a => a.id !== adminId));
       fetchStats();
     } catch (error: any) {
       const errorMsg = error.response?.data?.msg || 'Failed to remove admin';
@@ -287,7 +287,7 @@ export default function AccessControlPage() {
             <div className="space-y-3">
               {admins.map((admin) => (
                 <div
-                  key={admin._id}
+                  key={admin.id}
                   className="flex items-center justify-between p-4 border rounded-lg hover:bg-muted/50 transition-colors"
                 >
                   <div className="flex items-center gap-4">
@@ -297,7 +297,7 @@ export default function AccessControlPage() {
                     <div>
                       <div className="font-medium flex items-center gap-2">
                         {admin.email}
-                        {admin._id === user?._id && (
+                        {admin.id === user?.id && (
                           <Badge variant="secondary" className="text-xs">
                             You
                           </Badge>
@@ -314,12 +314,12 @@ export default function AccessControlPage() {
                       {admin.isEmailVerified ? "Verified" : "Unverified"}
                     </Badge>
 
-                    {admin._id !== user?._id && (
+                    {admin.id !== user?.id && (
                       <Button
                         variant="ghost"
                         size="sm"
                         className="text-destructive hover:text-destructive"
-                        onClick={() => handleRemoveAdmin(admin._id)}
+                        onClick={() => handleRemoveAdmin(admin.id)}
                       >
                         <Trash2 className="h-4 w-4" />
                       </Button>

@@ -375,7 +375,10 @@ router.put('/:id/suspend', adminAuth, async (req, res) => {
   try {
     const { suspend, reason } = req.body;
 
-    const seller = await User.findById(req.params.id);
+    const seller = await prisma.user.findUnique({
+      where: { id: req.params.id },
+      include: { sellerDetails: true }
+    });
 
     if (!seller) {
       return res.status(404).json({
@@ -391,14 +394,24 @@ router.put('/:id/suspend', adminAuth, async (req, res) => {
       });
     }
 
-    seller.isSuspended = suspend;
-    if (suspend && reason) {
-      seller.suspensionReason = reason;
-    } else if (!suspend) {
-      seller.suspensionReason = '';
-    }
-
-    await seller.save();
+    const updatedSeller = await prisma.user.update({
+      where: { id: seller.id },
+      data: {
+        isSuspended: suspend,
+        suspensionReason: suspend && reason ? reason : (!suspend ? '' : undefined) // undefined means do not update if logic is clearer, but here explicitly ' ' or null
+      },
+      select: {
+          id: true,
+          email: true,
+          phone: true,
+          isSeller: true,
+          isVerified: true,
+          role: true,
+          isSuspended: true,
+          suspensionReason: true,
+          sellerDetails: true
+      }
+    });
 
     // Send notification email
     try {
@@ -429,7 +442,7 @@ router.put('/:id/suspend', adminAuth, async (req, res) => {
     res.json({
       success: true,
       msg: suspend ? 'Seller suspended successfully' : 'Seller unsuspended successfully',
-      seller: await User.findById(seller._id).select('-password')
+      seller: updatedSeller
     });
   } catch (error) {
     console.error('Error suspending seller:', error);
@@ -450,7 +463,16 @@ router.put('/:id/suspend', adminAuth, async (req, res) => {
 // @access  Private (Admin only)
 router.get('/:id/documents', adminAuth, async (req, res) => {
   try {
-    const seller = await User.findById(req.params.id).select('email sellerDetails');
+    const seller = await prisma.user.findUnique({
+      where: { id: req.params.id },
+      include: {
+        sellerDetails: {
+          include: {
+            verificationDocuments: true
+          }
+        }
+      }
+    });
 
     if (!seller) {
       return res.status(404).json({
@@ -470,7 +492,7 @@ router.get('/:id/documents', adminAuth, async (req, res) => {
 
     res.json({
       success: true,
-      sellerId: seller._id,
+      sellerId: seller.id,
       sellerEmail: seller.email,
       businessName: seller.sellerDetails?.businessName,
       verificationStatus: seller.sellerDetails?.verificationStatus,
@@ -492,7 +514,16 @@ router.get('/:id/documents', adminAuth, async (req, res) => {
 // @access  Private (Admin only)
 router.get('/:sellerId/documents/:documentId/view', adminAuth, async (req, res) => {
   try {
-    const seller = await User.findById(req.params.sellerId);
+    const seller = await prisma.user.findUnique({
+      where: { id: req.params.sellerId },
+      include: {
+        sellerDetails: {
+          include: {
+            verificationDocuments: true
+          }
+        }
+      }
+    });
 
     if (!seller) {
       return res.status(404).json({
@@ -501,7 +532,7 @@ router.get('/:sellerId/documents/:documentId/view', adminAuth, async (req, res) 
       });
     }
 
-    const document = seller.sellerDetails?.verificationDocuments?.id(req.params.documentId);
+    const document = seller.sellerDetails?.verificationDocuments?.find(doc => doc.id === req.params.documentId);
 
     if (!document) {
       return res.status(404).json({
@@ -560,16 +591,18 @@ router.put('/:sellerId/documents/:documentId/status', adminAuth, async (req, res
       });
     }
 
-    const seller = await User.findById(req.params.sellerId);
-
-    if (!seller) {
-      return res.status(404).json({
-        success: false,
-        msg: 'Seller not found'
-      });
-    }
-
-    const document = seller.sellerDetails?.verificationDocuments?.id(req.params.documentId);
+    // 1. Find the document and include seller info
+    const document = await prisma.verificationDocument.findUnique({
+      where: { id: req.params.documentId },
+      include: {
+        sellerDetails: {
+          include: {
+            user: true,
+            verificationDocuments: true
+          }
+        }
+      }
+    });
 
     if (!document) {
       return res.status(404).json({
@@ -578,75 +611,98 @@ router.put('/:sellerId/documents/:documentId/status', adminAuth, async (req, res
       });
     }
 
-    // Update document status
-    document.status = status;
-    if (status === 'rejected' && rejectionReason) {
-      document.rejectionReason = rejectionReason;
-    }
+    const sellerDetails = document.sellerDetails;
+    const seller = sellerDetails.user;
 
-    // Check if all documents are approved
-    const allDocuments = seller.sellerDetails.verificationDocuments;
-    const allApproved = allDocuments.every(doc => doc.status === 'approved');
-    const anyRejected = allDocuments.some(doc => doc.status === 'rejected');
+    // 2. Update the document status
+    const updatedDocument = await prisma.verificationDocument.update({
+      where: { id: document.id },
+      data: {
+        status: status === 'approved' ? 'APPROVED' : 'REJECTED',
+        rejectionReason: status === 'rejected' ? rejectionReason : null
+      }
+    });
 
-    // Update overall verification status
+    // 3. Check overall status
+    // We get the UPDATED list of documents. Since we included verificationDocuments in step 1 (stale),
+    // and updated one, we should re-check OR just update the array in memory.
+    // Fetching fresh is safer.
+    const allDocuments = await prisma.verificationDocument.findMany({
+      where: { sellerDetailsId: sellerDetails.id }
+    });
+
+    const allApproved = allDocuments.every(doc => doc.status === 'APPROVED');
+    const anyRejected = allDocuments.some(doc => doc.status === 'REJECTED');
+
+    let newVerificationStatus = 'UNDER_REVIEW';
+    let isVerified = false;
+
     if (allApproved && allDocuments.length > 0) {
-      seller.sellerDetails.verificationStatus = 'approved';
-      seller.isVerified = true;
-      seller.sellerDetails.verifiedAt = new Date();
-      seller.sellerDetails.verifiedBy = req.user.id;
+      newVerificationStatus = 'APPROVED';
+      isVerified = true;
     } else if (anyRejected) {
-      seller.sellerDetails.verificationStatus = 'rejected';
-      seller.isVerified = false;
-    } else {
-      seller.sellerDetails.verificationStatus = 'under_review';
+      newVerificationStatus = 'REJECTED';
     }
 
-    await seller.save();
+    // 4. Update Seller Details and User if status changed
+    if (sellerDetails.verificationStatus !== newVerificationStatus || seller.isVerified !== isVerified) {
+       await prisma.sellerDetails.update({
+        where: { id: sellerDetails.id },
+        data: {
+          verificationStatus: newVerificationStatus,
+          verifiedAt: newVerificationStatus === 'APPROVED' ? new Date() : null,
+          verifiedById: newVerificationStatus === 'APPROVED' ? req.user.id : null,
+          user: {
+            update: {
+              isVerified: isVerified
+            }
+          }
+        }
+      });
+    }
 
-    // Send email notification if verification status changed
-    if (allApproved) {
-      try {
+    // 5. Send Emails
+    if (newVerificationStatus === 'APPROVED' && sellerDetails.verificationStatus !== 'APPROVED') {
+       // Send approval email logic
+       try {
         await sendEmail({
           to: seller.email,
           subject: 'Seller Verification Approved - WyZar',
           html: `
             <h1>Congratulations! Your seller verification has been approved</h1>
-            <p>Hello ${seller.sellerDetails?.businessName || 'Seller'},</p>
+            <p>Hello ${sellerDetails?.businessName || 'Seller'},</p>
             <p>All your verification documents have been approved!</p>
             <p>You can now start listing products on WyZar marketplace.</p>
             <p>Thank you for joining WyZar!</p>
             <p>Best regards,<br>WyZar Team</p>
           `
         });
-      } catch (emailError) {
-        console.error('Error sending approval email:', emailError);
-      }
+      } catch (err) { console.error(err); }
     } else if (status === 'rejected') {
-      try {
+        // Send rejection email for specific document
+         try {
         await sendEmail({
           to: seller.email,
           subject: 'Document Verification Update - WyZar',
           html: `
             <h1>Verification Document Requires Attention</h1>
-            <p>Hello ${seller.sellerDetails?.businessName || 'Seller'},</p>
+            <p>Hello ${sellerDetails?.businessName || 'Seller'},</p>
             <p>One of your verification documents (${document.documentType}) has been rejected.</p>
             ${rejectionReason ? `<p><strong>Reason:</strong> ${rejectionReason}</p>` : ''}
             <p>Please upload a new document to continue with your verification.</p>
             <p>Best regards,<br>WyZar Team</p>
           `
         });
-      } catch (emailError) {
-        console.error('Error sending rejection email:', emailError);
-      }
+      } catch (err) { console.error(err); }
     }
 
     res.json({
       success: true,
       msg: `Document ${status} successfully`,
-      document,
-      overallStatus: seller.sellerDetails.verificationStatus
+      document: updatedDocument,
+      overallStatus: newVerificationStatus
     });
+
   } catch (error) {
     console.error('Error updating document status:', error);
     res.status(500).json({
@@ -664,7 +720,10 @@ router.put('/:id/verification-notes', adminAuth, async (req, res) => {
   try {
     const { notes } = req.body;
 
-    const seller = await User.findById(req.params.id);
+    const seller = await prisma.user.findUnique({
+      where: { id: req.params.id },
+      include: { sellerDetails: true }
+    });
 
     if (!seller) {
       return res.status(404).json({
@@ -673,13 +732,15 @@ router.put('/:id/verification-notes', adminAuth, async (req, res) => {
       });
     }
 
-    seller.sellerDetails.verificationNotes = notes;
-    await seller.save();
+    await prisma.sellerDetails.update({
+      where: { id: seller.sellerDetails.id },
+      data: { verificationNotes: notes }
+    });
 
     res.json({
       success: true,
       msg: 'Verification notes updated successfully',
-      notes: seller.sellerDetails.verificationNotes
+      notes: notes
     });
   } catch (error) {
     console.error('Error updating verification notes:', error);

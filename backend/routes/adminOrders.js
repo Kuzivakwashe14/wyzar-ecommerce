@@ -51,7 +51,8 @@ router.get('/', adminAuth, async (req, res) => {
             email: true,
             phone: true
           }
-        }
+        },
+        orderItems: true
       },
       orderBy: { createdAt: 'desc' },
       take: parseInt(limit),
