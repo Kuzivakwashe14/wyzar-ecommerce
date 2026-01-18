@@ -33,7 +33,7 @@ const formSchema = z.object({
 export default function SettingsPage() {
   const router = useRouter();
   // We need 'login' to refresh the user state
-  const { user, isAuthenticated, loading, login } = useAuth(); 
+  const { user, isAuthenticated, loading, refreshUser } = useAuth(); 
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   // 2. Define the form
@@ -69,7 +69,7 @@ export default function SettingsPage() {
       const response = await api.put("/seller/profile", values);
 
       // Refresh the user data in our context
-      await login(localStorage.getItem('token')!); 
+      await refreshUser();   
 
       toast(
         "Success!",{

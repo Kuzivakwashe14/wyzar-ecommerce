@@ -4,9 +4,7 @@
 const express = require('express');
 const router = express.Router();
 const adminAuth = require('../middleware/adminAuth');
-const User = require('../models/User');
-const Order = require('../models/Order');
-const Product = require('../models/Product');
+const prisma = require('../config/prisma');
 
 // ==========================================
 // USER MANAGEMENT
@@ -28,46 +26,68 @@ router.get('/', adminAuth, async (req, res) => {
     } = req.query;
 
     // Build query
-    const query = { role: { $ne: 'admin' } }; // Exclude admins from list
+    const where = { role: { not: 'ADMIN' } }; // Exclude admins from list
 
     // Search by email or phone
     if (search) {
-      query.$or = [
-        { email: { $regex: search, $options: 'i' } },
-        { phone: { $regex: search, $options: 'i' } },
-        { 'sellerDetails.businessName': { $regex: search, $options: 'i' } }
+      where.OR = [
+        { email: { contains: search, mode: 'insensitive' } },
+        { phone: { contains: search, mode: 'insensitive' } },
+        { sellerDetails: { businessName: { contains: search, mode: 'insensitive' } } }
       ];
     }
 
     // Filter by role
     if (role) {
-      query.role = role;
+      where.role = role.toUpperCase();
     }
 
     // Filter by seller status
     if (isSeller !== '') {
-      query.isSeller = isSeller === 'true';
+      where.isSeller = isSeller === 'true';
     }
 
     // Filter by verification status
     if (isVerified !== '') {
-      query.isVerified = isVerified === 'true';
+      where.isVerified = isVerified === 'true';
     }
 
     // Filter by suspension status
     if (isSuspended !== '') {
-      query.isSuspended = isSuspended === 'true';
+      where.isSuspended = isSuspended === 'true';
     }
 
     // Execute query with pagination
-    const users = await User.find(query)
-      .select('-password')
-      .sort({ createdAt: -1 })
-      .limit(limit * 1)
-      .skip((page - 1) * limit);
+    const users = await prisma.user.findMany({
+      where,
+      select: {
+        id: true,
+        email: true,
+        phone: true,
+        isPhoneVerified: true,
+        isEmailVerified: true,
+        isSeller: true,
+        isVerified: true,
+        role: true,
+        isSuspended: true,
+        suspensionReason: true,
+        createdAt: true,
+        updatedAt: true,
+        sellerDetails: {
+          select: {
+            businessName: true,
+            sellerType: true,
+            verificationStatus: true
+          }
+        }
+      },
+      orderBy: { createdAt: 'desc' },
+      take: limit * 1,
+      skip: (page - 1) * limit
+    });
 
     // Get total count for pagination
-    const count = await User.countDocuments(query);
+    const count = await prisma.user.count({ where });
 
     res.json({
       success: true,
@@ -91,7 +111,28 @@ router.get('/', adminAuth, async (req, res) => {
 // @access  Private (Admin only)
 router.get('/:id', adminAuth, async (req, res) => {
   try {
-    const user = await User.findById(req.params.id).select('-password');
+    const user = await prisma.user.findUnique({
+      where: { id: req.params.id },
+      select: {
+        id: true,
+        email: true,
+        phone: true,
+        isPhoneVerified: true,
+        isEmailVerified: true,
+        isSeller: true,
+        isVerified: true,
+        role: true,
+        isSuspended: true,
+        suspensionReason: true,
+        createdAt: true,
+        updatedAt: true,
+        sellerDetails: {
+          include: {
+            verificationDocuments: true
+          }
+        }
+      }
+    });
 
     if (!user) {
       return res.status(404).json({
@@ -104,51 +145,48 @@ router.get('/:id', adminAuth, async (req, res) => {
     let sellerStats = null;
     if (user.isSeller) {
       const [productCount, orderCount, revenueData] = await Promise.all([
-        Product.countDocuments({ seller: user._id }),
-        Order.countDocuments({ 'orderItems.product': { $exists: true } }),
-        Order.aggregate([
-          {
-            $match: {
-              'orderItems.product': { $exists: true },
-              status: { $in: ['Paid', 'Shipped', 'Delivered'] }
+        prisma.product.count({ where: { sellerId: user.id } }),
+        prisma.order.count(),
+        prisma.orderItem.aggregate({
+          where: {
+            product: {
+              sellerId: user.id
+            },
+            order: {
+              status: { in: ['PAID', 'SHIPPED', 'DELIVERED'] }
             }
           },
-          { $unwind: '$orderItems' },
-          {
-            $lookup: {
-              from: 'products',
-              localField: 'orderItems.product',
-              foreignField: '_id',
-              as: 'productInfo'
-            }
-          },
-          { $unwind: '$productInfo' },
-          {
-            $match: {
-              'productInfo.seller': user._id
-            }
-          },
-          {
-            $group: {
-              _id: null,
-              totalRevenue: { $sum: '$orderItems.price' }
-            }
-          }
-        ])
+          _sum: { price: true }
+        })
       ]);
 
       sellerStats = {
         products: productCount,
         orders: orderCount,
-        revenue: revenueData[0]?.totalRevenue || 0
+        revenue: revenueData._sum.price || 0
       };
     }
 
     // Get user's orders
-    const orders = await Order.find({ user: user._id })
-      .sort({ createdAt: -1 })
-      .limit(10)
-      .select('orderItems totalPrice status createdAt');
+    const orders = await prisma.order.findMany({
+      where: { userId: user.id },
+      orderBy: { createdAt: 'desc' },
+      take: 10,
+      select: {
+        id: true,
+        totalPrice: true,
+        status: true,
+        createdAt: true,
+        orderItems: {
+          select: {
+            id: true,
+            name: true,
+            quantity: true,
+            price: true
+          }
+        }
+      }
+    });
 
     res.json({
       success: true,
@@ -173,7 +211,7 @@ router.put('/:id', adminAuth, async (req, res) => {
   try {
     const { email, phone, isVerified, isSuspended, suspensionReason, role } = req.body;
 
-    const user = await User.findById(req.params.id);
+    const user = await prisma.user.findUnique({ where: { id: req.params.id } });
 
     if (!user) {
       return res.status(404).json({
@@ -183,27 +221,48 @@ router.put('/:id', adminAuth, async (req, res) => {
     }
 
     // Prevent admin from changing their own role
-    if (user._id.toString() === req.user.id && role !== user.role) {
+    if (user.id === req.user.id && role && role.toUpperCase() !== user.role) {
       return res.status(400).json({
         success: false,
         msg: 'You cannot change your own role'
       });
     }
 
-    // Update fields
-    if (email) user.email = email;
-    if (phone) user.phone = phone;
-    if (typeof isVerified !== 'undefined') user.isVerified = isVerified;
-    if (typeof isSuspended !== 'undefined') user.isSuspended = isSuspended;
-    if (suspensionReason) user.suspensionReason = suspensionReason;
-    if (role && ['user', 'seller', 'admin'].includes(role)) user.role = role;
+    // Prepare update data
+    const updateData = {};
+    if (email) updateData.email = email;
+    if (phone) updateData.phone = phone;
+    if (typeof isVerified !== 'undefined') updateData.isVerified = isVerified;
+    if (typeof isSuspended !== 'undefined') updateData.isSuspended = isSuspended;
+    if (suspensionReason) updateData.suspensionReason = suspensionReason;
+    if (role && ['user', 'seller', 'admin'].includes(role)) {
+      updateData.role = role.toUpperCase();
+    }
 
-    await user.save();
+    const updatedUser = await prisma.user.update({
+      where: { id: req.params.id },
+      data: updateData,
+      select: {
+        id: true,
+        email: true,
+        phone: true,
+        isPhoneVerified: true,
+        isEmailVerified: true,
+        isSeller: true,
+        isVerified: true,
+        role: true,
+        isSuspended: true,
+        suspensionReason: true,
+        createdAt: true,
+        updatedAt: true,
+        sellerDetails: true
+      }
+    });
 
     res.json({
       success: true,
       msg: 'User updated successfully',
-      user: await User.findById(user._id).select('-password')
+      user: updatedUser
     });
   } catch (error) {
     console.error('Error updating user:', error);
@@ -222,7 +281,7 @@ router.put('/:id/suspend', adminAuth, async (req, res) => {
   try {
     const { suspend, reason } = req.body;
 
-    const user = await User.findById(req.params.id);
+    const user = await prisma.user.findUnique({ where: { id: req.params.id } });
 
     if (!user) {
       return res.status(404).json({
@@ -232,7 +291,7 @@ router.put('/:id/suspend', adminAuth, async (req, res) => {
     }
 
     // Prevent admin from suspending themselves
-    if (user._id.toString() === req.user.id) {
+    if (user.id === req.user.id) {
       return res.status(400).json({
         success: false,
         msg: 'You cannot suspend your own account'
@@ -240,26 +299,46 @@ router.put('/:id/suspend', adminAuth, async (req, res) => {
     }
 
     // Prevent suspending other admins
-    if (user.role === 'admin') {
+    if (user.role === 'ADMIN') {
       return res.status(400).json({
         success: false,
         msg: 'You cannot suspend other admin accounts'
       });
     }
 
-    user.isSuspended = suspend;
+    const updateData = {
+      isSuspended: suspend
+    };
     if (suspend && reason) {
-      user.suspensionReason = reason;
+      updateData.suspensionReason = reason;
     } else if (!suspend) {
-      user.suspensionReason = '';
+      updateData.suspensionReason = '';
     }
 
-    await user.save();
+    const updatedUser = await prisma.user.update({
+      where: { id: req.params.id },
+      data: updateData,
+      select: {
+        id: true,
+        email: true,
+        phone: true,
+        isPhoneVerified: true,
+        isEmailVerified: true,
+        isSeller: true,
+        isVerified: true,
+        role: true,
+        isSuspended: true,
+        suspensionReason: true,
+        createdAt: true,
+        updatedAt: true,
+        sellerDetails: true
+      }
+    });
 
     res.json({
       success: true,
       msg: suspend ? 'User suspended successfully' : 'User unsuspended successfully',
-      user: await User.findById(user._id).select('-password')
+      user: updatedUser
     });
   } catch (error) {
     console.error('Error suspending user:', error);
@@ -276,7 +355,7 @@ router.put('/:id/suspend', adminAuth, async (req, res) => {
 // @access  Private (Admin only)
 router.delete('/:id', adminAuth, async (req, res) => {
   try {
-    const user = await User.findById(req.params.id);
+    const user = await prisma.user.findUnique({ where: { id: req.params.id } });
 
     if (!user) {
       return res.status(404).json({
@@ -286,7 +365,7 @@ router.delete('/:id', adminAuth, async (req, res) => {
     }
 
     // Prevent admin from deleting themselves
-    if (user._id.toString() === req.user.id) {
+    if (user.id === req.user.id) {
       return res.status(400).json({
         success: false,
         msg: 'You cannot delete your own account'
@@ -294,7 +373,7 @@ router.delete('/:id', adminAuth, async (req, res) => {
     }
 
     // Prevent deleting other admins
-    if (user.role === 'admin') {
+    if (user.role === 'ADMIN') {
       return res.status(400).json({
         success: false,
         msg: 'You cannot delete other admin accounts'
@@ -302,9 +381,13 @@ router.delete('/:id', adminAuth, async (req, res) => {
     }
 
     // Instead of deleting, suspend the account
-    user.isSuspended = true;
-    user.suspensionReason = 'Account deleted by admin';
-    await user.save();
+    await prisma.user.update({
+      where: { id: req.params.id },
+      data: {
+        isSuspended: true,
+        suspensionReason: 'Account deleted by admin'
+      }
+    });
 
     res.json({
       success: true,

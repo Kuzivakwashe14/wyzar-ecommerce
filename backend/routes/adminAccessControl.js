@@ -1,11 +1,11 @@
-// In backend/routes/adminAccessControl.js
+// backend/routes/adminAccessControl.js
 // Admin routes for managing admin access and roles
 
 const express = require('express');
 const router = express.Router();
 const bcrypt = require('bcryptjs');
 const adminAuth = require('../middleware/adminAuth');
-const User = require('../models/User');
+const prisma = require('../config/prisma');
 
 // ==========================================
 // ADMIN ACCESS CONTROL
@@ -16,9 +16,23 @@ const User = require('../models/User');
 // @access  Private (Admin only)
 router.get('/admins', adminAuth, async (req, res) => {
   try {
-    const admins = await User.find({ role: 'admin' })
-      .select('-password')
-      .sort({ createdAt: -1 });
+    const admins = await prisma.user.findMany({
+      where: { role: 'ADMIN' },
+      select: {
+        id: true,
+        email: true,
+        phone: true,
+        isPhoneVerified: true,
+        isEmailVerified: true,
+        isSeller: true,
+        isVerified: true,
+        role: true,
+        isSuspended: true,
+        suspensionReason: true,
+        createdAt: true
+      },
+      orderBy: { createdAt: 'desc' }
+    });
 
     res.json({
       success: true,
@@ -65,7 +79,10 @@ router.post('/admins', adminAuth, async (req, res) => {
     }
 
     // Check if email already exists
-    const existingUser = await User.findOne({ email });
+    const existingUser = await prisma.user.findUnique({
+      where: { email }
+    });
+
     if (existingUser) {
       return res.status(400).json({
         success: false,
@@ -78,24 +95,28 @@ router.post('/admins', adminAuth, async (req, res) => {
     const hashedPassword = await bcrypt.hash(password, salt);
 
     // Create admin user
-    const adminUser = new User({
-      email,
-      password: hashedPassword,
-      role: 'admin',
-      isEmailVerified: true,
-      isSeller: false,
-      isVerified: true
+    const adminUser = await prisma.user.create({
+      data: {
+        email,
+        password: hashedPassword,
+        role: 'ADMIN',
+        isEmailVerified: true,
+        isSeller: false,
+        isVerified: true
+      },
+      select: {
+        id: true,
+        email: true,
+        role: true,
+        isEmailVerified: true,
+        createdAt: true
+      }
     });
-
-    await adminUser.save();
-
-    // Return without password
-    const adminResponse = await User.findById(adminUser._id).select('-password');
 
     res.status(201).json({
       success: true,
       msg: 'Admin user created successfully',
-      admin: adminResponse
+      admin: adminUser
     });
   } catch (error) {
     console.error('Error creating admin:', error);
@@ -114,14 +135,27 @@ router.put('/admins/:id/role', adminAuth, async (req, res) => {
   try {
     const { role } = req.body;
 
-    if (!['user', 'seller', 'admin'].includes(role)) {
+    // Normalize role string to handle different cases if needed, but Prisma schema expects Enum usually.
+    // Assuming schema uses 'USER', 'SELLER', 'ADMIN' or lowercase. Checked schema previously, it seems to be 'ADMIN'.
+    // Mapping frontend 'admin' to backend 'ADMIN' if necessary, or assuming consistent usage.
+    // Based on previous file, let's normalize to uppercase to match schema if typical,
+    // or just pass through if the frontend handles it. 
+    // The previous file used lowercase 'admin'. Let's check typical usage.
+    // The GET route used role: 'ADMIN'. So we should convert.
+    
+    const validRoles = ['user', 'seller', 'admin'];
+    if (!validRoles.includes(role.toLowerCase())) {
       return res.status(400).json({
         success: false,
         msg: 'Invalid role. Must be: user, seller, or admin'
       });
     }
 
-    const user = await User.findById(req.params.id);
+    const prismaRole = role.toUpperCase(); // USER, SELLER, ADMIN
+
+    const user = await prisma.user.findUnique({
+      where: { id: req.params.id }
+    });
 
     if (!user) {
       return res.status(404).json({
@@ -131,24 +165,31 @@ router.put('/admins/:id/role', adminAuth, async (req, res) => {
     }
 
     // Prevent admin from changing their own role
-    if (user._id.toString() === req.user.id) {
+    if (user.id === req.user.id) {
       return res.status(400).json({
         success: false,
         msg: 'You cannot change your own role'
       });
     }
 
-    user.role = role;
+    // Update data
+    const updateData = { role: prismaRole };
     
     // If promoting to admin, verify email
-    if (role === 'admin') {
-      user.isEmailVerified = true;
-      user.isVerified = true;
+    if (prismaRole === 'ADMIN') {
+      updateData.isEmailVerified = true;
+      updateData.isVerified = true;
     }
 
-    await user.save();
-
-    const updatedUser = await User.findById(user._id).select('-password');
+    const updatedUser = await prisma.user.update({
+      where: { id: req.params.id },
+      data: updateData,
+      select: {
+        id: true,
+        email: true,
+        role: true
+      }
+    });
 
     res.json({
       success: true,
@@ -193,7 +234,9 @@ router.put('/admins/:id/password', adminAuth, async (req, res) => {
       });
     }
 
-    const user = await User.findById(req.params.id);
+    const user = await prisma.user.findUnique({
+      where: { id: req.params.id }
+    });
 
     if (!user) {
       return res.status(404).json({
@@ -204,9 +247,12 @@ router.put('/admins/:id/password', adminAuth, async (req, res) => {
 
     // Hash new password
     const salt = await bcrypt.genSalt(10);
-    user.password = await bcrypt.hash(newPassword, salt);
+    const hashedPassword = await bcrypt.hash(newPassword, salt);
 
-    await user.save();
+    await prisma.user.update({
+      where: { id: req.params.id },
+      data: { password: hashedPassword }
+    });
 
     res.json({
       success: true,
@@ -227,7 +273,9 @@ router.put('/admins/:id/password', adminAuth, async (req, res) => {
 // @access  Private (Admin only)
 router.delete('/admins/:id', adminAuth, async (req, res) => {
   try {
-    const user = await User.findById(req.params.id);
+    const user = await prisma.user.findUnique({
+      where: { id: req.params.id }
+    });
 
     if (!user) {
       return res.status(404).json({
@@ -237,23 +285,25 @@ router.delete('/admins/:id', adminAuth, async (req, res) => {
     }
 
     // Prevent admin from deleting themselves
-    if (user._id.toString() === req.user.id) {
+    if (user.id === req.user.id) {
       return res.status(400).json({
         success: false,
         msg: 'You cannot remove your own admin access'
       });
     }
 
-    if (user.role !== 'admin') {
+    if (user.role !== 'ADMIN') {
       return res.status(400).json({
         success: false,
         msg: 'User is not an admin'
       });
     }
 
-    // Change role to user instead of deleting
-    user.role = 'user';
-    await user.save();
+    // Change role to USER instead of deleting
+    await prisma.user.update({
+      where: { id: req.params.id },
+      data: { role: 'USER' }
+    });
 
     res.json({
       success: true,
@@ -275,9 +325,9 @@ router.delete('/admins/:id', adminAuth, async (req, res) => {
 router.get('/role-stats', adminAuth, async (req, res) => {
   try {
     const [admins, users, sellers] = await Promise.all([
-      User.countDocuments({ role: 'admin' }),
-      User.countDocuments({ role: 'user' }),
-      User.countDocuments({ role: 'seller' })
+      prisma.user.count({ where: { role: 'ADMIN' } }),
+      prisma.user.count({ where: { role: 'USER' } }),
+      prisma.user.count({ where: { role: 'SELLER' } })
     ]);
 
     res.json({

@@ -11,7 +11,7 @@ import { Star, X } from 'lucide-react';
 import { toast } from 'sonner';
 
 interface Review {
-  _id: string;
+  id: string;
   rating: number;
   title?: string;
   comment: string;
@@ -54,7 +54,7 @@ export default function ReviewForm({
       
       if (existingReview) {
         // Update existing review
-        await api.put(`/reviews/${existingReview._id}`, {
+        await api.put(`/reviews/${existingReview.id}`, {
           rating,
           title: title.trim() || undefined,
           comment: comment.trim()

@@ -17,9 +17,9 @@ import {
 import ReviewForm from './ReviewForm';
 
 interface Review {
-  _id: string;
+  id: string;
   user: {
-    _id: string;
+    id: string;
     email: string;
   };
   rating: number;
@@ -54,6 +54,7 @@ export default function ProductReviews({ productId }: ProductReviewsProps) {
   const [userReview, setUserReview] = useState<Review | null>(null);
 
   useEffect(() => {
+    if (!productId) return; // Guard against undefined productId
     fetchReviews();
     if (isAuthenticated) {
       checkUserReview();
@@ -61,6 +62,7 @@ export default function ProductReviews({ productId }: ProductReviewsProps) {
   }, [productId, currentPage, sortBy, isAuthenticated]);
 
   const fetchReviews = async () => {
+    if (!productId) return; // Guard against undefined productId
     try {
       setLoading(true);
       const { data } = await api.get(
@@ -78,10 +80,11 @@ export default function ProductReviews({ productId }: ProductReviewsProps) {
   };
 
   const checkUserReview = async () => {
+    if (!productId) return; // Guard against undefined productId
     try {
       const { data } = await api.get('/reviews/user/me');
       const review = data.reviews.find((r: any) => {
-        const rProductId = typeof r.product === 'object' ? r.product._id : r.product;
+        const rProductId = typeof r.product === 'object' ? r.product.id : r.product;
         return rProductId === productId;
       });
       setUserReview(review || null);
@@ -293,7 +296,7 @@ export default function ProductReviews({ productId }: ProductReviewsProps) {
           ) : (
             <div className="space-y-6">
               {reviews.map((review) => (
-                <div key={review._id} className="border-b pb-6 last:border-0 last:pb-0">
+                <div key={review.id} className="border-b pb-6 last:border-0 last:pb-0">
                   <div className="flex items-start justify-between mb-2">
                     <div className="flex-1">
                       <div className="flex items-center gap-2 mb-2">
@@ -326,7 +329,7 @@ export default function ProductReviews({ productId }: ProductReviewsProps) {
                     <Button
                       variant="ghost"
                       size="sm"
-                      onClick={() => handleMarkHelpful(review._id)}
+                      onClick={() => handleMarkHelpful(review.id)}
                       className="flex items-center gap-1"
                     >
                       <ThumbsUp className="w-4 h-4" />
@@ -367,5 +370,6 @@ export default function ProductReviews({ productId }: ProductReviewsProps) {
     </div>
   );
 }
+
 
 

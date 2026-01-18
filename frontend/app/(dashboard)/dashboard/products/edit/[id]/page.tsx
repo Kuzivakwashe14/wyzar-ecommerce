@@ -22,7 +22,26 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { Product } from "@/components/ProductCard"; // Reuse type
+import { Product } from "@/components/ProductCard";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+
+// 1. Define the categories
+const CATEGORIES = [
+  "Electronics",
+  "Fashion",
+  "Home & Living",
+  "Mobile & Accessories",
+  "Beauty & Health",
+  "Sports & Outdoors",
+  "Books & Media",
+  "Toys & Games"
+];
 
 // 1. Define the form schema (it's for UPDATING, so all fields are optional)
 // We don't validate images here, as that's a more complex update
@@ -30,7 +49,7 @@ const formSchema = z.object({
   name: z.string().min(3, "Name must be at least 3 characters."),
   description: z.string().min(10, "Description must be at least 10 characters."),
   price: z.string().min(1, "Price is required."),
-  category: z.string().min(2, "Category is required."),
+  category: z.string().min(1, "Category is required."),
   quantity: z.string().min(1, "Quantity is required."),
   deliveryTime: z.string().optional(),
   countryOfOrigin: z.string().optional(),
@@ -106,7 +125,7 @@ export default function EditProductPage() {
       }
 
       // Use the PUT route with multipart/form-data
-      await api.put(`/products/${product?._id}`, formData, {
+      await api.put(`/products/${id}`, formData, {
         headers: {
           "Content-Type": "multipart/form-data",
         },
@@ -139,7 +158,7 @@ export default function EditProductPage() {
 
   // 7. Build the form
   return (
-    <div className="container mx-auto max-w-2xl py-12">
+    <div className="container mx-auto max-w-2xl px-4 py-12">
       <Button variant="outline" size="sm" onClick={() => router.back()} className="mb-4">
         &larr; Back to Products
       </Button>
@@ -221,7 +240,20 @@ export default function EditProductPage() {
             render={({ field }) => (
               <FormItem>
                 <FormLabel>Category</FormLabel>
-                <FormControl><Input {...field} /></FormControl>
+                <Select onValueChange={field.onChange} value={field.value}>
+                  <FormControl>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select a category" />
+                    </SelectTrigger>
+                  </FormControl>
+                  <SelectContent>
+                    {CATEGORIES.map((category) => (
+                      <SelectItem key={category} value={category}>
+                        {category}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
                 <FormMessage />
               </FormItem>
             )}

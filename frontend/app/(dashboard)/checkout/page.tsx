@@ -26,7 +26,8 @@ import { api } from "@/context/AuthContent";
 import axios from "axios";
 import Image from "next/image";
 import { toast } from "sonner";
-import { CreditCard, Banknote } from "lucide-react";
+import { Smartphone, Building2, Banknote } from "lucide-react";
+import { getImageUrl } from "@/lib/utils";
 
 // Get the backend URL
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
@@ -37,7 +38,7 @@ const shippingSchema = z.object({
   address: z.string().min(5, "A valid address is required"),
   city: z.string().min(2, "City is required"),
   phone: z.string().min(8, "A valid phone number is required"),
-  paymentMethod: z.enum(["Paynow", "CashOnDelivery"] as const, {
+  paymentMethod: z.enum(["EcoCash", "BankTransfer", "CashOnDelivery"] as const, {
     message: "Please select a payment method",
   }),
 });
@@ -67,7 +68,7 @@ export default function CheckoutPage() {
       address: "",
       city: "",
       phone: "",
-      paymentMethod: "Paynow",
+      paymentMethod: "EcoCash",
     },
   });
 
@@ -132,7 +133,7 @@ export default function CheckoutPage() {
 
   // 6. Build the form component
   return (
-    <div className="container mx-auto max-w-4xl py-12">
+    <div className="container mx-auto max-w-4xl px-4 py-12">
       <h1 className="text-3xl font-bold text-center mb-8 text-shop_dark_green">Checkout</h1>
       
       <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
@@ -200,13 +201,23 @@ export default function CheckoutPage() {
                         defaultValue={field.value}
                         className="flex flex-col space-y-2"
                       >
-                        <div className={`flex items-center space-x-3 rounded-lg border-2 p-4 cursor-pointer transition-all ${field.value === 'Paynow' ? 'border-shop_dark_green bg-shop_dark_green/5' : 'border-gray-200 hover:border-shop_light_green'}`}>
-                          <RadioGroupItem value="Paynow" id="paynow" className="border-shop_dark_green text-shop_dark_green" />
-                          <Label htmlFor="paynow" className="flex items-center gap-2 cursor-pointer flex-1">
-                            <CreditCard className="h-5 w-5 text-shop_dark_green" />
+                        <div className={`flex items-center space-x-3 rounded-lg border-2 p-4 cursor-pointer transition-all ${field.value === 'EcoCash' ? 'border-shop_dark_green bg-shop_dark_green/5' : 'border-gray-200 hover:border-shop_light_green'}`}>
+                          <RadioGroupItem value="EcoCash" id="ecocash" className="border-shop_dark_green text-shop_dark_green" />
+                          <Label htmlFor="ecocash" className="flex items-center gap-2 cursor-pointer flex-1">
+                            <Smartphone className="h-5 w-5 text-shop_dark_green" />
                             <div>
-                              <p className="font-medium">Pay with Paynow</p>
-                              <p className="text-sm text-gray-500">Pay securely with EcoCash, OneMoney, or bank</p>
+                              <p className="font-medium">EcoCash</p>
+                              <p className="text-sm text-gray-500">Pay via EcoCash mobile money</p>
+                            </div>
+                          </Label>
+                        </div>
+                        <div className={`flex items-center space-x-3 rounded-lg border-2 p-4 cursor-pointer transition-all ${field.value === 'BankTransfer' ? 'border-shop_dark_green bg-shop_dark_green/5' : 'border-gray-200 hover:border-shop_light_green'}`}>
+                          <RadioGroupItem value="BankTransfer" id="bank" className="border-shop_dark_green text-shop_dark_green" />
+                          <Label htmlFor="bank" className="flex items-center gap-2 cursor-pointer flex-1">
+                            <Building2 className="h-5 w-5 text-shop_dark_green" />
+                            <div>
+                              <p className="font-medium">Bank Transfer</p>
+                              <p className="text-sm text-gray-500">Pay via bank deposit or transfer</p>
                             </div>
                           </Label>
                         </div>
@@ -237,7 +248,7 @@ export default function CheckoutPage() {
                   ? "Processing..." 
                   : form.watch("paymentMethod") === "CashOnDelivery" 
                     ? "Place Order (Pay on Delivery)" 
-                    : "Proceed to Payment"
+                    : "Place Order"
                 }
               </Button>
             </form>
@@ -254,11 +265,11 @@ export default function CheckoutPage() {
             <CardContent className="space-y-4 pt-4">
               <div className="space-y-2">
                 {cartItems.map((item) => (
-                  <div key={item._id} className="flex items-center justify-between">
+                  <div key={item.id} className="flex items-center justify-between">
                     <div className="flex items-center space-x-2">
                       <div className="relative h-12 w-12 rounded-md overflow-hidden border border-gray-200">
                         <Image
-                          src={`${API_BASE_URL}/${item.images[0].replace(/\\/g, '/')}`}
+                          src={getImageUrl(item.images?.[0])}
                           alt={item.name}
                           fill
                           style={{ objectFit: 'cover' }}

@@ -67,7 +67,7 @@ const sendLoginAlert = async (user, loginInfo = {}) => {
  */
 const sendOrderConfirmation = async (order, user) => {
   try {
-    console.log(`Sending order confirmation for order: ${order._id} to user: ${user.email}`);
+    console.log(`Sending order confirmation for order: ${order.id} to user: ${user.email}`);
 
     const emailResult = await sendOrderConfirmationEmail(order, user);
 
@@ -94,9 +94,9 @@ const sendOrderConfirmation = async (order, user) => {
  */
 const sendOrderStatusUpdate = async (order, user) => {
   try {
-    console.log(`Sending order status update for order: ${order._id}, status: ${order.status}`);
+    console.log(`Sending order status update for order: ${order.id}, status: ${order.status}`);
 
-    const emailResult = await sendOrderNotification(user.email, order.orderNumber || order._id, order.status);
+    const emailResult = await sendOrderNotification(user.email, order.orderNumber || order.id, order.status);
 
     if (emailResult.success) {
       console.log(`Order status update email sent successfully to ${user.email}`);
@@ -121,7 +121,7 @@ const sendOrderStatusUpdate = async (order, user) => {
  */
 const notifySellerOfOrder = async (order, seller) => {
   try {
-    console.log(`Notifying seller: ${seller.email} of new order: ${order._id}`);
+    console.log(`Notifying seller: ${seller.email} of new order: ${order.id}`);
 
     const emailResult = await sendSellerOrderNotification(order, seller);
 

@@ -393,7 +393,7 @@ const sendOrderConfirmationEmail = async (order, user) => {
           <div class="container">
             <div class="header">
               <h1>✅ Order Confirmed!</h1>
-              <p>Order #${order.orderNumber || order._id}</p>
+              <p>Order #${order.orderNumber || order.id}</p>
             </div>
             <div class="content">
               <p>Hello ${user.email},</p>
@@ -420,8 +420,10 @@ const sendOrderConfirmationEmail = async (order, user) => {
               </div>
 
               <p><strong>Delivery Address:</strong><br>
-              ${order.shippingAddress?.street || 'N/A'}<br>
-              ${order.shippingAddress?.city || ''}, ${order.shippingAddress?.state || ''} ${order.shippingAddress?.zipCode || ''}</p>
+              ${order.shippingFullName}<br>
+              ${order.shippingAddress}<br>
+              ${order.shippingCity}<br>
+              Phone: ${order.shippingPhone}</p>
 
               <p>We'll send you another email when your order ships. You can track your order status anytime by logging into your account.</p>
             </div>
@@ -436,7 +438,7 @@ const sendOrderConfirmationEmail = async (order, user) => {
 
     return await sendEmail({
       to: user.email,
-      subject: `Order Confirmed - #${order.orderNumber || order._id}`,
+      subject: `Order Confirmed - #${order.orderNumber || order.id}`,
       html
     });
   } catch (error) {
@@ -495,7 +497,7 @@ const sendSellerOrderNotification = async (order, seller) => {
 
               <div class="order-box">
                 <h3>Order Details</h3>
-                <p><strong>Order Number:</strong> #${order.orderNumber || order._id}</p>
+                <p><strong>Order Number:</strong> #${order.orderNumber || order.id}</p>
                 <p><strong>Customer:</strong> ${order.user?.email || 'N/A'}</p>
                 <p><strong>Order Date:</strong> ${new Date(order.createdAt).toLocaleDateString()}</p>
 
@@ -515,7 +517,7 @@ const sendSellerOrderNotification = async (order, seller) => {
               </div>
 
               <p style="text-align: center;">
-                <a href="${process.env.FRONTEND_URL || 'http://localhost:3000'}/seller/orders/${order._id}" class="button">View Order Details</a>
+                <a href="${process.env.FRONTEND_URL || 'http://localhost:3000'}/seller/orders/${order.id}" class="button">View Order Details</a>
               </p>
 
               <p>Please prepare the items for shipment. The customer is waiting!</p>
@@ -530,7 +532,7 @@ const sendSellerOrderNotification = async (order, seller) => {
 
     return await sendEmail({
       to: seller.email,
-      subject: `New Order #${order.orderNumber || order._id} - Action Required`,
+      subject: `New Order #${order.orderNumber || order.id} - Action Required`,
       html
     });
   } catch (error) {

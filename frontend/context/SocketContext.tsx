@@ -33,7 +33,7 @@ export const SocketProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     }
 
     // Connect to Socket.IO server
-    const socketURL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:5000';
+    const socketURL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
     const newSocket = io(socketURL, {
       withCredentials: true,
       transports: ['websocket', 'polling']
@@ -44,8 +44,8 @@ export const SocketProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       setIsConnected(true);
 
       // Join with user ID
-      if (user._id) {
-        newSocket.emit('join', user._id);
+      if (user.id) {
+        newSocket.emit('join', user.id);
       }
     });
 

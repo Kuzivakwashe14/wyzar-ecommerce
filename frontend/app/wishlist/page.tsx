@@ -139,11 +139,11 @@ export default function WishlistPage() {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
             {wishlist.map((product) => (
               <Card 
-                key={product._id} 
+                key={product.id} 
                 className="group border-gray-200 hover:shadow-lg transition-shadow overflow-hidden"
               >
                 <div className="relative aspect-square bg-shop_light_pink/30">
-                  <Link href={`/products/${product._id}`}>
+                  <Link href={`/products/${product.id}`}>
                     <Image
                       src={getImageUrl(product.images[0])}
                       alt={product.name}
@@ -155,7 +155,7 @@ export default function WishlistPage() {
                   
                   {/* Remove from Wishlist */}
                   <button
-                    onClick={() => handleRemove(product._id, product.name)}
+                    onClick={() => handleRemove(product.id, product.name)}
                     className="absolute top-3 right-3 h-9 w-9 rounded-full bg-white shadow-md flex items-center justify-center text-red-500 hover:bg-red-500 hover:text-gray-900 transition-colors"
                   >
                     <Trash2 className="h-4 w-4" />
@@ -178,7 +178,7 @@ export default function WishlistPage() {
                     </span>
                   </Link>
 
-                  <Link href={`/products/${product._id}`}>
+                  <Link href={`/products/${product.id}`}>
                     <h3 className="font-semibold text-gray-900 line-clamp-2 hover:text-shop_dark_green transition-colors mt-1">
                       {product.name}
                     </h3>
@@ -225,4 +225,5 @@ export default function WishlistPage() {
     </div>
   );
 }
+
 

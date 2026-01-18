@@ -6,27 +6,26 @@ const auth = require('../middleware/auth');
 const productUploadOptimized = require('../middleware/productUploadOptimized');
 const csvUpload = require('../middleware/csvUpload');
 const papa = require('papaparse');
-const Product = require('../models/Product');
-const User = require('../models/User');
+const prisma = require('../config/prisma');
 const { getPublicUrl } = require('../config/localStorage');
 
-// ===== Input Validation =====
-const {
-  validateProductCreation,
-  validateProductUpdate,
-  validateObjectIdParam
-} = require('../middleware/validateInput');
+// ===== Zod Validation =====
+const { validateBody, validateParams } = require('../middleware/zodValidate');
+const { productSchema, productUpdateSchema, objectIdParamSchema } = require('../schemas');
+
+// ===== Rate Limiting =====
+const { uploadLimiter } = require('../config/security');
 
 // @route   POST /api/products/bulk-upload
 // @desc    Bulk upload products from CSV
 // @access  Private (Sellers Only)
-router.post('/bulk-upload', auth, csvUpload, async (req, res) => {
+router.post('/bulk-upload', auth, uploadLimiter, csvUpload, async (req, res) => {
   if (!req.file) {
     return res.status(400).json({ msg: 'No file uploaded. Please upload a CSV file.' });
   }
 
   try {
-    const seller = await User.findById(req.user.id);
+    const seller = await prisma.user.findUnique({ where: { id: req.user.id } });
     if (!seller.isSeller) {
       return res.status(401).json({ msg: 'Not authorized. Only sellers can upload products.' });
     }
@@ -71,6 +70,13 @@ router.post('/bulk-upload', auth, csvUpload, async (req, res) => {
                   productImages = images.split(',').map(img => img.trim()).filter(img => img !== '');
                 }
 
+                // Map condition values to Prisma enum
+                let conditionValue = 'NEW';
+                if (condition) {
+                  const condMap = { 'new': 'NEW', 'used': 'USED', 'refurbished': 'REFURBISHED' };
+                  conditionValue = condMap[condition.toLowerCase()] || 'NEW';
+                }
+
                 productsToSave.push({
                   name,
                   description,
@@ -78,10 +84,10 @@ router.post('/bulk-upload', auth, csvUpload, async (req, res) => {
                   category,
                   quantity: parsedQuantity,
                   images: productImages,
-                  seller: req.user.id,
+                  sellerId: req.user.id,
                   deliveryTime: deliveryTime || "Not specified",
                   countryOfOrigin: countryOfOrigin || "Not specified",
-                  condition: ['new', 'used', 'refurbished'].includes(condition) ? condition : 'new',
+                  condition: conditionValue,
                   brand: brand || "Unbranded",
                   tags: tags ? tags.split(',').map(tag => tag.trim()) : []
                 });
@@ -95,7 +101,7 @@ router.post('/bulk-upload', auth, csvUpload, async (req, res) => {
 
               if (productsToSave.length > 0) {
                 try {
-                  await Product.insertMany(productsToSave, { ordered: false });
+                  await prisma.product.createMany({ data: productsToSave, skipDuplicates: true });
                 } catch (e) {
                   // This error is complex to parse, so we'll just notify the user
                   return reject({ status: 500, data: { msg: 'An error occurred while saving products to the database. Please check your data for duplicates or errors.', errors } });
@@ -155,45 +161,55 @@ router.post('/', auth, (req, res) => {
       return res.status(400).json({ msg: 'No product images uploaded. At least one is required.' });
     }
 
-    // 3. Validate product input
-    return validateProductCreation(req, res, async () => {
-      const { name, description, price, category, quantity, deliveryTime, countryOfOrigin } = req.body;
+    // 3. Validate product input using Zod
+    const validation = productSchema.safeParse(req.body);
+    if (!validation.success) {
+      // Zod v4 uses 'issues', v3 uses 'errors'
+      const zodErrors = validation.error.issues || validation.error.errors || [];
+      const errors = zodErrors.map((err) => ({
+        field: err.path.join('.'),
+        message: err.message,
+      }));
+      return res.status(400).json({
+        success: false,
+        msg: errors[0]?.message || 'Validation failed',
+        errors,
+      });
+    }
 
-      try {
-      // 5. Check if user is a verified seller (we'll add verification later)
-      // For now, we just check if they are a seller 
-      const seller = await User.findById(req.user.id);
+    const { name, description, price, category, quantity, deliveryTime, countryOfOrigin } = validation.data;
+
+    try {
+      // 4. Check if user is a verified seller
+      const seller = await prisma.user.findUnique({ where: { id: req.user.id } });
       if (!seller.isSeller) {
         return res.status(401).json({ msg: 'Not authorized. Only sellers can create products.' });
       }
 
-      // (Later, we'll add: if (!seller.isVerified) ... )
-
-      // 6. Get image paths - convert to public URLs for Nginx
+      // 5. Get image paths - convert to public URLs for Nginx
       const images = req.files.map(file => getPublicUrl(file.path));
 
-      // 7. Create new product instance
-      const newProduct = new Product({
-        seller: req.user.id,
-        name,
-        description,
-        price,
-        category,
-        quantity,
-        images,
-        deliveryTime: deliveryTime || "Not specified",
-        countryOfOrigin: countryOfOrigin || "Not specified"
+      // 6. Create new product instance
+      const product = await prisma.product.create({
+        data: {
+          sellerId: req.user.id,
+          name,
+          description,
+          price: parseFloat(price),
+          category,
+          quantity: parseInt(quantity),
+          images,
+          deliveryTime: deliveryTime || "Not specified",
+          countryOfOrigin: countryOfOrigin || "Not specified"
+        }
       });
 
-      // 8. Save to database
-      const product = await newProduct.save();
-      res.status(201).json(product); // Send back the created product
+      res.status(201).json(product);
 
-      } catch (err) {
-        console.error(err.message);
-        res.status(500).send('Server Error');
-      }
-    });
+    } catch (err) {
+      console.error(err.message);
+      res.status(500).send('Server Error');
+    }
   });
 });
 
@@ -204,9 +220,22 @@ router.get('/', async (req, res) => {
   try {
     // Find all products and populate the 'seller' field
     // We only select the seller's 'businessName'
-    const products = await Product.find()
-      .populate('seller', ['sellerDetails.businessName'])
-      .sort({ createdAt: -1 }); // Show newest first
+    const products = await prisma.product.findMany({
+      include: {
+        seller: {
+          select: {
+            id: true,
+            email: true,
+            sellerDetails: {
+              select: {
+                businessName: true
+              }
+            }
+          }
+        }
+      },
+      orderBy: { createdAt: 'desc' } // Show newest first
+    });
 
     res.json(products);
   } catch (err) {
@@ -218,26 +247,39 @@ router.get('/', async (req, res) => {
 // @route   GET /api/products/:id
 // @desc    Get a single product by ID (with view tracking)
 // @access  Public
-router.get('/:id', validateObjectIdParam('id'), async (req, res) => {
+router.get('/:id', validateParams(objectIdParamSchema), async (req, res) => {
   try {
-    const product = await Product.findById(req.params.id)
-      .populate('seller', ['sellerDetails.businessName', 'email']); // Get seller's info
+    const product = await prisma.product.findUnique({
+      where: { id: req.params.id },
+      include: {
+        seller: {
+          select: {
+            id: true,
+            email: true,
+            sellerDetails: {
+              select: {
+                businessName: true
+              }
+            }
+          }
+        }
+      }
+    });
 
     if (!product) {
       return res.status(404).json({ msg: 'Product not found' });
     }
 
     // Increment view count (don't wait for it)
-    Product.findByIdAndUpdate(req.params.id, { $inc: { views: 1 } }).exec();
+    prisma.product.update({
+      where: { id: req.params.id },
+      data: { views: { increment: 1 } }
+    }).catch(err => console.error('Error updating views:', err));
 
     res.json(product);
   } catch (err) {
     console.error(err.message);
-    // If the ID is not a valid MongoDB ID, it will throw an error
-    if (err.kind === 'ObjectId') {
-      return res.status(404).json({ msg: 'Product not found' });
-    }
-    res.status(500).send('Server Error');
+    return res.status(404).json({ msg: 'Product not found' });
   }
 });
 
@@ -246,12 +288,15 @@ router.get('/:id', validateObjectIdParam('id'), async (req, res) => {
 // @access  Private (Sellers Only)
 router.get('/seller/me', auth, async (req, res) => {
   try {
-    const seller = await User.findById(req.user.id);
+    const seller = await prisma.user.findUnique({ where: { id: req.user.id } });
     if (!seller.isSeller) {
       return res.status(401).json({ msg: 'Not authorized.' });
     }
 
-    const products = await Product.find({ seller: req.user.id }).sort({ createdAt: -1 });
+    const products = await prisma.product.findMany({
+      where: { sellerId: req.user.id },
+      orderBy: { createdAt: 'desc' }
+    });
     res.json(products);
 
   } catch (err) {
@@ -263,15 +308,29 @@ router.get('/seller/me', auth, async (req, res) => {
 // @route   PUT /api/products/:id
 // @desc    Update a product
 // @access  Private (Sellers Only)
-router.put('/:id', auth, validateObjectIdParam('id'), (req, res) => {
+router.put('/:id', auth, validateParams(objectIdParamSchema), (req, res) => {
   productUploadOptimized(req, res, async (err) => {
     if (err) {
       return res.status(400).json({ msg: err.message });
     }
 
     // Validate product update input
-    return validateProductUpdate(req, res, async () => {
-      const { name, description, price, category, quantity, deliveryTime, countryOfOrigin } = req.body;
+    const validation = productUpdateSchema.safeParse(req.body);
+    if (!validation.success) {
+      // Zod v4 uses 'issues', v3 uses 'errors'
+      const zodErrors = validation.error.issues || validation.error.errors || [];
+      const errors = zodErrors.map((err) => ({
+        field: err.path.join('.'),
+        message: err.message,
+      }));
+      return res.status(400).json({
+        success: false,
+        msg: errors[0]?.message || 'Validation failed',
+        errors,
+      });
+    }
+
+    const { name, description, price, category, quantity, deliveryTime, countryOfOrigin } = req.body;
 
       // Build product object
       const productFields = {};
@@ -289,51 +348,62 @@ router.put('/:id', auth, validateObjectIdParam('id'), (req, res) => {
       }
 
       try {
-      let product = await Product.findById(req.params.id);
+      let product = await prisma.product.findUnique({ where: { id: req.params.id } });
 
       if (!product) {
         return res.status(404).json({ msg: 'Product not found' });
       }
 
       // Security Check: Make sure the user owns the product
-      if (product.seller.toString() !== req.user.id) {
+      if (product.sellerId !== req.user.id) {
         return res.status(401).json({ msg: 'Not authorized' });
       }
 
-      product = await Product.findByIdAndUpdate(
-        req.params.id,
-        { $set: productFields },
-        { new: true } // Return the updated document
-      );
+      // Build update data
+      const updateData = {};
+      if (name) updateData.name = name;
+      if (description) updateData.description = description;
+      if (price) updateData.price = parseFloat(price);
+      if (category) updateData.category = category;
+      if (quantity) updateData.quantity = parseInt(quantity);
+      if (deliveryTime) updateData.deliveryTime = deliveryTime;
+      if (countryOfOrigin) updateData.countryOfOrigin = countryOfOrigin;
+      if (req.files && req.files.length > 0) {
+        updateData.images = req.files.map(file => getPublicUrl(file.path));
+      }
+
+      product = await prisma.product.update({
+        where: { id: req.params.id },
+        data: updateData
+      });
 
       res.json(product);
       } catch (err) {
         console.error(err.message);
         res.status(500).send('Server Error');
       }
-    });
   });
 });
 
 // @route   DELETE /api/products/:id
 // @desc    Delete a product
 // @access  Private (Sellers Only)
-router.delete('/:id', auth, validateObjectIdParam('id'), async (req, res) => {
+router.delete('/:id', auth, validateParams(objectIdParamSchema), async (req, res) => {
   try {
-    let product = await Product.findById(req.params.id);
+    let product = await prisma.product.findUnique({ where: { id: req.params.id } });
 
     if (!product) {
       return res.status(404).json({ msg: 'Product not found' });
     }
 
     // Security Check: Make sure the user owns the product
-    if (product.seller.toString() !== req.user.id) {
+    if (product.sellerId !== req.user.id) {
       return res.status(401).json({ msg: 'Not authorized' });
     }
 
     // TODO: We should also delete images from the 'uploads/' folder here
     // For now, we'll just delete the database record
-    await Product.findByIdAndDelete(req.params.id);
+    await prisma.product.delete({ where: { id: req.params.id } });
 
     res.json({ msg: 'Product removed' });
   } catch (err) {

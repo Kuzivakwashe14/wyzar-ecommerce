@@ -1,14 +1,21 @@
 // backend/services/smsService.js
-const AfricasTalking = require('africastalking');
 
-// Initialize Africa's Talking
-const africastalking = AfricasTalking({
-  apiKey: process.env.AT_API_KEY,
-  username: process.env.AT_USERNAME
-});
+// Check if Africa's Talking credentials are configured
+const isATConfigured = process.env.AT_API_KEY && process.env.AT_USERNAME;
 
-const sms = africastalking.SMS;
+let sms = null;
 
+if (isATConfigured) {
+  const AfricasTalking = require('africastalking');
+  const africastalking = AfricasTalking({
+    apiKey: process.env.AT_API_KEY,
+    username: process.env.AT_USERNAME
+  });
+  sms = africastalking.SMS;
+  console.log('✅ Africa\'s Talking SMS service enabled');
+} else {
+  console.log('⚠️ Africa\'s Talking SMS not configured - SMS notifications disabled');
+}
 /**
  * Send OTP via SMS
  * @param {string} phone - Phone number in format +263XXXXXXXXX
@@ -16,6 +23,12 @@ const sms = africastalking.SMS;
  * @returns {Promise} - Promise with SMS result
  */
 const sendOTP = async (phone, otp) => {
+  // Return early if SMS service not configured
+  if (!sms) {
+    console.log('SMS service not configured - skipping OTP SMS');
+    return { success: false, error: 'SMS service not configured' };
+  }
+  
   try {
     // Ensure phone number is in correct format
     const formattedPhone = formatPhoneNumber(phone);
@@ -50,6 +63,12 @@ const sendOTP = async (phone, otp) => {
  * @param {string} status - Order status
  */
 const sendOrderNotification = async (phone, orderNumber, status) => {
+  // Return early if SMS service not configured
+  if (!sms) {
+    console.log('SMS service not configured - skipping order notification SMS');
+    return { success: false, error: 'SMS service not configured' };
+  }
+  
   try {
     const formattedPhone = formatPhoneNumber(phone);
     
@@ -111,6 +130,12 @@ const formatPhoneNumber = (phone) => {
  * @param {string} otp - OTP code
  */
 const sendPasswordResetOTP = async (phone, otp) => {
+  // Return early if SMS service not configured
+  if (!sms) {
+    console.log('SMS service not configured - skipping password reset SMS');
+    return { success: false, error: 'SMS service not configured' };
+  }
+  
   try {
     const formattedPhone = formatPhoneNumber(phone);
     

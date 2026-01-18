@@ -3,6 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useAuth } from "@/context/AuthContent";
+import { SignInButton, SignUpButton } from "@clerk/nextjs";
 import Logo from "@/components/Logo";
 import { Button } from "@/components/ui/button";
 import {
@@ -34,6 +35,7 @@ import {
   LogOut,
   Shield,
   ChevronRight,
+  MessageCircle,
 } from "lucide-react";
 
 interface Category {
@@ -94,18 +96,18 @@ export default function MobileMenu({ categories }: MobileMenuProps) {
             </div>
           ) : (
             <div className="px-4 pb-4 border-b space-y-2">
-              <Link href="/login" onClick={handleClose}>
-                <Button variant="outline" className="w-full justify-start gap-2">
+              <SignInButton mode="modal">
+                <Button variant="outline" className="w-full justify-start gap-2" onClick={handleClose}>
                   <LogIn className="h-4 w-4" />
                   Login
                 </Button>
-              </Link>
-              <Link href="/sign-up" onClick={handleClose}>
-                <Button className="w-full justify-start gap-2 bg-shop_dark_green hover:bg-shop_light_green text-white">
+              </SignInButton>
+              <SignUpButton mode="modal">
+                <Button className="w-full justify-start gap-2 bg-shop_dark_green hover:bg-shop_light_green text-white" onClick={handleClose}>
                   <UserPlus className="h-4 w-4" />
                   Create Account
                 </Button>
-              </Link>
+              </SignUpButton>
             </div>
           )}
 
@@ -160,6 +162,15 @@ export default function MobileMenu({ categories }: MobileMenuProps) {
                 Wishlist
               </Button>
             </Link>
+
+            {isAuthenticated && (
+              <Link href="/messages" onClick={handleClose}>
+                <Button variant="ghost" className="w-full justify-start gap-3 h-12">
+                  <MessageCircle className="h-5 w-5 text-shop_dark_green" />
+                  Messages
+                </Button>
+              </Link>
+            )}
           </div>
 
           {/* User Account Section */}
@@ -209,7 +220,7 @@ export default function MobileMenu({ categories }: MobileMenuProps) {
                   </>
                 )}
 
-                {user.role === 'admin' && (
+                {(user.role === 'admin' || user.role === 'ADMIN') && (
                   <Link href="/admin" onClick={handleClose}>
                     <Button variant="ghost" className="w-full justify-start gap-3 h-12">
                       <Shield className="h-5 w-5 text-shop_orange" />

@@ -77,13 +77,13 @@ function getStoragePath(type = 'products') {
 
 /**
  * Get public URL for an uploaded file
- * This assumes Nginx serves /uploads at /static/uploads
+ * This returns /uploads path served by Express static middleware
  */
 function getPublicUrl(filePath) {
   // Convert absolute path to relative URL
-  // Example: uploads/products/image.jpg -> /static/uploads/products/image.jpg
+  // Example: uploads/products/image.jpg -> /uploads/products/image.jpg
   const relativePath = filePath.replace(/\\/g, '/').split('uploads/')[1];
-  return `/static/uploads/${relativePath}`;
+  return `/uploads/${relativePath}`;
 }
 
 /**

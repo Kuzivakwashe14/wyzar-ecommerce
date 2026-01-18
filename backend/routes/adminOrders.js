@@ -4,8 +4,7 @@
 const express = require('express');
 const router = express.Router();
 const adminAuth = require('../middleware/adminAuth');
-const Order = require('../models/Order');
-const User = require('../models/User');
+const prisma = require('../config/prisma');
 const { sendEmail } = require('../services/emailService');
 const { sendSMS } = require('../services/smsService');
 
@@ -27,40 +26,51 @@ router.get('/', adminAuth, async (req, res) => {
       endDate = ''
     } = req.query;
 
-    // Build query
-    const query = {};
+    // Build where clause
+    const where = {};
 
     // Filter by status
     if (status) {
-      query.status = status;
+      where.status = status.toUpperCase();
     }
 
     // Filter by date range
     if (startDate || endDate) {
-      query.createdAt = {};
-      if (startDate) query.createdAt.$gte = new Date(startDate);
-      if (endDate) query.createdAt.$lte = new Date(endDate);
+      where.createdAt = {};
+      if (startDate) where.createdAt.gte = new Date(startDate);
+      if (endDate) where.createdAt.lte = new Date(endDate);
     }
 
     // Execute query with pagination
-    const orders = await Order.find(query)
-      .populate('user', 'email phone')
-      .sort({ createdAt: -1 })
-      .limit(limit * 1)
-      .skip((page - 1) * limit);
+    const orders = await prisma.order.findMany({
+      where,
+      include: {
+        user: {
+          select: {
+            id: true,
+            email: true,
+            phone: true
+          }
+        },
+        orderItems: true
+      },
+      orderBy: { createdAt: 'desc' },
+      take: parseInt(limit),
+      skip: (parseInt(page) - 1) * parseInt(limit)
+    });
 
-    // If search is provided, filter after population
+    // If search is provided, filter results
     let filteredOrders = orders;
     if (search) {
       filteredOrders = orders.filter(order =>
         order.user?.email?.toLowerCase().includes(search.toLowerCase()) ||
         order.user?.phone?.includes(search) ||
-        order._id.toString().includes(search)
+        order.id.toString().includes(search)
       );
     }
 
     // Get total count for pagination
-    const count = await Order.countDocuments(query);
+    const count = await prisma.order.count({ where });
 
     res.json({
       success: true,
@@ -84,9 +94,23 @@ router.get('/', adminAuth, async (req, res) => {
 // @access  Private (Admin only)
 router.get('/:id', adminAuth, async (req, res) => {
   try {
-    const order = await Order.findById(req.params.id)
-      .populate('user', 'email phone')
-      .populate('orderItems.product');
+    const order = await prisma.order.findUnique({
+      where: { id: req.params.id },
+      include: {
+        user: {
+          select: {
+            id: true,
+            email: true,
+            phone: true
+          }
+        },
+        orderItems: {
+          include: {
+            product: true
+          }
+        }
+      }
+    });
 
     if (!order) {
       return res.status(404).json({

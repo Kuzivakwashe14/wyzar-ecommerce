@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { SignInButton, SignUpButton } from "@clerk/nextjs";
 import { api } from "@/context/AuthContent";
 import {
   NavigationMenu,
@@ -290,7 +291,7 @@ export default function Navbar() {
                       </>
                     )}
 
-                    {user.role === 'admin' ? (
+                    {(user.role === 'admin' || user.role === 'ADMIN') ? (
                       <Link href="/admin">
                         <DropdownMenuItem>
                           <Shield className="mr-2 h-4 w-4" />
@@ -316,15 +317,15 @@ export default function Navbar() {
               </>
             ) : (
               <>
-                <Link href="/login" className="hidden sm:block">
-                  <Button variant="ghost" size="sm">Login</Button>
-                </Link>
-                <Link href="/sign-up">
+                <SignInButton mode="modal">
+                  <Button variant="ghost" size="sm" className="hidden sm:inline-flex">Login</Button>
+                </SignInButton>
+                <SignUpButton mode="modal">
                   <Button size="sm" className="gap-1">
                     <span className="hidden sm:inline">Sign Up</span>
                     <span className="sm:hidden">Join</span>
                   </Button>
-                </Link>
+                </SignUpButton>
               </>
             )}
 

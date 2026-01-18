@@ -14,9 +14,9 @@ import {
 } from 'lucide-react';
 
 interface Order {
-  _id: string;
+  id: string;
   user: {
-    _id: string;
+    id: string;
     email: string;
     phone: string;
   };
@@ -213,10 +213,10 @@ export default function OrdersPage() {
                 </thead>
                 <tbody className="divide-y divide-gray-200">
                   {orders.map((order) => (
-                    <tr key={order._id} className="hover:bg-gray-50 transition-colors">
+                    <tr key={order.id} className="hover:bg-gray-50 transition-colors">
                       <td className="px-6 py-4">
                         <p className="text-gray-900 font-mono text-sm">
-                          #{order._id.slice(-8)}
+                          #{order.id.slice(-8)}
                         </p>
                       </td>
                       <td className="px-6 py-4">
@@ -227,7 +227,7 @@ export default function OrdersPage() {
                       </td>
                       <td className="px-6 py-4">
                         <p className="text-gray-900 text-sm">
-                          {order.orderItems.length} item{order.orderItems.length !== 1 ? 's' : ''}
+                          {order.orderItems?.length || 0} item{order.orderItems?.length !== 1 ? 's' : ''}
                         </p>
                       </td>
                       <td className="px-6 py-4">
@@ -247,7 +247,7 @@ export default function OrdersPage() {
                       <td className="px-6 py-4 text-right">
                         <select
                           value={order.status}
-                          onChange={(e) => handleStatusChange(order._id, e.target.value)}
+                          onChange={(e) => handleStatusChange(order.id, e.target.value)}
                           className="px-3 py-1 bg-gray-200 border border-gray-300 rounded-lg text-gray-900 text-sm focus:outline-none focus:border-shop_dark_green"
                         >
                           <option value="Pending">Pending</option>

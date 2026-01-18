@@ -1,35 +1,27 @@
-// In frontend/context/AuthContext.tsx
+// frontend/context/AuthContent.tsx
 "use client";
 
-import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
+import React, { createContext, useContext, useEffect, useState, useCallback } from 'react';
+import { useUser, useAuth as useClerkAuth } from '@clerk/nextjs';
 import axios from 'axios';
 
-// 1. Define the API URL and a utility for API requests
+// 1. Define the API URL and create Axios instance
 const API_URL = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:5000/api";
 
-// Create an Axios instance
 const api = axios.create({
   baseURL: API_URL,
 });
 
-// Utility to set the global auth token for Axios
-const setAuthToken = (token: string | null) => {
-  if (token) {
-    api.defaults.headers.common['x-auth-token'] = token;
-  } else {
-    delete api.defaults.headers.common['x-auth-token'];
-  }
-};
-
 // 2. Define types for our context
 interface User {
-  _id: string;
+  id: string;
+  clerkId: string;
   email: string;
-  phone: string;
+  firstName?: string;
+  lastName?: string;
+  imageUrl?: string;
   isSeller: boolean;
   isVerified: boolean;
-  isPhoneVerified: boolean;
-  isEmailVerified: boolean;
   role: string;
   sellerDetails?: {
     businessName: string;
@@ -37,13 +29,11 @@ interface User {
 }
 
 interface AuthContextType {
-  token: string | null;
   user: User | null;
   isAuthenticated: boolean;
   loading: boolean;
-  login: (token: string) => Promise<void>;
   logout: () => void;
-  register: (email: string, password: string) => Promise<void>;
+  refreshUser: () => Promise<void>;
   axiosInstance: typeof api;
 }
 
@@ -52,134 +42,100 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 // 4. Create the AuthProvider component
 export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
-  const [token, setToken] = useState<string | null>(null);
+  const { isLoaded: clerkLoaded, isSignedIn, user: clerkUser } = useUser();
+  const { getToken, signOut } = useClerkAuth();
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
 
-  // 8. Logout function - defined first so it can be used in interceptor
-  const logout = useCallback(() => {
-    localStorage.removeItem('token');
-    setAuthToken(null);
-    setToken(null);
-    setUser(null);
-    setLoading(false);
-    // Only redirect if we're not already on the login page
-    if (typeof window !== 'undefined' && !window.location.pathname.includes('/login')) {
-      window.location.href = '/login';
-    }
-  }, []);
-
-  // Setup axios interceptor for handling 401 errors
+  // Setup axios interceptor to add Clerk token to requests
   useEffect(() => {
-    const interceptor = api.interceptors.response.use(
-      (response) => response,
-      (error) => {
-        const status = error.response?.status;
-        const url = error.config?.url || '';
-        
-        // Handle 429 (Too Many Requests) - don't logout, just show error
-        if (status === 429) {
-          console.warn('Rate limited - too many requests');
-          // Don't logout on rate limiting
-          return Promise.reject(error);
-        }
-        
-        // Only logout on 401 if it's not a login/register request
-        if (status === 401) {
-          // Don't logout for auth endpoints (login, register, etc.)
-          if (!url.includes('/auth/login') && !url.includes('/auth/register')) {
-            console.warn('Session expired or invalid token');
-            // Don't auto-logout, just clear the token silently
-            // The user will be redirected when they try to access protected content
-            localStorage.removeItem('token');
-            setAuthToken(null);
-            setToken(null);
-            setUser(null);
+    const interceptor = api.interceptors.request.use(
+      async (config) => {
+        if (isSignedIn) {
+          try {
+            const token = await getToken();
+            if (token) {
+              config.headers.Authorization = `Bearer ${token}`;
+            }
+          } catch (error) {
+            console.error('Failed to get auth token:', error);
           }
         }
-        return Promise.reject(error);
-      }
+        return config;
+      },
+      (error) => Promise.reject(error)
     );
 
-    // Cleanup interceptor on unmount
     return () => {
-      api.interceptors.response.eject(interceptor);
+      api.interceptors.request.eject(interceptor);
     };
-  }, []);
+  }, [isSignedIn, getToken]);
 
-  // 5. Load user function: Gets token from localStorage and fetches user
+  // Load user data from backend
   const loadUser = useCallback(async () => {
-    const localToken = localStorage.getItem('token');
-    if (localToken) {
-      setAuthToken(localToken);
-      setToken(localToken);
-      try {
-        const res = await api.get('/auth/me');
-        setUser(res.data);
-      } catch (err: any) {
-        console.error("Failed to load user:", err?.response?.data?.msg || err.message);
-        // Only clear token, don't force redirect
-        localStorage.removeItem('token');
-        setAuthToken(null);
-        setToken(null);
-        setUser(null);
-      }
+    if (!clerkLoaded) return;
+    
+    if (!isSignedIn || !clerkUser) {
+      setUser(null);
+      setLoading(false);
+      return;
     }
-    setLoading(false);
-  }, []);
 
-  // 6. useEffect to load user on app start
+    try {
+      const token = await getToken();
+      
+      if (!token) {
+        setUser(null);
+        setLoading(false);
+        return;
+      }
+
+      const res = await axios.get(`${API_URL}/auth/me`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      setUser(res.data);
+    } catch (error: any) {
+      // If 401, it might mean user doesn't exist yet (syncing) or token invalid
+      if (error.response?.status !== 401) {
+        console.error('Failed to load user:', error);
+      }
+      setUser(null);
+    } finally {
+      setLoading(false);
+    }
+  }, [clerkLoaded, isSignedIn, clerkUser, getToken]);
+
+  // Refresh user data
+  const refreshUser = useCallback(async () => {
+    await loadUser();
+  }, [loadUser]);
+
+  // Load user when Clerk state changes
   useEffect(() => {
     loadUser();
   }, [loadUser]);
 
-  // 7. Login function
-  const login = async (token: string) => {
-    setLoading(true);
-    localStorage.setItem('token', token);
-    setAuthToken(token);
-    setToken(token);
-    try {
-      const res = await api.get('/auth/me');
-      setUser(res.data);
-    } catch (err) {
-      console.error("Failed to login/load user", err);
-    }
-    setLoading(false);
-  };
-
-  // 9. Register function
-  const register = async (email: string, password: string) => {
-    setLoading(true);
-    try {
-      const res = await api.post('/auth/register', { email, password });
-      const { token } = res.data;
-
-      // After successful registration, log the user in
-      await login(token);
-    } catch (err) {
-      setLoading(false);
-      throw err; // Re-throw to handle in the component
-    }
-  };
+  // Logout function
+  const logout = useCallback(() => {
+    signOut();
+    setUser(null);
+  }, [signOut]);
 
   return (
     <AuthContext.Provider value={{
-      token,
       user,
-      isAuthenticated: !!token && !!user, // True if token and user exist
-      loading,
-      login,
+      isAuthenticated: !!user && !!isSignedIn,
+      loading: !clerkLoaded || loading,
       logout,
-      register,
+      refreshUser,
       axiosInstance: api
     }}>
-      {!loading && children}
+      {children}
     </AuthContext.Provider>
   );
 };
 
-// 9. Create a custom hook for easy access to the context
+// 5. Create a custom hook for easy access to the context
 export const useAuth = () => {
   const context = useContext(AuthContext);
   if (context === undefined) {
@@ -188,5 +144,5 @@ export const useAuth = () => {
   return context;
 };
 
-// 10. Export the pre-configured 'api' instance
+// 6. Export the pre-configured 'api' instance
 export { api };
