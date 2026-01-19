@@ -313,7 +313,7 @@ export default function Header() {
             </div>
 
             {/* Seller Link */}
-            {isAuthenticated && user && !user.isSeller && (
+            {isAuthenticated && user && !(user.publicMetadata && (user.publicMetadata as any).isSeller) && (
               <Link href="/become-a-seller">
                 <Button 
                   variant="outline" 

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import { api } from "@/context/AuthContent";
 import ProductCard, { Product } from "@/components/ProductCard";
@@ -67,7 +67,9 @@ const ratingFilters = [
   { value: 1, label: "1 Star & Up" },
 ];
 
-export default function ProductsPage() {
+function ProductsPageInner() {
+      const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
+    const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const searchParams = useSearchParams();
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
@@ -78,56 +80,34 @@ export default function ProductsPage() {
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
   const [sortBy, setSortBy] = useState("newest");
   const [priceRange, setPriceRange] = useState<[number, number]>([0, 10000]);
-  const [minRating, setMinRating] = useState<number>(0);
+  const [minRating, setMinRating] = useState(0);
   const [inStockOnly, setInStockOnly] = useState(false);
-  const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
-  const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
 
-  // Calculate max price from products
-  const maxPrice = useMemo(() => {
-    if (products.length === 0) return 10000;
-    return Math.ceil(Math.max(...products.map(p => p.price)) / 100) * 100;
-  }, [products]);
+  // Derived states
+  const maxPrice = useMemo(
+    () => Math.max(...products.map((product) => product.price), 0),
+    [products]
+  );
 
-  // Update price range when products load
-  useEffect(() => {
-    if (maxPrice > 0) {
-      setPriceRange([0, maxPrice]);
-    }
-  }, [maxPrice]);
-
-  // Get category counts
   const categoryCounts = useMemo(() => {
-    const counts: Record<string, number> = {};
-    products.forEach(product => {
-      const cat = product.category?.toLowerCase() || "";
-      counts[cat] = (counts[cat] || 0) + 1;
-    });
-    return counts;
+    return products.reduce((acc, product) => {
+      const category = product.category?.toLowerCase();
+      if (category) {
+        acc[category] = (acc[category] || 0) + 1;
+      }
+      return acc;
+    }, {} as Record<string, number>);
   }, [products]);
-
-  // Get category and search from URL params
-  useEffect(() => {
-    const category = searchParams.get("category");
-    const search = searchParams.get("search");
-
-    if (category) {
-      setSelectedCategories([category.toLowerCase()]);
-    }
-    if (search) {
-      setSearchQuery(search);
-    }
-  }, [searchParams]);
 
   useEffect(() => {
     const fetchProducts = async () => {
       setLoading(true);
       setError(null);
+
       try {
         const response = await api.get("/products");
         setProducts(response.data);
       } catch (err) {
-        console.error("Failed to fetch products:", err);
         setError("Failed to load products. Please try again later.");
       } finally {
         setLoading(false);
@@ -137,41 +117,35 @@ export default function ProductsPage() {
     fetchProducts();
   }, []);
 
-  // Filter and sort products
   const filteredAndSortedProducts = useMemo(() => {
-    let result = [...products];
+    let result = products.filter((product) => {
+      // Apply search query
+      if (searchQuery) {
+        const query = searchQuery.toLowerCase();
+        const matchesName = product.name.toLowerCase().includes(query);
+        const matchesDescription = product.description
+          ?.toLowerCase()
+          .includes(query);
+        if (!matchesName && !matchesDescription) return false;
+      }
 
-    // Apply search filter
-    if (searchQuery.trim()) {
-      const query = searchQuery.toLowerCase();
-      result = result.filter(
-        (product) =>
-          product.name.toLowerCase().includes(query) ||
-          product.description?.toLowerCase().includes(query) ||
-          product.category?.toLowerCase().includes(query)
-      );
-    }
+      // Apply category filters
+      if (selectedCategories.length > 0) {
+        const category = product.category?.toLowerCase();
+        if (!category || !selectedCategories.includes(category)) return false;
+      }
 
-    // Apply category filter
-    if (selectedCategories.length > 0) {
-      result = result.filter((product) =>
-        selectedCategories.some(
-          (cat) => product.category?.toLowerCase().includes(cat)
-        )
-      );
-    }
+      // Apply price range filter
+      const [minPrice, maxPrice] = priceRange;
+      if (product.price < minPrice || product.price > maxPrice) return false;
 
-    // Apply price range filter
-    result = result.filter(
-      (product) => product.price >= priceRange[0] && product.price <= priceRange[1]
-    );
+      // Apply rating filter
+      if (minRating > 0) {
+        if (!product.rating || typeof product.rating.average !== 'number' || product.rating.average < minRating) return false;
+      }
 
-    // Apply rating filter
-    if (minRating > 0) {
-      result = result.filter(
-        (product) => (product.rating?.average || 0) >= minRating
-      );
-    }
+      return true;
+    });
 
     // Apply stock filter
     if (inStockOnly) {
@@ -356,7 +330,7 @@ export default function ProductsPage() {
           <Checkbox
             id="in-stock"
             checked={inStockOnly}
-            onCheckedChange={(checked) => setInStockOnly(checked as boolean)}
+            onCheckedChange={(checked) => setInStockOnly(Boolean(checked))}
             className="border-gray-300 data-[state=checked]:bg-shop_dark_green data-[state=checked]:border-shop_dark_green"
           />
           <Label
@@ -658,6 +632,14 @@ export default function ProductsPage() {
         </div>
       </Container>
     </div>
+  );
+}
+
+export default function ProductsPage() {
+  return (
+    <Suspense>
+      <ProductsPageInner />
+    </Suspense>
   );
 }
 

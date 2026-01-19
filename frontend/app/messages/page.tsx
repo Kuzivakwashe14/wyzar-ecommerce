@@ -42,7 +42,7 @@ export default function MessagesPage() {
   const [searchResults, setSearchResults] = useState<any[]>([]);
   const [isSearching, setIsSearching] = useState(false);
   const [showChat, setShowChat] = useState(false);
-  const { user } = useAuth();
+  const { user, login } = useAuth();
   const router = useRouter();
 
   useEffect(() => {
