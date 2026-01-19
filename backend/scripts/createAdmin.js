@@ -1,11 +1,12 @@
 // Script to create an admin user
 // Run this with: node scripts/createAdmin.js
 
+const mongoose = require('mongoose');
 const bcrypt = require('bcryptjs');
 require('dotenv').config();
 
-// Import Prisma client
-const prisma = require('../config/prisma');
+// Import User model
+const User = require('../models/User');
 
 // Admin credentials
 const ADMIN_EMAIL = 'admin@wyzar.com';
@@ -13,28 +14,23 @@ const ADMIN_PASSWORD = 'Admin@123456';
 
 async function createAdmin() {
   try {
-    console.log('Connecting to PostgreSQL database...');
+    // Connect to MongoDB
+    await mongoose.connect(process.env.MONGODB_URI);
+    console.log('Connected to MongoDB');
 
     // Check if admin already exists
-    const existingAdmin = await prisma.user.findUnique({ 
-      where: { email: ADMIN_EMAIL } 
-    });
-    
+    const existingAdmin = await User.findOne({ email: ADMIN_EMAIL });
     if (existingAdmin) {
       console.log('Admin user already exists!');
       console.log('Email:', existingAdmin.email);
       console.log('Role:', existingAdmin.role);
 
       // Update to admin if not already
-      if (existingAdmin.role !== 'ADMIN') {
-        await prisma.user.update({
-          where: { id: existingAdmin.id },
-          data: {
-            role: 'ADMIN',
-            isEmailVerified: true
-          }
-        });
-        console.log('User role updated to ADMIN');
+      if (existingAdmin.role !== 'admin') {
+        existingAdmin.role = 'admin';
+        existingAdmin.isEmailVerified = true;
+        await existingAdmin.save();
+        console.log('User role updated to admin');
       }
 
       console.log('================================');
@@ -43,7 +39,6 @@ async function createAdmin() {
       console.log('Password:', ADMIN_PASSWORD);
       console.log('================================');
 
-      await prisma.$disconnect();
       process.exit(0);
     }
 
@@ -52,16 +47,16 @@ async function createAdmin() {
     const hashedPassword = await bcrypt.hash(ADMIN_PASSWORD, salt);
 
     // Create admin user
-    const adminUser = await prisma.user.create({
-      data: {
-        email: ADMIN_EMAIL,
-        password: hashedPassword,
-        role: 'ADMIN',
-        isEmailVerified: true,
-        isSeller: false,
-        isVerified: true
-      }
+    const adminUser = new User({
+      email: ADMIN_EMAIL,
+      password: hashedPassword,
+      role: 'admin',
+      isEmailVerified: true,
+      isSeller: false,
+      isVerified: true
     });
+
+    await adminUser.save();
 
     console.log('✅ Admin user created successfully!');
     console.log('================================');
@@ -72,11 +67,9 @@ async function createAdmin() {
     console.log('================================');
     console.log('⚠️  IMPORTANT: Change the password after first login!');
 
-    await prisma.$disconnect();
     process.exit(0);
   } catch (error) {
     console.error('Error creating admin user:', error);
-    await prisma.$disconnect();
     process.exit(1);
   }
 }

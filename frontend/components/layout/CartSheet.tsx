@@ -16,7 +16,9 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useCart } from "@/context/CartContext";
 import { ShoppingCart, Trash2, Plus, Minus, ShoppingBag } from "lucide-react";
-import { getImageUrl } from "@/lib/utils";
+
+// Get the backend URL
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
 
 export default function CartSheet() {
   const { cartItems, itemCount, cartTotal, removeFromCart, updateQuantity } = useCart();
@@ -73,10 +75,10 @@ export default function CartSheet() {
             {/* 3. Cart Items List */}
             <div className="flex-1 overflow-y-auto -mx-6 px-6 divide-y">
               {cartItems.map((item) => (
-                <div key={item.id} className="flex items-start gap-4 py-4">
+                <div key={item._id} className="flex items-start gap-4 py-4">
                   <div className="relative h-20 w-20 rounded-lg overflow-hidden border bg-shop_light_pink/30 shrink-0">
                     <Image
-                      src={getImageUrl(item.images[0])}
+                      src={`${API_BASE_URL}/${item.images[0].replace(/\\/g, '/')}`}
                       alt={item.name}
                       fill
                       style={{ objectFit: 'contain' }}
@@ -99,7 +101,7 @@ export default function CartSheet() {
                           variant="ghost"
                           size="icon"
                           className="h-8 w-8 rounded-none rounded-l-lg hover:bg-shop_light_pink"
-                          onClick={() => updateQuantity(item.id, Math.max(1, item.cartQuantity - 1))}
+                          onClick={() => updateQuantity(item._id, Math.max(1, item.cartQuantity - 1))}
                           disabled={item.cartQuantity <= 1}
                         >
                           <Minus className="h-3 w-3" />
@@ -111,7 +113,7 @@ export default function CartSheet() {
                           variant="ghost"
                           size="icon"
                           className="h-8 w-8 rounded-none rounded-r-lg hover:bg-shop_light_pink"
-                          onClick={() => updateQuantity(item.id, Math.min(item.quantity, item.cartQuantity + 1))}
+                          onClick={() => updateQuantity(item._id, Math.min(item.quantity, item.cartQuantity + 1))}
                           disabled={item.cartQuantity >= item.quantity}
                         >
                           <Plus className="h-3 w-3" />
@@ -121,7 +123,7 @@ export default function CartSheet() {
                         variant="ghost"
                         size="icon"
                         className="h-8 w-8 text-red-500 hover:text-red-600 hover:bg-red-50"
-                        onClick={() => removeFromCart(item.id)}
+                        onClick={() => removeFromCart(item._id)}
                       >
                         <Trash2 className="h-4 w-4" />
                       </Button>

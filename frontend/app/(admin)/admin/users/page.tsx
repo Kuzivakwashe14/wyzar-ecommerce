@@ -17,7 +17,7 @@ import {
 } from 'lucide-react';
 
 interface User {
-  id: string;
+  _id: string;
   email: string;
   phone: string;
   isPhoneVerified: boolean;
@@ -212,7 +212,7 @@ export default function UsersPage() {
                 </thead>
                 <tbody className="divide-y divide-gray-200">
                   {users.map((user) => (
-                    <tr key={user.id} className="hover:bg-gray-50 transition-colors">
+                    <tr key={user._id} className="hover:bg-gray-50 transition-colors">
                       <td className="px-6 py-4">
                         <div className="flex items-center gap-3">
                           <div className="w-10 h-10 rounded-full bg-indigo-600 flex items-center justify-center text-gray-900 font-bold">
@@ -246,7 +246,7 @@ export default function UsersPage() {
                       </td>
                       <td className="px-6 py-4">
                         <div className="flex flex-col gap-1">
-                          {(user.role === 'admin' || user.role === 'ADMIN') && (
+                          {user.role === 'admin' && (
                             <span className="inline-flex items-center gap-1 px-2 py-1 bg-purple-500/10 text-purple-400 text-xs rounded w-fit">
                               <Shield className="w-3 h-3" />
                               Admin
@@ -257,7 +257,7 @@ export default function UsersPage() {
                               Seller
                             </span>
                           )}
-                          {!user.isSeller && user.role !== 'admin' && user.role !== 'ADMIN' && (
+                          {!user.isSeller && user.role !== 'admin' && (
                             <span className="inline-flex px-2 py-1 bg-blue-500/10 text-blue-400 text-xs rounded w-fit">
                               Buyer
                             </span>
@@ -292,7 +292,7 @@ export default function UsersPage() {
                             <button
                               onClick={() => {
                                 const reason = prompt('Reason for suspension:');
-                                if (reason) handleSuspend(user.id, true, reason);
+                                if (reason) handleSuspend(user._id, true, reason);
                               }}
                               className="px-3 py-1 bg-red-600 hover:bg-red-700 text-gray-900 text-sm rounded transition-all"
                             >
@@ -300,7 +300,7 @@ export default function UsersPage() {
                             </button>
                           ) : (
                             <button
-                              onClick={() => handleSuspend(user.id, false)}
+                              onClick={() => handleSuspend(user._id, false)}
                               className="px-3 py-1 bg-green-600 hover:bg-green-700 text-gray-900 text-sm rounded transition-all"
                             >
                               Unsuspend

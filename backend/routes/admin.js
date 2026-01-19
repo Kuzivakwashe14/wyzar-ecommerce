@@ -4,7 +4,9 @@
 const express = require('express');
 const router = express.Router();
 const adminAuth = require('../middleware/adminAuth');
-const prisma = require('../config/prisma');
+const User = require('../models/User');
+const Product = require('../models/Product');
+const Order = require('../models/Order');
 
 // ==========================================
 // DASHBOARD STATS
@@ -37,51 +39,47 @@ router.get('/stats/overview', adminAuth, async (req, res) => {
       thisWeekOrders,
       thisMonthOrders
     ] = await Promise.all([
-      prisma.user.count({ where: { role: { not: 'ADMIN' } } }),
-      prisma.user.count({ where: { isSeller: true, isVerified: true } }),
-      prisma.user.count({ where: { isSeller: true, isVerified: false } }),
-      prisma.product.count(),
-      prisma.order.count(),
-      prisma.order.count({ where: { createdAt: { gte: today } } }),
-      prisma.order.count({ where: { createdAt: { gte: thisWeek } } }),
-      prisma.order.count({ where: { createdAt: { gte: thisMonth } } })
+      User.countDocuments({ role: { $ne: 'admin' } }),
+      User.countDocuments({ isSeller: true, isVerified: true }),
+      User.countDocuments({ isSeller: true, isVerified: false }),
+      Product.countDocuments(),
+      Order.countDocuments(),
+      Order.countDocuments({ createdAt: { $gte: today } }),
+      Order.countDocuments({ createdAt: { $gte: thisWeek } }),
+      Order.countDocuments({ createdAt: { $gte: thisMonth } })
     ]);
 
-    // Calculate revenue using Prisma aggregations
-    const allRevenue = await prisma.order.aggregate({
-      where: { status: { in: ['PAID', 'SHIPPED', 'DELIVERED'] } },
-      _sum: { totalPrice: true }
-    });
+    // Calculate revenue
+    const revenueData = await Order.aggregate([
+      { $match: { status: { $in: ['Paid', 'Shipped', 'Delivered'] } } },
+      {
+        $group: {
+          _id: null,
+          totalRevenue: { $sum: '$totalPrice' },
+          todayRevenue: {
+            $sum: {
+              $cond: [{ $gte: ['$createdAt', today] }, '$totalPrice', 0]
+            }
+          },
+          weekRevenue: {
+            $sum: {
+              $cond: [{ $gte: ['$createdAt', thisWeek] }, '$totalPrice', 0]
+            }
+          },
+          monthRevenue: {
+            $sum: {
+              $cond: [{ $gte: ['$createdAt', thisMonth] }, '$totalPrice', 0]
+            }
+          }
+        }
+      }
+    ]);
 
-    const todayRevenue = await prisma.order.aggregate({
-      where: {
-        status: { in: ['PAID', 'SHIPPED', 'DELIVERED'] },
-        createdAt: { gte: today }
-      },
-      _sum: { totalPrice: true }
-    });
-
-    const weekRevenue = await prisma.order.aggregate({
-      where: {
-        status: { in: ['PAID', 'SHIPPED', 'DELIVERED'] },
-        createdAt: { gte: thisWeek }
-      },
-      _sum: { totalPrice: true }
-    });
-
-    const monthRevenue = await prisma.order.aggregate({
-      where: {
-        status: { in: ['PAID', 'SHIPPED', 'DELIVERED'] },
-        createdAt: { gte: thisMonth }
-      },
-      _sum: { totalPrice: true }
-    });
-
-    const revenue = {
-      totalRevenue: allRevenue._sum.totalPrice || 0,
-      todayRevenue: todayRevenue._sum.totalPrice || 0,
-      weekRevenue: weekRevenue._sum.totalPrice || 0,
-      monthRevenue: monthRevenue._sum.totalPrice || 0
+    const revenue = revenueData[0] || {
+      totalRevenue: 0,
+      todayRevenue: 0,
+      weekRevenue: 0,
+      monthRevenue: 0
     };
 
     // Commission calculation (10%)
@@ -145,40 +143,29 @@ router.get('/stats/revenue', adminAuth, async (req, res) => {
     startDate.setDate(startDate.getDate() - daysBack);
     startDate.setHours(0, 0, 0, 0);
 
-    const orders = await prisma.order.findMany({
-      where: {
-        createdAt: { gte: startDate },
-        status: { in: ['PAID', 'SHIPPED', 'DELIVERED'] }
+    const revenueByDay = await Order.aggregate([
+      {
+        $match: {
+          createdAt: { $gte: startDate },
+          status: { $in: ['Paid', 'Shipped', 'Delivered'] }
+        }
       },
-      select: {
-        createdAt: true,
-        totalPrice: true
-      }
-    });
-
-    // Group by date manually since Prisma doesn't support dateToString
-    const revenueByDay = {};
-    orders.forEach(order => {
-      const date = order.createdAt.toISOString().split('T')[0];
-      if (!revenueByDay[date]) {
-        revenueByDay[date] = { revenue: 0, orders: 0 };
-      }
-      revenueByDay[date].revenue += order.totalPrice;
-      revenueByDay[date].orders += 1;
-    });
-
-    const revenueData = Object.entries(revenueByDay)
-      .map(([date, data]) => ({
-        _id: date,
-        revenue: data.revenue,
-        orders: data.orders
-      }))
-      .sort((a, b) => a._id.localeCompare(b._id));
+      {
+        $group: {
+          _id: {
+            $dateToString: { format: '%Y-%m-%d', date: '$createdAt' }
+          },
+          revenue: { $sum: '$totalPrice' },
+          orders: { $sum: 1 }
+        }
+      },
+      { $sort: { _id: 1 } }
+    ]);
 
     res.json({
       success: true,
       period,
-      data: revenueData.map(item => ({
+      data: revenueByDay.map(item => ({
         date: item._id,
         revenue: item.revenue,
         orders: item.orders,
@@ -209,40 +196,31 @@ router.get('/stats/users', adminAuth, async (req, res) => {
     const startDate = new Date();
     startDate.setDate(startDate.getDate() - daysBack);
 
-    const users = await prisma.user.findMany({
-      where: {
-        createdAt: { gte: startDate },
-        role: { not: 'ADMIN' }
+    const usersByDay = await User.aggregate([
+      {
+        $match: {
+          createdAt: { $gte: startDate },
+          role: { $ne: 'admin' }
+        }
       },
-      select: {
-        createdAt: true,
-        isSeller: true
-      }
-    });
-
-    // Group by date manually
-    const usersByDay = {};
-    users.forEach(user => {
-      const date = user.createdAt.toISOString().split('T')[0];
-      if (!usersByDay[date]) {
-        usersByDay[date] = { users: 0, sellers: 0 };
-      }
-      usersByDay[date].users += 1;
-      if (user.isSeller) usersByDay[date].sellers += 1;
-    });
-
-    const userData = Object.entries(usersByDay)
-      .map(([date, data]) => ({
-        _id: date,
-        users: data.users,
-        sellers: data.sellers
-      }))
-      .sort((a, b) => a._id.localeCompare(b._id));
+      {
+        $group: {
+          _id: {
+            $dateToString: { format: '%Y-%m-%d', date: '$createdAt' }
+          },
+          users: { $sum: 1 },
+          sellers: {
+            $sum: { $cond: ['$isSeller', 1, 0] }
+          }
+        }
+      },
+      { $sort: { _id: 1 } }
+    ]);
 
     res.json({
       success: true,
       period,
-      data: userData
+      data: usersByDay
     });
   } catch (error) {
     console.error('Error fetching user stats:', error);
@@ -259,52 +237,26 @@ router.get('/stats/users', adminAuth, async (req, res) => {
 // @access  Private (Admin only)
 router.get('/stats/products', adminAuth, async (req, res) => {
   try {
-    const productsByCategory = await prisma.product.groupBy({
-      by: ['category'],
-      _count: { category: true },
-      _sum: {
-        price: true,
-        quantity: true
+    const productsByCategory = await Product.aggregate([
+      {
+        $group: {
+          _id: '$category',
+          count: { $sum: 1 },
+          totalValue: { $sum: { $multiply: ['$price', '$quantity'] } }
+        }
       },
-      orderBy: {
-        _count: {
-          category: 'desc'
-        }
-      }
-    });
+      { $sort: { count: -1 } }
+    ]);
 
-    // Calculate totalValue for each category
-    const categoryStats = productsByCategory.map(cat => ({
-      _id: cat.category,
-      count: cat._count.category,
-      totalValue: (cat._sum.price || 0) * (cat._sum.quantity || 0)
-    }));
-
-    const topProducts = await prisma.product.findMany({
-      orderBy: { views: 'desc' },
-      take: 10,
-      select: {
-        id: true,
-        name: true,
-        price: true,
-        views: true,
-        category: true,
-        sellerId: true,
-        seller: {
-          select: {
-            id: true,
-            email: true,
-            sellerDetails: {
-              select: { businessName: true }
-            }
-          }
-        }
-      }
-    });
+    const topProducts = await Product.find()
+      .sort({ views: -1 })
+      .limit(10)
+      .select('name price views category seller')
+      .populate('seller', 'email sellerDetails.businessName');
 
     res.json({
       success: true,
-      byCategory: categoryStats,
+      byCategory: productsByCategory,
       topProducts
     });
   } catch (error) {
@@ -323,62 +275,22 @@ router.get('/stats/products', adminAuth, async (req, res) => {
 router.get('/stats/recent-activity', adminAuth, async (req, res) => {
   try {
     const [recentOrders, recentUsers, recentProducts] = await Promise.all([
-      prisma.order.findMany({
-        orderBy: { createdAt: 'desc' },
-        take: 5,
-        include: {
-          user: {
-            select: {
-              id: true,
-              email: true,
-              phone: true
-            }
-          },
-          orderItems: {
-            select: {
-              id: true,
-              name: true,
-              quantity: true,
-              price: true
-            }
-          }
-        }
-      }),
+      Order.find()
+        .sort({ createdAt: -1 })
+        .limit(5)
+        .populate('user', 'email phone')
+        .select('orderItems totalPrice status createdAt'),
 
-      prisma.user.findMany({
-        where: { role: { not: 'ADMIN' } },
-        orderBy: { createdAt: 'desc' },
-        take: 5,
-        select: {
-          id: true,
-          email: true,
-          phone: true,
-          isSeller: true,
-          isVerified: true,
-          createdAt: true
-        }
-      }),
+      User.find({ role: { $ne: 'admin' } })
+        .sort({ createdAt: -1 })
+        .limit(5)
+        .select('email phone isSeller isVerified createdAt'),
 
-      prisma.product.findMany({
-        orderBy: { createdAt: 'desc' },
-        take: 5,
-        select: {
-          id: true,
-          name: true,
-          price: true,
-          category: true,
-          createdAt: true,
-          seller: {
-            select: {
-              id: true,
-              email: true,
-              sellerDetails: {
-                select: { businessName: true }
-              }
-            }
-          }
-        }
-      })
+      Product.find()
+        .sort({ createdAt: -1 })
+        .limit(5)
+        .populate('seller', 'email sellerDetails.businessName')
+        .select('name price category createdAt')
     ]);
 
     res.json({

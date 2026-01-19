@@ -4,13 +4,12 @@ const router = express.Router();
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const auth = require('../middleware/auth');
-const prisma = require('../config/prisma');
+const User = require('../models/User');
 const { sendWelcomeNotification, sendLoginAlert } = require('../services/notificationService');
 const { authLimiter } = require('../config/security');
 
-// ===== Zod Validation =====
-const { validateBody } = require('../middleware/zodValidate');
-const { registrationSchema, loginSchema } = require('../schemas');
+// ===== Input Validation & Sanitization =====
+const { validateRegistration, validateLogin } = require('../middleware/validateInput');
 const { sanitizeRequestBody } = require('../utils/security/inputValidation');
 const { validatePasswordMiddleware } = require('../utils/passwordSecurity');
 
@@ -18,15 +17,13 @@ const { validatePasswordMiddleware } = require('../utils/passwordSecurity');
 // @route   POST /api/auth/register
 // @desc    Register a new user (must verify email with OTP first)
 // @access  Public
-router.post('/register', authLimiter, sanitizeRequestBody, validateBody(registrationSchema), validatePasswordMiddleware, async (req, res) => {
+router.post('/register', authLimiter, sanitizeRequestBody, validateRegistration, validatePasswordMiddleware, async (req, res) => {
   // 1. Get email and password from the request body
   const { email, password } = req.body;
-  console.log('Registration request received:', { email, passwordLength: password?.length });
 
   try {
     // Validate input
     if (!email || !password) {
-      console.log('Validation failed: missing email or password');
       return res.status(400).json({
         success: false,
         msg: 'Email and password are required'
@@ -34,7 +31,7 @@ router.post('/register', authLimiter, sanitizeRequestBody, validateBody(registra
     }
 
     // 2. Check if the email already exists
-    let existingEmail = await prisma.user.findUnique({ where: { email } });
+    let existingEmail = await User.findOne({ email });
     if (existingEmail) {
       return res.status(400).json({
         success: false,
@@ -47,22 +44,23 @@ router.post('/register', authLimiter, sanitizeRequestBody, validateBody(registra
     // For now, we'll create the user and mark email as unverified
     // The user will verify it in the next step
 
-    // 4. Hash the password
-    const salt = await bcrypt.genSalt(10);
-    const hashedPassword = await bcrypt.hash(password, salt);
-
-    // 5. Create a new user instance
+    // 4. Create a new user instance
     // Auto-assign admin role if email contains @wyzar
-    const role = email.toLowerCase().includes('@wyzar') ? 'ADMIN' : 'USER';
+    const role = email.toLowerCase().includes('@wyzar') ? 'admin' : 'user';
 
-    const user = await prisma.user.create({
-      data: {
-        email,
-        password: hashedPassword,
-        isEmailVerified: false, // Will be set to true after OTP verification
-        role: role
-      }
+    const user = new User({
+      email,
+      password,
+      isEmailVerified: false, // Will be set to true after OTP verification
+      role: role
     });
+
+    // 5. Hash the password
+    const salt = await bcrypt.genSalt(10);
+    user.password = await bcrypt.hash(password, salt);
+
+    // 6. Save the user to the database
+    await user.save();
 
     // 7. Send welcome notification (email) - Don't wait for it
     sendWelcomeNotification(user).catch(err => {
@@ -115,22 +113,21 @@ router.post('/register', authLimiter, sanitizeRequestBody, validateBody(registra
 // @route   POST /api/auth/login
 // @desc    Authenticate user & get token (supports email)
 // @access  Public
-router.post('/login', authLimiter, sanitizeRequestBody, validateBody(loginSchema), async (req, res) => {
+router.post('/login', authLimiter, sanitizeRequestBody,  validateLogin,  async (req, res) => {
   // 1. Get credentials from request body
   const { email, password } = req.body;
 
   try {
+    // Validate that we have email and password
+    if (!email || !password) {
+      return res.status(400).json({
+        success: false,
+        msg: 'Please provide email and password'
+      });
+    }
+
     // 2. Find user by email
-    const user = await prisma.user.findUnique({ 
-      where: { email },
-      include: {
-        sellerDetails: {
-          include: {
-            verificationDocuments: true
-          }
-        }
-      }
-    });
+    const user = await User.findOne({ email });
 
     if (!user) {
       return res.status(400).json({
@@ -210,38 +207,14 @@ router.post('/login', authLimiter, sanitizeRequestBody, validateBody(loginSchema
 
 // --- Get Logged In User Route ---
 // @route   GET /api/auth/me
-// @desc    Get the logged-in user's data (works with Clerk auth)
+// @desc    Get the logged-in user's data
 // @access  Private (Thanks to our 'auth' middleware)
 
 router.get('/me', auth, async (req, res) => {
   try {
     // req.user.id comes from the auth middleware
     // We find the user by ID but exclude the password
-    const user = await prisma.user.findUnique({
-      where: { id: req.user.id },
-      select: {
-        id: true,
-        clerkId: true,
-        email: true,
-        firstName: true,
-        lastName: true,
-        imageUrl: true,
-        phone: true,
-        isPhoneVerified: true,
-        isEmailVerified: true,
-        isSeller: true,
-        isVerified: true,
-        role: true,
-        isSuspended: true,
-        suspensionReason: true,
-        createdAt: true,
-        sellerDetails: {
-          include: {
-            verificationDocuments: true
-          }
-        }
-      }
-    });
+    const user = await User.findById(req.user.id).select('-password');
     res.json(user);
   } catch (err) {
     console.error(err.message);
@@ -249,57 +222,4 @@ router.get('/me', auth, async (req, res) => {
   }
 });
 
-// --- Clerk User Sync Route ---
-// @route   POST /api/auth/clerk-sync
-// @desc    Sync Clerk user with database
-// @access  Private (requires Clerk token)
-router.post('/clerk-sync', auth, async (req, res) => {
-  try {
-    const { clerkId, email, firstName, lastName, imageUrl } = req.body;
-
-    // Validate clerkId matches the authenticated user
-    if (clerkId !== req.user.clerkId) {
-      return res.status(403).json({ 
-        success: false, 
-        msg: 'Clerk ID mismatch' 
-      });
-    }
-
-    // Update user with latest Clerk data
-    const user = await prisma.user.update({
-      where: { clerkId },
-      data: {
-        email: email || undefined,
-        firstName: firstName || undefined,
-        lastName: lastName || undefined,
-        imageUrl: imageUrl || undefined,
-      },
-      include: { sellerDetails: true }
-    });
-
-    res.json({
-      success: true,
-      user: {
-        id: user.id,
-        clerkId: user.clerkId,
-        email: user.email,
-        firstName: user.firstName,
-        lastName: user.lastName,
-        imageUrl: user.imageUrl,
-        isSeller: user.isSeller,
-        isVerified: user.isVerified,
-        role: user.role,
-        sellerDetails: user.sellerDetails
-      }
-    });
-  } catch (err) {
-    console.error('Clerk sync error:', err.message);
-    res.status(500).json({ 
-      success: false, 
-      msg: 'Failed to sync user' 
-    });
-  }
-});
-
 module.exports = router;
-

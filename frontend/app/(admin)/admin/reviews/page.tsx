@@ -5,13 +5,13 @@ import { useAuth } from '@/context/AuthContent';
 import { Star, CheckCircle, XCircle, Trash2, Eye } from 'lucide-react';
 
 interface Review {
-  id: string;
+  _id: string;
   product: {
-    id: string;
+    _id: string;
     name: string;
   };
   user: {
-    id: string;
+    _id: string;
     email: string;
   };
   rating: number;
@@ -171,7 +171,7 @@ export default function ReviewsPage() {
                 <tbody className="divide-y divide-gray-200">
                   {reviews.map((review) => (
                     <tr
-                      key={review.id}
+                      key={review._id}
                       className="hover:bg-gray-50 transition-colors cursor-pointer"
                       onClick={() => setSelectedReview(review)}
                     >
@@ -217,7 +217,7 @@ export default function ReviewsPage() {
                             <button
                               onClick={(e) => {
                                 e.stopPropagation();
-                                handleApprove(review.id, true);
+                                handleApprove(review._id, true);
                               }}
                               className="px-3 py-1 bg-green-600 hover:bg-green-700 text-gray-900 text-sm rounded transition-all"
                             >
@@ -228,7 +228,7 @@ export default function ReviewsPage() {
                             <button
                               onClick={(e) => {
                                 e.stopPropagation();
-                                handleApprove(review.id, false);
+                                handleApprove(review._id, false);
                               }}
                               className="px-3 py-1 bg-yellow-600 hover:bg-yellow-700 text-gray-900 text-sm rounded transition-all"
                             >
@@ -238,7 +238,7 @@ export default function ReviewsPage() {
                           <button
                             onClick={(e) => {
                               e.stopPropagation();
-                              handleDelete(review.id);
+                              handleDelete(review._id);
                             }}
                             className="px-3 py-1 bg-red-600 hover:bg-red-700 text-gray-900 text-sm rounded transition-all"
                           >
@@ -354,7 +354,7 @@ export default function ReviewsPage() {
                 <div className="flex items-center gap-2 pt-4 border-t border-gray-200">
                   {!selectedReview.isApproved && (
                     <button
-                      onClick={() => handleApprove(selectedReview.id, true)}
+                      onClick={() => handleApprove(selectedReview._id, true)}
                       className="flex-1 px-4 py-2 bg-green-600 hover:bg-green-700 text-gray-900 rounded transition-all"
                     >
                       Approve
@@ -362,14 +362,14 @@ export default function ReviewsPage() {
                   )}
                   {selectedReview.isApproved && (
                     <button
-                      onClick={() => handleApprove(selectedReview.id, false)}
+                      onClick={() => handleApprove(selectedReview._id, false)}
                       className="flex-1 px-4 py-2 bg-yellow-600 hover:bg-yellow-700 text-gray-900 rounded transition-all"
                     >
                       Reject
                     </button>
                   )}
                   <button
-                    onClick={() => handleDelete(selectedReview.id)}
+                    onClick={() => handleDelete(selectedReview._id)}
                     className="px-4 py-2 bg-red-600 hover:bg-red-700 text-gray-900 rounded transition-all"
                   >
                     <Trash2 className="w-4 h-4" />

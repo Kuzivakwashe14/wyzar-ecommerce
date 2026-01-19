@@ -12,21 +12,24 @@ import {
   AccordionTrigger,
 } from "@/components/ui/accordion";
 import { Badge } from "@/components/ui/badge";
-import { getImageUrl } from "@/lib/utils";
 
-// Define the Order type (Prisma format)
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
+
+// Define the Order type
 interface Order {
-  id: string;
+  _id: string;
   orderItems: {
-    id: string;
+    _id: string;
     name: string;
     quantity: number;
     image: string;
     price: number;
   }[];
-  shippingFullName: string;
-  shippingAddress: string;
-  shippingCity: string;
+  shippingAddress: {
+    fullName: string;
+    address: string;
+    city: string;
+  };
   totalPrice: number;
   status: string;
   createdAt: string;
@@ -102,7 +105,7 @@ export default function MyOrdersPage() {
   };
 
   return (
-    <div className="container mx-auto max-w-3xl py-12 px-4">
+    <div className="container mx-auto max-w-3xl py-12">
       <h1 className="text-3xl font-bold mb-8 text-shop_dark_green">My Orders</h1>
 
       {orders.length === 0 ? (
@@ -112,12 +115,12 @@ export default function MyOrdersPage() {
       ) : (
         <Accordion type="single" collapsible className="w-full space-y-4">
           {orders.map((order) => (
-            <AccordionItem value={order.id} key={order.id} className="bg-white rounded-xl border border-gray-200 px-4">
+            <AccordionItem value={order._id} key={order._id} className="bg-white rounded-xl border border-gray-200 px-4">
               
               <AccordionTrigger className="hover:no-underline">
                 <div className="flex justify-between w-full pr-4">
                   <div className="text-left">
-                    <p className="font-semibold text-shop_dark_green">Order ID: {order.id.substring(0, 8)}...</p>
+                    <p className="font-semibold text-shop_dark_green">Order ID: {order._id.substring(0, 8)}...</p>
                     <p className="text-sm text-gray-500">
                       Placed on {formatDate(order.createdAt)}
                     </p>
@@ -135,10 +138,10 @@ export default function MyOrdersPage() {
                 <div className="pt-4 space-y-4">
                   {/* Order Items */}
                   {order.orderItems.map((item) => (
-                    <div key={item.id} className="flex items-center space-x-4">
+                    <div key={item._id} className="flex items-center space-x-4">
                       <div className="relative h-16 w-16 rounded-md overflow-hidden border border-gray-200">
                         <Image
-                          src={getImageUrl(item.image)}
+                          src={`${API_BASE_URL}/${item.image.replace(/\\/g, '/')}`}
                           alt={item.name}
                           fill
                           style={{ objectFit: 'cover' }}
@@ -159,9 +162,9 @@ export default function MyOrdersPage() {
                   {/* Shipping Details */}
                   <div className="border-t border-gray-200 pt-4">
                     <h4 className="font-semibold mb-2 text-shop_dark_green">Shipping To:</h4>
-                    <p className="text-sm text-gray-600">{order.shippingFullName}</p>
-                    <p className="text-sm text-gray-600">{order.shippingAddress}</p>
-                    <p className="text-sm text-gray-600">{order.shippingCity}</p>
+                    <p className="text-sm text-gray-600">{order.shippingAddress.fullName}</p>
+                    <p className="text-sm text-gray-600">{order.shippingAddress.address}</p>
+                    <p className="text-sm text-gray-600">{order.shippingAddress.city}</p>
                   </div>
                 </div>
               </AccordionContent>

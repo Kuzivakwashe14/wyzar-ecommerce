@@ -15,7 +15,7 @@ import {
 import Image from 'next/image';
 
 interface Product {
-  id: string;
+  _id: string;
   name: string;
   description: string;
   price: number;
@@ -27,7 +27,7 @@ interface Product {
   brand?: string;
   views: number;
   seller: {
-    id: string;
+    _id: string;
     email: string;
     sellerDetails?: {
       businessName: string;
@@ -251,16 +251,12 @@ export default function ProductsPage() {
                 </thead>
                 <tbody className="divide-y divide-gray-200">
                   {products.map((product) => (
-                    <tr key={product.id} className="hover:bg-gray-50 transition-colors">
+                    <tr key={product._id} className="hover:bg-gray-50 transition-colors">
                       <td className="px-6 py-4">
                         <div className="flex items-center gap-3">
                           {product.images && product.images.length > 0 ? (
                             <img
-                              src={
-                                product.images[0].startsWith('http')
-                                  ? product.images[0]
-                                  : `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'}/${product.images[0].startsWith('/') ? product.images[0].slice(1) : product.images[0]}`
-                              }
+                              src={`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'}/${product.images[0]}`}
                               alt={product.name}
                               className="w-12 h-12 rounded-lg object-cover"
                             />
@@ -308,7 +304,7 @@ export default function ProductsPage() {
                       <td className="px-6 py-4 text-right">
                         <div className="flex items-center justify-end gap-2">
                           <button
-                            onClick={() => handleFeature(product.id, product.featured)}
+                            onClick={() => handleFeature(product._id, product.featured)}
                             className={`p-2 rounded-lg transition-all ${
                               product.featured
                                 ? 'bg-amber-600 hover:bg-amber-700 text-gray-900'
@@ -323,7 +319,7 @@ export default function ProductsPage() {
                             )}
                           </button>
                           <button
-                            onClick={() => handleDelete(product.id)}
+                            onClick={() => handleDelete(product._id)}
                             className="p-2 rounded-lg bg-red-600 hover:bg-red-700 text-gray-900 transition-all"
                             title="Delete"
                           >

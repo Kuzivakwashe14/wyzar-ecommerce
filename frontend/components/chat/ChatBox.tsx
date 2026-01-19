@@ -12,16 +12,16 @@ import { Send, Loader2 } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 
 interface Message {
-  id: string;
+  _id: string;
   sender: {
-    id: string;
+    _id: string;
     email: string;
     sellerDetails?: {
       businessName: string;
     };
   };
   receiver: {
-    id: string;
+    _id: string;
   };
   message: string;
   isRead: boolean;
@@ -31,7 +31,7 @@ interface Message {
 interface ChatBoxProps {
   conversationId: string;
   otherUser: {
-    id: string;
+    _id: string;
     email: string;
     sellerDetails?: {
       businessName: string;
@@ -67,13 +67,13 @@ export default function ChatBox({ conversationId, otherUser, currentUserId }: Ch
     };
 
     const handleUserTyping = (data: any) => {
-      if (data.conversationId === conversationId && data.userId === otherUser.id) {
+      if (data.conversationId === conversationId && data.userId === otherUser._id) {
         setIsTyping(true);
       }
     };
 
     const handleUserStopTyping = (data: any) => {
-      if (data.conversationId === conversationId && data.userId === otherUser.id) {
+      if (data.conversationId === conversationId && data.userId === otherUser._id) {
         setIsTyping(false);
       }
     };
@@ -87,7 +87,7 @@ export default function ChatBox({ conversationId, otherUser, currentUserId }: Ch
       socket.off('user_typing', handleUserTyping);
       socket.off('user_stop_typing', handleUserStopTyping);
     };
-  }, [socket, conversationId, otherUser.id]);
+  }, [socket, conversationId, otherUser._id]);
 
   const fetchMessages = async () => {
     try {
@@ -111,7 +111,7 @@ export default function ChatBox({ conversationId, otherUser, currentUserId }: Ch
 
     socket.emit('typing', {
       conversationId,
-      receiverId: otherUser.id
+      receiverId: otherUser._id
     });
 
     // Clear existing timeout
@@ -123,7 +123,7 @@ export default function ChatBox({ conversationId, otherUser, currentUserId }: Ch
     typingTimeoutRef.current = setTimeout(() => {
       socket.emit('stop_typing', {
         conversationId,
-        receiverId: otherUser.id
+        receiverId: otherUser._id
       });
     }, 2000);
   };
@@ -137,7 +137,7 @@ export default function ChatBox({ conversationId, otherUser, currentUserId }: Ch
       setSending(true);
 
       const response = await api.post('/messages/send', {
-        receiverId: otherUser.id,
+        receiverId: otherUser._id,
         message: newMessage.trim()
       });
 
@@ -145,13 +145,13 @@ export default function ChatBox({ conversationId, otherUser, currentUserId }: Ch
       if (socket) {
         socket.emit('send_message', {
           conversationId,
-          receiverId: otherUser.id,
+          receiverId: otherUser._id,
           message: response.data.message
         });
 
         socket.emit('stop_typing', {
           conversationId,
-          receiverId: otherUser.id
+          receiverId: otherUser._id
         });
       }
 
@@ -200,11 +200,11 @@ export default function ChatBox({ conversationId, otherUser, currentUserId }: Ch
         <ScrollArea className="flex-1 p-4">
           <div className="space-y-4">
             {messages.map((message) => {
-              const isCurrentUser = message.sender.id === currentUserId;
+              const isCurrentUser = message.sender._id === currentUserId;
 
               return (
                 <div
-                  key={message.id}
+                  key={message._id}
                   className={`flex ${isCurrentUser ? 'justify-end' : 'justify-start'}`}
                 >
                   <div className={`flex gap-2 max-w-[70%] ${isCurrentUser ? 'flex-row-reverse' : 'flex-row'}`}>

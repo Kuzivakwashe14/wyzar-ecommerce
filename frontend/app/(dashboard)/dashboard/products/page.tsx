@@ -78,7 +78,7 @@ export default function MyProductsPage() {
     try {
       await api.delete(`/products/${productId}`);
       // Refresh list by filtering out the deleted product
-      setProducts(products.filter(p => p.id !== productId));
+      setProducts(products.filter(p => p._id !== productId));
       toast("Success", { description: "Product deleted." });
     } catch (err) {
       console.error(err);
@@ -91,7 +91,7 @@ export default function MyProductsPage() {
   }
 
   return (
-    <div className="container mx-auto py-8 px-4">
+    <div className="container mx-auto py-8">
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-3xl font-bold">My Products</h1>
         <div className="flex gap-2">
@@ -104,7 +104,7 @@ export default function MyProductsPage() {
         </div>
       </div>
 
-      <div className="border rounded-lg overflow-x-auto">
+      <div className="border rounded-lg">
         <Table>
           <TableHeader>
             <TableRow>
@@ -124,7 +124,7 @@ export default function MyProductsPage() {
               </TableRow>
             ) : (
               products.map((product) => (
-                <TableRow key={product.id}>
+                <TableRow key={product._id}>
                   <TableCell className="hidden sm:table-cell">
                     <Image
                       alt={product.name}
@@ -135,7 +135,7 @@ export default function MyProductsPage() {
                       unoptimized
                     />
                   </TableCell>
-                  <TableCell className="font-medium whitespace-nowrap">{product.name}</TableCell>
+                  <TableCell className="font-medium">{product.name}</TableCell>
                   <TableCell>{product.quantity}</TableCell>
                   <TableCell>${product.price.toFixed(2)}</TableCell>
                   <TableCell>
@@ -149,7 +149,7 @@ export default function MyProductsPage() {
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
                           <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                          <Link href={`/dashboard/products/edit/${product.id}`}>
+                          <Link href={`/dashboard/products/edit/${product._id}`}>
                             <DropdownMenuItem>Edit</DropdownMenuItem>
                           </Link>
                           {/* This is now correctly inside the AlertDialog */}
@@ -172,7 +172,7 @@ export default function MyProductsPage() {
                         </AlertDialogHeader>
                         <AlertDialogFooter>
                           <AlertDialogCancel>Cancel</AlertDialogCancel>
-                          <AlertDialogAction onClick={() => handleDelete(product.id)}>
+                          <AlertDialogAction onClick={() => handleDelete(product._id)}>
                             Delete
                           </AlertDialogAction>
                         </AlertDialogFooter>

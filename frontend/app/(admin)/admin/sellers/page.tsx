@@ -26,19 +26,14 @@ export default function SellersPage() {
           <p className="text-amber-100">Review and approve seller applications</p>
         </Link>
 
-        <Link
-          href="/admin/sellers/verified"
-          className="bg-white border border-gray-200 rounded-xl p-8 hover:shadow-lg transition-all group"
-        >
-          <div className="flex items-center justify-between mb-4">
-            <div className="p-3 bg-green-500/10 rounded-lg">
-              <Store className="w-8 h-8 text-green-500" />
-            </div>
-            <ArrowRight className="w-6 h-6 text-gray-400 group-hover:text-green-600 group-hover:translate-x-1 transition-all" />
+        <div className="bg-white border border-gray-200 rounded-xl p-8">
+          <div className="p-3 bg-green-500/10 rounded-lg w-fit mb-4">
+            <Store className="w-8 h-8 text-green-500" />
           </div>
           <h2 className="text-2xl font-bold text-gray-900 mb-2">Verified Sellers</h2>
-          <p className="text-gray-600">View and manage all verified sellers</p>
-        </Link>
+          <p className="text-gray-600 mb-4">View all verified sellers</p>
+          <p className="text-gray-500 text-sm">Coming soon...</p>
+        </div>
       </div>
     </div>
   );

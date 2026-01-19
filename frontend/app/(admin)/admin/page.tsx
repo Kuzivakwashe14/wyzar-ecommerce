@@ -44,36 +44,10 @@ interface Stats {
   };
 }
 
-interface RecentOrder {
-  id: string;
-  totalPrice: number;
-  status: string;
-  user?: {
-    email: string;
-  };
-}
-
-interface RecentUser {
-  id: string;
-  email: string;
-  phone: string;
-  isSeller: boolean;
-  isVerified: boolean;
-}
-
-interface RecentProduct {
-  id: string;
-  name: string;
-  price: number;
-  seller?: {
-    email: string;
-  };
-}
-
 interface RecentActivity {
-  recentOrders: RecentOrder[];
-  recentUsers: RecentUser[];
-  recentProducts: RecentProduct[];
+  recentOrders: any[];
+  recentUsers: any[];
+  recentProducts: any[];
 }
 
 export default function AdminDashboard() {
@@ -278,12 +252,12 @@ export default function AdminDashboard() {
           <div className="space-y-2">
             {recentActivity?.recentOrders.slice(0, 5).map((order) => (
               <div
-                key={order.id}
+                key={order._id}
                 className="flex items-center justify-between p-2 bg-gray-50 rounded-md hover:bg-gray-100 transition-all"
               >
                 <div className="flex-1">
                   <p className="text-gray-800 text-xs font-medium">
-                    Order #{order.id.slice(-6)}
+                    Order #{order._id.slice(-6)}
                   </p>
                   <p className="text-gray-500 text-[10px] mt-0.5">
                     {order.user?.email}
@@ -322,7 +296,7 @@ export default function AdminDashboard() {
           <div className="space-y-2">
             {recentActivity?.recentUsers.slice(0, 5).map((user) => (
               <div
-                key={user.id}
+                key={user._id}
                 className="flex items-center justify-between p-2 bg-gray-50 rounded-md hover:bg-gray-100 transition-all"
               >
                 <div className="flex items-center gap-2">

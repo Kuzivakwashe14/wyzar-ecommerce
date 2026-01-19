@@ -5,7 +5,7 @@ import { useParams, useRouter } from "next/navigation";
 import Image from "next/image";
 import Link from "next/link";
 import { toast } from "sonner";
-import { api, useAuth } from "@/context/AuthContent";
+import { api } from "@/context/AuthContent";
 import { Product } from "@/components/ProductCard";
 import ProductCard from "@/components/ProductCard";
 import { Button } from "@/components/ui/button";
@@ -51,10 +51,9 @@ export default function ProductDetailPage() {
   const { id } = params;
   const { addToCart } = useCart();
   const { isInWishlist, toggleWishlist } = useWishlist();
-  const { isAuthenticated } = useAuth();
 
   // Check if product is in wishlist
-  const isWishlisted = product ? isInWishlist(product.id) : false;
+  const isWishlisted = product ? isInWishlist(product._id) : false;
 
   const handleWishlist = () => {
     if (!product) return;
@@ -115,7 +114,7 @@ export default function ProductDetailPage() {
         const allProductsResponse = await api.get("/products");
         const related = allProductsResponse.data
           .filter((p: Product) =>
-            p.category === response.data.category && p.id !== response.data.id
+            p.category === response.data.category && p._id !== response.data._id
           )
           .slice(0, 4);
         setRelatedProducts(related);
@@ -138,43 +137,22 @@ export default function ProductDetailPage() {
   };
 
   const handleAskSeller = async () => {
-    if (!product) {
-      toast.error("Product not available");
-      return;
-    }
-
-    // Check if user is authenticated
-    if (!isAuthenticated) {
-      toast.error("Please login to message the seller");
-      router.push('/login');
-      return;
-    }
+    if (!product || !product.seller) return;
 
     try {
       setStartingChat(true);
 
-      // Get the seller ID from either seller.id or sellerId field
-      const sellerId = product.seller?.id || (product as any).sellerId;
-
-      if (!sellerId) {
-        toast.error("Seller information not available");
-        return;
-      }
-
       // Create or get conversation
       const response = await api.post('/messages/send', {
-        receiverId: sellerId,
-        productId: product.id,
+        receiverId: product.seller._id,
+        productId: product._id,
         message: `Hi, I'm interested in ${product.name}. Is this still available?`
       });
 
-      toast.success("Message sent!");
       // Redirect to messages page
       router.push('/messages');
-    } catch (error: any) {
+    } catch (error) {
       console.error('Error starting chat:', error);
-      const errorMessage = error.response?.data?.msg || 'Failed to start chat';
-      toast.error(errorMessage);
     } finally {
       setStartingChat(false);
     }
@@ -479,11 +457,9 @@ export default function ProductDetailPage() {
         </div>
 
         {/* Reviews Section */}
-        {product && product.id && (
-          <div className="mt-16">
-            <ProductReviews productId={product.id} />
-          </div>
-        )}
+        <div className="mt-16">
+          <ProductReviews productId={product._id} />
+        </div>
 
         {/* Related Products */}
         {relatedProducts.length > 0 && (
@@ -499,7 +475,7 @@ export default function ProductDetailPage() {
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
               {relatedProducts.map((relatedProduct) => (
-                <ProductCard key={relatedProduct.id} product={relatedProduct} />
+                <ProductCard key={relatedProduct._id} product={relatedProduct} />
               ))}
             </div>
           </div>

@@ -53,14 +53,14 @@ export function WishlistProvider({ children }: { children: React.ReactNode }) {
 
   const isInWishlist = useCallback(
     (productId: string) => {
-      return wishlist.some((item) => item.id === productId);
+      return wishlist.some((item) => item._id === productId);
     },
     [wishlist]
   );
 
   const addToWishlist = useCallback((product: Product) => {
     setWishlist((prev) => {
-      if (prev.some((item) => item.id === product.id)) {
+      if (prev.some((item) => item._id === product._id)) {
         return prev;
       }
       return [...prev, product];
@@ -68,13 +68,13 @@ export function WishlistProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const removeFromWishlist = useCallback((productId: string) => {
-    setWishlist((prev) => prev.filter((item) => item.id !== productId));
+    setWishlist((prev) => prev.filter((item) => item._id !== productId));
   }, []);
 
   const toggleWishlist = useCallback(
     (product: Product) => {
-      if (isInWishlist(product.id)) {
-        removeFromWishlist(product.id);
+      if (isInWishlist(product._id)) {
+        removeFromWishlist(product._id);
       } else {
         addToWishlist(product);
       }
@@ -110,5 +110,4 @@ export function useWishlist() {
   }
   return context;
 }
-
 

@@ -2,7 +2,8 @@
 
 const express = require('express');
 const router = express.Router();
-const prisma = require('../config/prisma');
+const OTP = require('../models/OTP');
+const User = require('../models/User');
 const { sendOTP, sendPasswordResetOTP } = require('../services/emailService');
 const { otpLimiter } = require('../config/security');
 
@@ -30,21 +31,16 @@ router.post('/send', otpLimiter, async (req, res) => {
     }
 
     // Validate type
-    const validTypes = ['registration', 'login', 'password-reset'];
-    if (!validTypes.includes(type)) {
+    if (!['registration', 'login', 'password-reset'].includes(type)) {
       return res.status(400).json({
         success: false,
         msg: 'Invalid OTP type. Must be: registration, login, or password-reset'
       });
     }
 
-    // Convert type to uppercase enum
-    const otpType = type === 'registration' ? 'REGISTRATION' : 
-                    type === 'login' ? 'LOGIN' : 'PASSWORD_RESET';
-
     // For registration, check if email already exists
     if (type === 'registration') {
-      const existingUser = await prisma.user.findUnique({ where: { email } });
+      const existingUser = await User.findOne({ email });
       if (existingUser) {
         return res.status(400).json({
           success: false,
@@ -55,7 +51,7 @@ router.post('/send', otpLimiter, async (req, res) => {
 
     // For password-reset, check if email exists
     if (type === 'password-reset') {
-      const user = await prisma.user.findUnique({ where: { email } });
+      const user = await User.findOne({ email });
       if (!user) {
         return res.status(404).json({
           success: false,
@@ -65,14 +61,10 @@ router.post('/send', otpLimiter, async (req, res) => {
     }
 
     // Check for recent OTP requests (rate limiting - max 1 per minute)
-    const oneMinuteAgo = new Date(Date.now() - 60 * 1000);
-    const recentOTP = await prisma.oTP.findFirst({
-      where: {
-        email,
-        type: otpType,
-        createdAt: { gte: oneMinuteAgo }
-      },
-      orderBy: { createdAt: 'desc' }
+    const recentOTP = await OTP.findOne({
+      email,
+      type,
+      createdAt: { $gte: new Date(Date.now() - 60 * 1000) } // Last 60 seconds
     });
 
     if (recentOTP) {
@@ -86,14 +78,14 @@ router.post('/send', otpLimiter, async (req, res) => {
     const otpCode = generateOTP();
 
     // Create OTP record in database
-    await prisma.oTP.create({
-      data: {
-        email,
-        otp: otpCode,
-        type: otpType,
-        expiresAt: new Date(Date.now() + 10 * 60 * 1000) // 10 minutes
-      }
+    const otpRecord = new OTP({
+      email,
+      otp: otpCode,
+      type,
+      expiresAt: new Date(Date.now() + 10 * 60 * 1000) // 10 minutes
     });
+
+    await otpRecord.save();
 
     // Send OTP via Email
     let emailResult;
@@ -152,19 +144,12 @@ router.post('/verify', async (req, res) => {
       });
     }
 
-    // Convert type to uppercase enum
-    const otpType = type === 'registration' ? 'REGISTRATION' : 
-                    type === 'login' ? 'LOGIN' : 'PASSWORD_RESET';
-
     // Find the most recent OTP for this email and type
-    const otpRecord = await prisma.oTP.findFirst({
-      where: {
-        email,
-        type: otpType,
-        verified: false
-      },
-      orderBy: { createdAt: 'desc' }
-    });
+    const otpRecord = await OTP.findOne({
+      email,
+      type,
+      verified: false
+    }).sort({ createdAt: -1 });
 
     if (!otpRecord) {
       return res.status(404).json({
@@ -174,7 +159,7 @@ router.post('/verify', async (req, res) => {
     }
 
     // Check if OTP has expired
-    if (new Date() > otpRecord.expiresAt) {
+    if (otpRecord.isExpired()) {
       return res.status(400).json({
         success: false,
         msg: 'OTP has expired. Please request a new one.'
@@ -192,12 +177,9 @@ router.post('/verify', async (req, res) => {
     // Verify OTP
     if (otpRecord.otp !== otp) {
       // Increment attempts
-      await prisma.oTP.update({
-        where: { id: otpRecord.id },
-        data: { attempts: { increment: 1 } }
-      });
+      await otpRecord.incrementAttempts();
 
-      const remainingAttempts = 5 - (otpRecord.attempts + 1);
+      const remainingAttempts = 5 - otpRecord.attempts;
       return res.status(400).json({
         success: false,
         msg: `Invalid OTP. ${remainingAttempts} attempt(s) remaining.`
@@ -205,19 +187,15 @@ router.post('/verify', async (req, res) => {
     }
 
     // OTP is valid - mark as verified
-    await prisma.oTP.update({
-      where: { id: otpRecord.id },
-      data: { verified: true }
-    });
+    otpRecord.verified = true;
+    await otpRecord.save();
 
     // If this is for registration or login, you might want to update user's email verification status
     if (type === 'registration' || type === 'login') {
-      const user = await prisma.user.findUnique({ where: { email } });
+      const user = await User.findOne({ email });
       if (user && !user.isEmailVerified) {
-        await prisma.user.update({
-          where: { id: user.id },
-          data: { isEmailVerified: true }
-        });
+        user.isEmailVerified = true;
+        await user.save();
       }
     }
 
@@ -237,22 +215,13 @@ router.post('/verify', async (req, res) => {
   }
 });
 
+// --- Resend OTP Route ---
 // @route   POST /api/otp/resend
 // @desc    Resend OTP (convenience endpoint)
 // @access  Public
-router.post('/resend', otpLimiter, async (req, res) => {
-  // This forwards to /send logic
-  const { email, type } = req.body;
-  
-  if (!email || !type) {
-    return res.status(400).json({
-      success: false,
-      msg: 'Email address and type are required'
-    });
-  }
-  
-  // Redirect to send endpoint logic by forwarding the request
-  req.url = '/send';
+router.post('/resend', async (req, res) => {
+  // This is just a convenience wrapper around /send
+  // It provides a clearer API for resending
   return router.handle(req, res);
 });
 
