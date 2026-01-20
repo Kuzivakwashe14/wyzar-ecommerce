@@ -33,7 +33,7 @@ const formSchema = z.object({
 export default function SettingsPage() {
   const router = useRouter();
   // We need 'login' to refresh the user state
-  const { user, isAuthenticated, loading, refreshUser } = useAuth(); 
+  const { user, isAuthenticated, loading, refreshUser, login } = useAuth(); 
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   // 2. Define the form
@@ -48,7 +48,7 @@ export default function SettingsPage() {
   useEffect(() => {
     if (!loading) {
       if (!isAuthenticated) {
-        router.push("/login");
+        login();
       } else if (!user?.isSeller) {
         router.push("/become-a-seller");
       } else {

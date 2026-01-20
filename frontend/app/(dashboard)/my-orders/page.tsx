@@ -34,14 +34,14 @@ interface Order {
 
 export default function MyOrdersPage() {
   const router = useRouter();
-  const { isAuthenticated, loading: authLoading } = useAuth();
+  const { isAuthenticated, loading: authLoading, login } = useAuth();
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
 
   // 1. Protect page
   useEffect(() => {
     if (!authLoading && !isAuthenticated) {
-      router.push("/login");
+      login();
     }
   }, [isAuthenticated, authLoading, router]);
 

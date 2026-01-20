@@ -2,7 +2,7 @@
 "use client";
 
 import React, { createContext, useContext, useEffect, useState, useCallback } from 'react';
-import { useUser, useAuth as useClerkAuth } from '@clerk/nextjs';
+import { useUser, useAuth as useClerkAuth, useClerk } from '@clerk/nextjs';
 import axios from 'axios';
 
 // 1. Define the API URL and create Axios instance
@@ -33,6 +33,7 @@ interface AuthContextType {
   isAuthenticated: boolean;
   loading: boolean;
   logout: () => void;
+  login: () => void;
   refreshUser: () => Promise<void>;
   axiosInstance: typeof api;
 }
@@ -44,6 +45,7 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const { isLoaded: clerkLoaded, isSignedIn, user: clerkUser } = useUser();
   const { getToken, signOut } = useClerkAuth();
+  const { openSignIn } = useClerk();
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -127,6 +129,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       isAuthenticated: !!user && !!isSignedIn,
       loading: !clerkLoaded || loading,
       logout,
+      login: () => openSignIn(),
       refreshUser,
       axiosInstance: api
     }}>

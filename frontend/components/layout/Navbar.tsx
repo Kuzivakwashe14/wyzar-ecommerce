@@ -56,7 +56,7 @@ const categories = [
 ];
 
 export default function Navbar() {
-  const { isAuthenticated, user, logout } = useAuth();
+  const { isAuthenticated, user, logout, login } = useAuth();
   const { itemCount } = useCart();
   const router = useRouter();
   const [searchQuery, setSearchQuery] = useState("");
@@ -97,10 +97,19 @@ export default function Navbar() {
         <div className="container mx-auto px-4">
           <div className="flex h-10 items-center justify-between text-sm">
             <div className="flex items-center gap-4">
-              <Link href="/become-a-seller" className="flex items-center gap-1 hover:text-primary transition-colors">
+              <button
+                onClick={() => {
+                  if (!isAuthenticated) {
+                    login();
+                  } else {
+                    router.push("/become-a-seller");
+                  }
+                }}
+                className="flex items-center gap-1 hover:text-primary transition-colors"
+              >
                 <Store className="h-4 w-4" />
                 <span className="hidden sm:inline">Sell on WyZar</span>
-              </Link>
+              </button>
               <span className="text-muted-foreground hidden md:inline">|</span>
               <span className="text-muted-foreground hidden md:inline">Free shipping on orders over $50</span>
             </div>

@@ -24,14 +24,14 @@ import {
 } from 'lucide-react';
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
-  const { user, loading, logout } = useAuth();
+  const { user, loading, logout, login } = useAuth();
   const router = useRouter();
   const pathname = usePathname();
   const [sidebarOpen, setSidebarOpen] = useState(true);
 
   useEffect(() => {
     if (!loading && (!user || (user.role !== 'admin' && user.role !== 'ADMIN'))) {
-      router.push('/login');
+      login();
     }
   }, [user, loading, router]);
 
@@ -65,7 +65,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
   const handleLogout = () => {
     logout();
-    router.push('/login');
+    router.push('/');
   };
 
   return (

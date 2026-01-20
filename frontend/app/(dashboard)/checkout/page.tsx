@@ -45,7 +45,7 @@ const shippingSchema = z.object({
 
 export default function CheckoutPage() {
   const router = useRouter();
-  const { isAuthenticated, loading: authLoading } = useAuth();
+  const { isAuthenticated, loading: authLoading, login } = useAuth();
   const { cartItems, cartTotal, itemCount, clearCart } = useCart();
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -53,7 +53,7 @@ export default function CheckoutPage() {
  useEffect(() => {
   if (!authLoading) {
     if (!isAuthenticated) {
-      router.push("/login?redirect=/checkout"); // Not logged in, redirect
+      login(); // Not logged in, redirect
     } else if (itemCount === 0) { // <-- ADD 'else' HERE
       router.push("/products"); // Logged in, but empty cart
     }

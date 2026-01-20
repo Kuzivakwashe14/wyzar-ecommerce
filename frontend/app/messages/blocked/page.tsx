@@ -24,12 +24,12 @@ export default function BlockedUsersPage() {
   const [blockedUsers, setBlockedUsers] = useState<BlockedUser[]>([]);
   const [loading, setLoading] = useState(true);
   const [unblocking, setUnblocking] = useState<string | null>(null);
-  const { user } = useAuth();
+  const { user, login } = useAuth();
   const router = useRouter();
 
   useEffect(() => {
     if (!user) {
-      router.push('/login');
+      login();
       return;
     }
 

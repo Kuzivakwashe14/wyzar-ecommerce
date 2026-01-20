@@ -51,7 +51,7 @@ export default function ProductDetailPage() {
   const { id } = params;
   const { addToCart } = useCart();
   const { isInWishlist, toggleWishlist } = useWishlist();
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, login } = useAuth();
 
   // Check if product is in wishlist
   const isWishlisted = product ? isInWishlist(product.id) : false;
@@ -146,7 +146,7 @@ export default function ProductDetailPage() {
     // Check if user is authenticated
     if (!isAuthenticated) {
       toast.error("Please login to message the seller");
-      router.push('/login');
+      login();
       return;
     }
 

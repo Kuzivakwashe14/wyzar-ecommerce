@@ -42,14 +42,14 @@ const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
 
 export default function MyProductsPage() {
   const router = useRouter();
-  const { user, isAuthenticated, loading: authLoading } = useAuth();
+  const { user, isAuthenticated, loading: authLoading, login } = useAuth();
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
 
   // 1. Protect page
   useEffect(() => {
     if (!authLoading) {
-      if (!isAuthenticated) router.push("/login");
+      if (!isAuthenticated) login();
       else if (!user?.isSeller) router.push("/become-a-seller");
     }
   }, [isAuthenticated, user, authLoading, router]);

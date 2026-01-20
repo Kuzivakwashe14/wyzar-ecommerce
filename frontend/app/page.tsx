@@ -3,7 +3,8 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { api } from "@/context/AuthContent";
+import { useRouter } from "next/navigation";
+import { api, useAuth } from "@/context/AuthContent";
 import ProductCard, { Product } from "@/components/ProductCard";
 import Container from "@/components/Container";
 import { Button } from "@/components/ui/button";
@@ -97,6 +98,8 @@ const features = [
 ];
 
 export default function HomePage() {
+  const { isAuthenticated, login } = useAuth();
+  const router = useRouter();
   const [products, setProducts] = useState<Product[]>([]);
   const [featuredProducts, setFeaturedProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
@@ -152,16 +155,19 @@ export default function HomePage() {
                     Shop Now
                   </Button>
                 </Link>
-                <Link href="/become-a-seller">
-                  <Button 
-                    size="lg" 
-                    variant="outline" 
-                    className="border-shop_dark_green text-shop_dark_green hover:bg-shop_dark_green hover:text-white px-8 h-12"
-                  >
-                    Start Selling
-                    <ArrowRight className="ml-2 h-5 w-5" />
-                  </Button>
-                </Link>
+                <button
+                  onClick={() => {
+                    if (!isAuthenticated) {
+                      login();
+                    } else {
+                      router.push("/become-a-seller");
+                    }
+                  }}
+                  className="inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 border border-shop_dark_green text-shop_dark_green hover:bg-shop_dark_green hover:text-white px-8 h-12"
+                >
+                  Start Selling
+                  <ArrowRight className="ml-2 h-5 w-5" />
+                </button>
               </div>
 
               {/* Stats */}
@@ -382,15 +388,19 @@ export default function HomePage() {
                 Start your business journey with zero upfront costs.
               </p>
               <div className="flex flex-wrap gap-4">
-                <Link href="/become-a-seller">
-                  <Button 
-                    size="lg" 
-                    className="bg-shop_orange hover:bg-shop_orange/90 text-white px-8 h-12"
-                  >
-                    Become a Seller
-                    <ArrowRight className="ml-2 h-5 w-5" />
-                  </Button>
-                </Link>
+                <button
+                  onClick={() => {
+                    if (!isAuthenticated) {
+                      login();
+                    } else {
+                      router.push("/become-a-seller");
+                    }
+                  }}
+                  className="inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 bg-shop_orange hover:bg-shop_orange/90 text-white px-8 h-12"
+                >
+                  Become a Seller
+                  <ArrowRight className="ml-2 h-5 w-5" />
+                </button>
                 <Link href="/help/seller">
                   <Button 
                     size="lg" 

@@ -12,13 +12,13 @@ import { useAuth, api } from '@/context/AuthContent';
 const BulkUploadPage = () => {
   const [file, setFile] = useState<File | null>(null);
   const [isLoading, setIsLoading] = useState(false);
-  const { user, isAuthenticated, loading: authLoading } = useAuth();
+  const { user, isAuthenticated, loading: authLoading, login } = useAuth();
   const router = useRouter();
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     if (!authLoading) {
-      if (!isAuthenticated) router.push("/login");
+      if (!isAuthenticated) login();
       else if (!user?.isSeller) router.push("/become-a-seller");
     }
   }, [isAuthenticated, user, authLoading, router]);

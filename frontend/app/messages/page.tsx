@@ -50,7 +50,7 @@ interface Conversation {
 }
 
 export default function MessagesPage() {
-  const { user, loading: authLoading } = useAuth();
+  const { user, loading: authLoading, login } = useAuth();
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [selectedConversation, setSelectedConversation] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
@@ -120,8 +120,8 @@ export default function MessagesPage() {
           <p className="text-muted-foreground mb-4">
             Please log in to view your messages
           </p>
-          <Button asChild>
-            <a href="/login">Log In</a>
+          <Button onClick={login}>
+            Log In
           </Button>
         </Card>
       </div>

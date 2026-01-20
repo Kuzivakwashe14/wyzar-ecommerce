@@ -54,7 +54,7 @@ const formSchema = z.object({
 
 export default function BecomeASellerPage() {
   const router = useRouter();
-  const { user, isAuthenticated, loading, refreshUser } = useAuth();
+  const { user, isAuthenticated, loading, refreshUser, login } = useAuth();
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   // 2. Define the form
@@ -79,7 +79,7 @@ export default function BecomeASellerPage() {
   useEffect(() => {
     if (!loading) {
       if (!isAuthenticated) {
-        router.push("/login"); // Not logged in, go to login
+        login(); // Not logged in, go to login
       }
       if (isAuthenticated && user?.isSeller) {
         router.push("/dashboard"); // Already a seller, go to dashboard

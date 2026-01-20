@@ -68,13 +68,13 @@ const formSchema = z.object({
 
 export default function NewProductPage() {
   const router = useRouter();
-  const { user, isAuthenticated, loading } = useAuth();
+  const { user, isAuthenticated, loading, login } = useAuth();
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   // 2. Protect page (same as dashboard)
   useEffect(() => {
     if (!loading) {
-      if (!isAuthenticated) router.push("/login");
+      if (!isAuthenticated) login();
       else if (!user?.isSeller) router.push("/become-a-seller");
     }
   }, [isAuthenticated, user, loading, router]);

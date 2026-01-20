@@ -16,7 +16,7 @@ interface SellerStats {
 }
 
 export default function DashboardPage() {
-  const { user, isAuthenticated, loading } = useAuth();
+  const { user, isAuthenticated, loading, login } = useAuth();
   const router = useRouter();
   const [stats, setStats] = useState<SellerStats | null>(null);
   const [statsLoading, setStatsLoading] = useState(true);
@@ -51,7 +51,7 @@ export default function DashboardPage() {
   useEffect(() => {
     if (!loading) {
       if (!isAuthenticated) {
-        router.push("/login"); // Not logged in
+        login(); // Not logged in
       } else if (!user?.isSeller) {
         router.push("/become-a-seller"); // Not a seller
       }
