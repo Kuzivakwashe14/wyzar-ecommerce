@@ -7,7 +7,8 @@ import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { DollarSign, Package, Clock } from "lucide-react";
+import { DollarSign, Package, Clock, ShieldAlert, AlertTriangle } from "lucide-react";
+import { toast } from "sonner";
 
 interface SellerStats {
   totalEarnings: number;
@@ -16,10 +17,11 @@ interface SellerStats {
 }
 
 export default function DashboardPage() {
-  const { user, isAuthenticated, loading, login } = useAuth();
+  const { user, isAuthenticated, loading, login, refreshUser } = useAuth();
   const router = useRouter();
   const [stats, setStats] = useState<SellerStats | null>(null);
   const [statsLoading, setStatsLoading] = useState(true);
+  const [deleteLoading, setDeleteLoading] = useState(false);
 
   // --- Fetch Seller Stats ---
   useEffect(() => {
@@ -42,10 +44,29 @@ export default function DashboardPage() {
       }
     };
 
-    if (!loading && isAuthenticated && user?.isSeller) {
+    if (!loading && isAuthenticated && user?.isSeller && !user?.isSuspended) {
       fetchStats();
+    } else if (user?.isSuspended) {
+      setStatsLoading(false);
     }
   }, [isAuthenticated, user, loading]);
+
+  const handleDeleteAccount = async () => {
+    if (!confirm("Are you sure you want to DELETE your seller account? This will remove all your products and seller details. This action cannot be undone.")) return;
+
+    try {
+      setDeleteLoading(true);
+      await api.delete("/seller/delete-account");
+      toast.success("Seller account deleted successfully.");
+      await refreshUser();
+      router.push("/");
+    } catch (error: any) {
+      console.error("Error deleting account:", error);
+      toast.error(error.response?.data?.msg || "Failed to delete account");
+    } finally {
+      setDeleteLoading(false);
+    }
+  };
 
   // --- Page Protection ---
   useEffect(() => {
@@ -77,15 +98,40 @@ export default function DashboardPage() {
         Welcome, {user.email}
       </h1>
       
-      {/* We'll add a check for verification later */}
-      <div className="border-2 p-4 border-shop_light_green/30 bg-shop_light_green/5 rounded-lg mb-6">
-        <p className="font-semibold text-shop_dark_green">Your Seller Account</p>
-        <p className="text-sm">
-          Status: {user.isVerified ? 
-            <span className="text-shop_light_green font-bold">Verified</span> : 
-            <span className="text-shop_orange font-bold">Pending Approval</span>
-          }
-        </p>
+      {/* Status Banner */}
+      <div className={`border-2 p-6 rounded-xl mb-8 ${
+        user.isSuspended 
+          ? "border-red-200 bg-red-50" 
+          : "border-shop_light_green/30 bg-shop_light_green/5"
+      }`}>
+        <div className="flex items-center justify-between">
+          <div>
+             <h2 className={`text-lg font-bold mb-1 ${user.isSuspended ? "text-red-700" : "text-shop_dark_green"}`}>
+              {user.isSuspended ? "Account Suspended" : "Seller Account Status"}
+            </h2>
+             <p className="text-sm">
+              Status: {user.isSuspended ? (
+                  <span className="text-red-600 font-bold">Suspended</span>
+              ) : user.isVerified ? (
+                <span className="text-shop_light_green font-bold">Verified</span> 
+              ) : (
+                <span className="text-shop_orange font-bold">Pending Approval</span>
+              )}
+            </p>
+            {user.isSuspended && user.suspensionReason && (
+              <div className="mt-3 p-3 bg-white/50 rounded-md border border-red-100">
+                <p className="text-sm text-red-800">
+                  <strong>Reason:</strong> {user.suspensionReason}
+                </p>
+              </div>
+            )}
+          </div>
+          {user.isSuspended ? (
+             <ShieldAlert className="h-12 w-12 text-red-500 opacity-20" />
+          ) : (
+             <Package className="h-12 w-12 text-shop_dark_green opacity-20" />
+          )}
+        </div>
       </div>
 
       <h2 className="text-2xl font-semibold mb-4 text-shop_dark_green">Seller Tools</h2>
@@ -158,6 +204,8 @@ export default function DashboardPage() {
         </div>
 
       </div>
+
+
     </div>
   );
 }

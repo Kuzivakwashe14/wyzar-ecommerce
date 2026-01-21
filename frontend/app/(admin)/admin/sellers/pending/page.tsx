@@ -38,6 +38,22 @@ interface PendingSeller {
     verificationDocument?: string;
     verificationDocuments?: VerificationDocument[];
     verificationStatus?: string;
+    // New Fields
+    jobTitle?: string;
+    website?: string;
+    productCategory?: string;
+    totalSkuCount?: number;
+    annualRevenue?: string;
+    primarySalesChannel?: string;
+    catalogStandardsAgreed?: boolean;
+    slaAgreed?: boolean;
+    // Payment
+    ecocashNumber?: string;
+    ecocashName?: string;
+    bankName?: string;
+    bankAccountName?: string;
+    bankAccountNumber?: string;
+    whatsappNumber?: string;
   };
   createdAt: string;
 }
@@ -248,313 +264,284 @@ export default function PendingSellersPage() {
           {sellers.map((seller) => (
             <div
               key={seller.id}
-              className="bg-white border border-gray-200 rounded-xl p-6 hover:border-indigo-500 transition-all"
+              className="bg-white border border-gray-200 rounded-xl p-6 hover:border-indigo-500 transition-all shadow-sm"
             >
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                {/* Seller Information */}
-                <div className="space-y-4">
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                {/* LEFT COLUMN: Seller Info & Business Details */}
+                <div className="space-y-6">
+                  {/* Basic Header */}
                   <div>
-                    <h3 className="text-xl font-bold text-gray-900 mb-2">
+                    <h3 className="text-2xl font-bold text-gray-900 mb-1">
                       {seller.sellerDetails?.businessName || 'No business name'}
                     </h3>
-                    <span className="px-3 py-1 bg-blue-500/10 text-blue-400 text-sm rounded-full">
-                      {seller.sellerDetails?.sellerType || 'individual'}
-                    </span>
-                  </div>
-
-                  <div className="space-y-2">
-                    <div className="flex items-center gap-2 text-gray-700">
-                      <Mail className="w-4 h-4 text-gray-500" />
-                      <span className="text-sm">{seller.email}</span>
-                      {seller.isEmailVerified && (
-                        <CheckCircle className="w-4 h-4 text-green-400" />
-                      )}
-                    </div>
-
-                    <div className="flex items-center gap-2 text-gray-700">
-                      <Phone className="w-4 h-4 text-gray-500" />
-                      <span className="text-sm">{seller.phone}</span>
-                      {seller.isPhoneVerified && (
-                        <CheckCircle className="w-4 h-4 text-green-400" />
-                      )}
-                    </div>
-
-                    <div className="flex items-center gap-2 text-gray-700">
-                      <Calendar className="w-4 h-4 text-gray-500" />
-                      <span className="text-sm">
-                        Applied {new Date(seller.createdAt).toLocaleDateString()}
+                    <div className="flex items-center gap-2">
+                      <span className="px-3 py-1 bg-blue-500/10 text-blue-600 text-xs font-medium rounded-full uppercase tracking-wide">
+                        {seller.sellerDetails?.sellerType || 'individual'}
                       </span>
-                    </div>
-
-                    {/* Verification Status Badge */}
-                    {seller.sellerDetails?.verificationStatus && (
-                      <div className="flex items-center gap-2">
-                        <span className={`px-3 py-1 text-xs rounded-full ${
-                          seller.sellerDetails.verificationStatus === 'approved' ? 'bg-green-500/10 text-green-400' :
-                          seller.sellerDetails.verificationStatus === 'rejected' ? 'bg-red-500/10 text-red-400' :
-                          seller.sellerDetails.verificationStatus === 'under_review' ? 'bg-amber-500/10 text-amber-400' :
-                          'bg-slate-500/10 text-gray-600'
-                        }`}>
-                          {seller.sellerDetails.verificationStatus.replace('_', ' ').toUpperCase()}
+                      {seller.sellerDetails?.jobTitle && (
+                         <span className="px-3 py-1 bg-gray-100 text-gray-600 text-xs font-medium rounded-full">
+                          {seller.sellerDetails.jobTitle}
                         </span>
-                      </div>
-                    )}
+                      )}
+                    </div>
                   </div>
-                </div>
 
-                {/* Verification Documents Section */}
-                <div className="col-span-1 md:col-span-2 space-y-4">
-                  <h4 className="text-lg font-semibold text-gray-900">Verification Documents</h4>
+                  {/* Contact Info */}
+                  <div className="bg-gray-50 rounded-lg p-4 space-y-3 text-sm">
+                    <h4 className="font-semibold text-gray-700 border-b pb-2 mb-2">Contact Information</h4>
+                    
+                    <div className="flex items-center gap-2 text-gray-700">
+                      <Mail className="w-4 h-4 text-gray-400" />
+                      <span>{seller.email}</span>
+                      {seller.isEmailVerified && <CheckCircle className="w-3 h-3 text-green-500" />}
+                    </div>
+                    
+                    <div className="flex items-center gap-2 text-gray-700">
+                      <Phone className="w-4 h-4 text-gray-400" />
+                      <span>{seller.phone || seller.sellerDetails?.phoneNumber}</span>
+                      {seller.isPhoneVerified && <CheckCircle className="w-3 h-3 text-green-500" />}
+                    </div>
 
-                  {seller.sellerDetails?.verificationDocuments && seller.sellerDetails.verificationDocuments.length > 0 ? (
-                    <div className="space-y-3">
-                      {seller.sellerDetails.verificationDocuments.map((doc) => (
-                        <div
-                          key={doc.id}
-                          className="bg-gray-50 border border-gray-300 rounded-lg p-4"
-                        >
-                          <div className="flex items-start justify-between mb-3">
-                            <div className="flex items-center gap-3">
-                              <FileText className="w-5 h-5 text-indigo-400" />
-                              <div>
-                                <h5 className="font-medium text-gray-900">
-                                  {getDocumentTypeLabel(doc.documentType)}
-                                </h5>
-                                <p className="text-xs text-gray-600">
-                                  Uploaded {new Date(doc.uploadedAt).toLocaleDateString()}
-                                </p>
-                              </div>
-                            </div>
-                            <span className={`px-3 py-1 text-xs rounded-full ${
-                              doc.status === 'approved' ? 'bg-green-500/10 text-green-400' :
-                              doc.status === 'rejected' ? 'bg-red-500/10 text-red-400' :
-                              'bg-amber-500/10 text-amber-400'
-                            }`}>
-                              {doc.status.toUpperCase()}
-                            </span>
-                          </div>
-
-                          <div className="flex items-center gap-3 mb-3">
-                            <button
-                              onClick={() => handleViewDocument(seller.id, doc.id)}
-                              className="text-sm text-indigo-400 hover:text-indigo-300 hover:underline cursor-pointer"
-                            >
-                              View Document →
-                            </button>
-                            {doc.documentName && (
-                              <span className="text-xs text-gray-500">
-                                {doc.documentName}
-                              </span>
-                            )}
-                          </div>
-
-                          {doc.rejectionReason && (
-                            <div className="bg-red-500/10 border border-red-500/20 rounded p-3 mb-3">
-                              <p className="text-sm text-red-300">
-                                <strong>Rejection Reason:</strong> {doc.rejectionReason}
-                              </p>
-                            </div>
-                          )}
-
-                          {doc.status === 'pending' && (
-                            <div className="space-y-3">
-                              {expandedDocuments.has(doc.id) && (
-                                <div>
-                                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                                    Rejection Reason
-                                  </label>
-                                  <textarea
-                                    value={documentRejectReasons[doc.id] || ''}
-                                    onChange={(e) => setDocumentRejectReasons(prev => ({
-                                      ...prev,
-                                      [doc.id]: e.target.value
-                                    }))}
-                                    className="w-full px-3 py-2 bg-gray-100 border border-gray-300 rounded text-gray-900 placeholder-gray-400 focus:outline-none focus:border-shop_dark_green text-sm"
-                                    rows={2}
-                                    placeholder="Provide a reason for rejection..."
-                                  />
-                                </div>
-                              )}
-
-                              <div className="flex gap-2">
-                                <button
-                                  onClick={() => handleDocumentApprove(seller.id, doc.id)}
-                                  disabled={processing === `${seller.id}-${doc.id}`}
-                                  className="flex-1 flex items-center justify-center gap-2 px-4 py-2 bg-green-600 hover:bg-green-700 disabled:bg-gray-200 text-gray-900 rounded text-sm font-medium transition-all"
-                                >
-                                  {processing === `${seller.id}-${doc.id}` ? (
-                                    <>
-                                      <Loader2 className="w-4 h-4 animate-spin" />
-                                      Processing...
-                                    </>
-                                  ) : (
-                                    <>
-                                      <CheckCircle className="w-4 h-4" />
-                                      Approve
-                                    </>
-                                  )}
-                                </button>
-
-                                {expandedDocuments.has(doc.id) ? (
-                                  <>
-                                    <button
-                                      onClick={() => handleDocumentReject(seller.id, doc.id)}
-                                      disabled={processing === `${seller.id}-${doc.id}`}
-                                      className="flex-1 flex items-center justify-center gap-2 px-4 py-2 bg-red-600 hover:bg-red-700 disabled:bg-gray-200 text-gray-900 rounded text-sm font-medium transition-all"
-                                    >
-                                      <XCircle className="w-4 h-4" />
-                                      Confirm Reject
-                                    </button>
-                                    <button
-                                      onClick={() => toggleDocumentExpansion(doc.id)}
-                                      className="px-4 py-2 bg-gray-200 hover:bg-gray-300 text-gray-900 rounded text-sm font-medium transition-all"
-                                    >
-                                      Cancel
-                                    </button>
-                                  </>
-                                ) : (
-                                  <button
-                                    onClick={() => toggleDocumentExpansion(doc.id)}
-                                    disabled={processing === `${seller.id}-${doc.id}`}
-                                    className="flex-1 flex items-center justify-center gap-2 px-4 py-2 bg-gray-200 hover:bg-gray-300 disabled:bg-gray-100 text-gray-900 rounded text-sm font-medium transition-all"
-                                  >
-                                    <XCircle className="w-4 h-4" />
-                                    Reject
-                                  </button>
-                                )}
-                              </div>
-                            </div>
-                          )}
+                    {seller.sellerDetails?.whatsappNumber && (
+                        <div className="flex items-center gap-2 text-gray-700">
+                            <span className="font-medium w-4 text-center text-green-600">WA</span>
+                            <span>{seller.sellerDetails.whatsappNumber}</span>
                         </div>
-                      ))}
-                    </div>
-                  ) : (
-                    <div className="bg-gray-50 border border-gray-300 rounded-lg p-6 text-center">
-                      <FileText className="w-12 h-12 text-gray-400 mx-auto mb-3" />
-                      <p className="text-gray-600">No verification documents uploaded</p>
-                    </div>
-                  )}
-                </div>
-
-                {/* Actions */}
-                <div className="col-span-1 md:col-span-2 space-y-4">
-                  {/* Reject Reason Input */}
-                  {selectedSeller?.id === seller.id && (
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Rejection Reason
-                      </label>
-                      <textarea
-                        value={rejectReason}
-                        onChange={(e) => setRejectReason(e.target.value)}
-                        className="w-full px-4 py-2 bg-gray-50 border border-gray-300 rounded-lg text-gray-900 placeholder-gray-400 focus:outline-none focus:border-shop_dark_green"
-                        rows={3}
-                        placeholder="Provide a reason for rejection..."
-                      />
-                    </div>
-                  )}
-
-                  {/* Action Buttons */}
-                  <div className="flex flex-col gap-3">
-                    <button
-                      onClick={() => handleApprove(seller.id)}
-                      disabled={processing === seller.id}
-                      className="flex items-center justify-center gap-2 px-6 py-3 bg-green-600 hover:bg-green-700 disabled:bg-gray-200 text-gray-900 rounded-lg font-medium transition-all"
-                    >
-                      {processing === seller.id ? (
-                        <>
-                          <Loader2 className="w-5 h-5 animate-spin" />
-                          Processing...
-                        </>
-                      ) : (
-                        <>
-                          <CheckCircle className="w-5 h-5" />
-                          Approve Seller
-                        </>
-                      )}
-                    </button>
-
-                    {selectedSeller?.id === seller.id ? (
-                      <div className="flex gap-3">
-                        <button
-                          onClick={() => handleReject(seller.id)}
-                          disabled={processing === seller.id}
-                          className="flex-1 flex items-center justify-center gap-2 px-6 py-3 bg-red-600 hover:bg-red-700 disabled:bg-gray-200 text-gray-900 rounded-lg font-medium transition-all"
-                        >
-                          <XCircle className="w-5 h-5" />
-                          Confirm Reject
-                        </button>
-                        <button
-                          onClick={() => {
-                            setSelectedSeller(null);
-                            setRejectReason('');
-                          }}
-                          className="px-6 py-3 bg-gray-200 hover:bg-gray-300 text-gray-900 rounded-lg font-medium transition-all"
-                        >
-                          Cancel
-                        </button>
-                      </div>
-                    ) : (
-                      <button
-                        onClick={() => setSelectedSeller(seller)}
-                        disabled={processing === seller.id}
-                        className="flex items-center justify-center gap-2 px-6 py-3 bg-gray-200 hover:bg-gray-300 disabled:bg-gray-100 text-gray-900 rounded-lg font-medium transition-all"
-                      >
-                        <XCircle className="w-5 h-5" />
-                        Reject Application
-                      </button>
+                    )}
+                     {seller.sellerDetails?.website && (
+                        <div className="flex items-center gap-2 text-gray-700">
+                            <span className="font-medium w-4 text-center text-blue-600">🌐</span>
+                            <a href={seller.sellerDetails.website} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline truncate max-w-[200px]">{seller.sellerDetails.website}</a>
+                        </div>
                     )}
                   </div>
 
-                  {/* Verification Status */}
-                  <div className="p-4 bg-gray-50 rounded-lg space-y-2">
-                    <p className="text-xs text-gray-500 uppercase font-semibold mb-3">
-                      Verification Status
-                    </p>
-                    <div className="flex items-center justify-between">
-                      <span className="text-sm text-gray-700">Email Verified</span>
-                      {seller.isEmailVerified ? (
-                        <CheckCircle className="w-5 h-5 text-green-400" />
-                      ) : (
-                        <XCircle className="w-5 h-5 text-red-400" />
-                      )}
-                    </div>
-                    <div className="flex items-center justify-between">
-                      <span className="text-sm text-gray-700">Phone Verified</span>
-                      {seller.isPhoneVerified ? (
-                        <CheckCircle className="w-5 h-5 text-green-400" />
-                      ) : (
-                        <XCircle className="w-5 h-5 text-red-400" />
-                      )}
-                    </div>
-                    <div className="flex items-center justify-between">
-                      <span className="text-sm text-gray-700">Documents</span>
-                      <div className="flex items-center gap-2">
-                        {(() => {
-                          const docs = seller.sellerDetails?.verificationDocuments || [];
-                          const approved = docs.filter(d => d.status === 'approved').length;
-                          const pending = docs.filter(d => d.status === 'pending').length;
-                          const rejected = docs.filter(d => d.status === 'rejected').length;
-                          return (
-                            <div className="flex items-center gap-2 text-xs">
-                              {approved > 0 && (
-                                <span className="text-green-400">{approved} ✓</span>
-                              )}
-                              {pending > 0 && (
-                                <span className="text-amber-400">{pending} ⏳</span>
-                              )}
-                              {rejected > 0 && (
-                                <span className="text-red-400">{rejected} ✗</span>
-                              )}
-                              {docs.length === 0 && (
-                                <span className="text-gray-500">None</span>
-                              )}
+                  {/* Business Details */}
+                   <div className="bg-gray-50 rounded-lg p-4 space-y-3 text-sm">
+                    <h4 className="font-semibold text-gray-700 border-b pb-2 mb-2">Business Profile</h4>
+                    
+                     <div className="grid grid-cols-2 gap-4">
+                        <div>
+                            <p className="text-xs text-gray-500">Industry</p>
+                            <p className="font-medium">{seller.sellerDetails?.productCategory || 'N/A'}</p>
+                        </div>
+                         <div>
+                            <p className="text-xs text-gray-500">Sales Channel</p>
+                            <p className="font-medium capitalize">{seller.sellerDetails?.primarySalesChannel?.replace('_', ' ') || 'N/A'}</p>
+                        </div>
+                         <div>
+                            <p className="text-xs text-gray-500">Est. Revenue</p>
+                            <p className="font-medium">{seller.sellerDetails?.annualRevenue || 'N/A'}</p>
+                        </div>
+                         <div>
+                            <p className="text-xs text-gray-500">SKU Count</p>
+                            <p className="font-medium">{seller.sellerDetails?.totalSkuCount || '0'}</p>
+                        </div>
+                     </div>
+                  </div>
+
+                  {/* Agreements & Compliance */}
+                  <div className="flex gap-4">
+                     <div className={`flex items-center gap-2 text-xs px-3 py-2 rounded-md ${seller.sellerDetails?.catalogStandardsAgreed ? 'bg-green-50 text-green-700' : 'bg-red-50 text-red-700'}`}>
+                        {seller.sellerDetails?.catalogStandardsAgreed ? <CheckCircle className="w-3 h-3"/> : <XCircle className="w-3 h-3"/>}
+                        Catalog Standards
+                     </div>
+                     <div className={`flex items-center gap-2 text-xs px-3 py-2 rounded-md ${seller.sellerDetails?.slaAgreed ? 'bg-green-50 text-green-700' : 'bg-red-50 text-red-700'}`}>
+                        {seller.sellerDetails?.slaAgreed ? <CheckCircle className="w-3 h-3"/> : <XCircle className="w-3 h-3"/>}
+                        SLA Agreed
+                     </div>
+                  </div>
+
+                </div>
+
+                {/* RIGHT COLUMN: Documents & Actions */}
+                <div className="space-y-6">
+                  
+                  {/* Documents */}
+                  <div>
+                    <h4 className="text-lg font-semibold text-gray-900 mb-4 flex items-center justify-between">
+                        <span>Verification Documents</span>
+                        <span className="text-xs font-normal text-gray-500 bg-gray-100 px-2 py-1 rounded-full">
+                            {seller.sellerDetails?.verificationDocuments?.length || 0} Files
+                        </span>
+                    </h4>
+
+                    {seller.sellerDetails?.verificationDocuments && seller.sellerDetails.verificationDocuments.length > 0 ? (
+                        <div className="space-y-3">
+                        {seller.sellerDetails.verificationDocuments.map((doc) => (
+                            <div
+                            key={doc.id}
+                            className="bg-white border border-gray-200 rounded-lg p-3 shadow-sm"
+                            >
+                            <div className="flex items-start justify-between mb-2">
+                                <div className="flex items-center gap-3">
+                                <div className="p-2 bg-indigo-50 rounded-lg">
+                                    <FileText className="w-5 h-5 text-indigo-500" />
+                                </div>
+                                <div>
+                                    <h5 className="font-medium text-gray-900 text-sm">
+                                    {getDocumentTypeLabel(doc.documentType)}
+                                    </h5>
+                                    <p className="text-xs text-gray-500">
+                                    {new Date(doc.uploadedAt).toLocaleDateString()}
+                                    </p>
+                                </div>
+                                </div>
+                                <span className={`px-2 py-0.5 text-[10px] uppercase font-bold tracking-wider rounded-full ${
+                                doc.status === 'approved' ? 'bg-green-100 text-green-700' :
+                                doc.status === 'rejected' ? 'bg-red-100 text-red-700' :
+                                'bg-amber-100 text-amber-700'
+                                }`}>
+                                {doc.status}
+                                </span>
                             </div>
-                          );
-                        })()}
-                      </div>
+
+                            {/* View Button & Name */}
+                             <div className="flex items-center justify-between text-xs pl-[44px]">
+                                <span className="text-gray-400 truncate max-w-[150px]">{doc.documentName}</span>
+                                <button
+                                    onClick={() => handleViewDocument(seller.id, doc.id)}
+                                    className="text-indigo-600 hover:text-indigo-800 font-medium hover:underline"
+                                >
+                                    View File
+                                </button>
+                            </div>
+
+                            {/* Rejection Display */}
+                            {doc.status === "rejected" && doc.rejectionReason && (
+                                <div className="mt-2 ml-[44px] bg-red-50 p-2 rounded text-xs text-red-600 border border-red-100">
+                                    Reason: {doc.rejectionReason}
+                                </div>
+                            )}
+
+                             {/* Action Buttons for Pending */}
+                            {doc.status === 'pending' && (
+                                <div className="mt-3 ml-[44px] space-y-2">
+                                    {/* Reject Reason Input (only if expanded) */}
+                                    {expandedDocuments.has(doc.id) && (
+                                        <textarea
+                                        value={documentRejectReasons[doc.id] || ''}
+                                        onChange={(e) => setDocumentRejectReasons(prev => ({
+                                            ...prev,
+                                            [doc.id]: e.target.value
+                                        }))}
+                                        className="w-full px-2 py-1 bg-gray-50 border border-gray-300 rounded text-gray-900 text-xs focus:ring-1 focus:ring-indigo-500 mb-2"
+                                        rows={2}
+                                        placeholder="Reason for rejection..."
+                                        />
+                                    )}
+
+                                    <div className="flex gap-2">
+                                        <button
+                                        onClick={() => handleDocumentApprove(seller.id, doc.id)}
+                                        disabled={processing === `${seller.id}-${doc.id}`}
+                                        className="flex-1 py-1.5 bg-green-600 hover:bg-green-700 text-white rounded text-xs font-medium transition-colors"
+                                        >
+                                            Approve
+                                        </button>
+
+                                        {expandedDocuments.has(doc.id) ? (
+                                        <>
+                                            <button
+                                            onClick={() => handleDocumentReject(seller.id, doc.id)}
+                                            disabled={processing === `${seller.id}-${doc.id}`}
+                                            className="flex-1 py-1.5 bg-red-600 hover:bg-red-700 text-white rounded text-xs font-medium transition-colors"
+                                            >
+                                                Confirm
+                                            </button>
+                                            <button
+                                            onClick={() => toggleDocumentExpansion(doc.id)}
+                                            className="px-3 py-1.5 bg-gray-100 hover:bg-gray-200 text-gray-600 rounded text-xs font-medium"
+                                            >
+                                                Cancel
+                                            </button>
+                                        </>
+                                        ) : (
+                                        <button
+                                            onClick={() => toggleDocumentExpansion(doc.id)}
+                                            disabled={processing === `${seller.id}-${doc.id}`}
+                                            className="flex-1 py-1.5 bg-white border border-gray-300 hover:bg-gray-50 text-gray-700 rounded text-xs font-medium transition-colors"
+                                        >
+                                            Reject
+                                        </button>
+                                        )}
+                                    </div>
+                                </div>
+                            )}
+                            </div>
+                        ))}
+                        </div>
+                    ) : (
+                        <div className="bg-gray-50 border border-dashed border-gray-300 rounded-lg p-6 text-center">
+                        <FileText className="w-8 h-8 text-gray-300 mx-auto mb-2" />
+                        <p className="text-gray-500 text-sm">No documents uploaded.</p>
+                        </div>
+                    )}
+                  </div>
+
+                  <hr className="border-gray-100" />
+
+                  {/* Final Decision Actions */}
+                  <div>
+                    <h4 className="text-lg font-semibold text-gray-900 mb-4">Final Decision</h4>
+                    
+                    {selectedSeller?.id === seller.id && (
+                        <div className="mb-4">
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                            Rejection Reason
+                        </label>
+                        <textarea
+                            value={rejectReason}
+                            onChange={(e) => setRejectReason(e.target.value)}
+                            className="w-full px-3 py-2 bg-white border border-gray-300 rounded-lg text-sm mb-2"
+                            rows={2}
+                            placeholder="Why is this application being rejected?"
+                        />
+                        </div>
+                    )}
+
+                    <div className="flex flex-col gap-3">
+                        {/* Approve Button */}
+                        <button
+                        onClick={() => handleApprove(seller.id)}
+                        disabled={processing === seller.id}
+                        className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-shop_dark_green hover:bg-shop_dark_green/90 text-white rounded-lg font-medium shadow-sm transition-all"
+                        >
+                            {processing === seller.id ? <Loader2 className="w-5 h-5 animate-spin" /> : <CheckCircle className="w-5 h-5" />}
+                            Approve Full Application
+                        </button>
+
+                        {/* Reject Button Group */}
+                        {selectedSeller?.id === seller.id ? (
+                        <div className="flex gap-2">
+                            <button
+                            onClick={() => handleReject(seller.id)}
+                            disabled={processing === seller.id}
+                            className="flex-1 flex items-center justify-center gap-2 px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg font-medium"
+                            >
+                                <XCircle className="w-4 h-4" />
+                                Confirm Rejection
+                            </button>
+                            <button
+                            onClick={() => { setSelectedSeller(null); setRejectReason(''); }}
+                            className="px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg font-medium"
+                            >
+                                Cancel
+                            </button>
+                        </div>
+                        ) : (
+                        <button
+                            onClick={() => setSelectedSeller(seller)}
+                            disabled={processing === seller.id}
+                            className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-white border border-gray-300 hover:bg-gray-50 text-gray-700 rounded-lg font-medium transition-all"
+                        >
+                            <XCircle className="w-5 h-5" />
+                            Reject Application
+                        </button>
+                        )}
                     </div>
                   </div>
+
                 </div>
               </div>
             </div>

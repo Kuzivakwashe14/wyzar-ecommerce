@@ -60,6 +60,17 @@ model SellerDetails {
   bankAccountNumber     String?
   whatsappNumber        String?
   whatsappNumber2       String?
+  
+  // Enhanced Verification Details
+  jobTitle              String?
+  website               String?
+  productCategory       String?
+  totalSkuCount         Int?
+  annualRevenue         String?
+  primarySalesChannel   String?
+  catalogStandardsAgreed Boolean @default(false)
+  slaAgreed             Boolean @default(false)
+
   streetAddress         String?
   city                  String?
   state                 String?
@@ -86,6 +97,7 @@ model VerificationDocument {
   documentType    DocumentType
   documentPath    String
   documentName    String?
+  fileHash        String?        // stored hash for duplicate detection
   status          DocumentStatus @default(PENDING)
   rejectionReason String?
   uploadedAt      DateTime       @default(now())
@@ -93,6 +105,7 @@ model VerificationDocument {
   sellerDetails   SellerDetails  @relation(fields: [sellerDetailsId], references: [id], onDelete: Cascade)
 
   @@index([sellerDetailsId])
+  @@index([fileHash]) // Add index for fast lookups
   @@map("verification_documents")
 }
 

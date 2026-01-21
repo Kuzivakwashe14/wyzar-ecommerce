@@ -100,19 +100,21 @@ export default function Header() {
         <Container>
           <div className="flex items-center justify-between text-sm">
             <div className="flex items-center gap-4">
-              <button
-                onClick={() => {
-                  if (!isAuthenticated) {
-                    login();
-                  } else {
-                    router.push("/become-a-seller");
-                  }
-                }}
-                className="flex items-center gap-1 hover:text-shop_orange transition-colors"
-              >
-                <Store className="h-4 w-4" />
-                <span className="hidden sm:inline">Sell on WyZar</span>
-              </button>
+              {!user?.isSeller && (
+                <button
+                  onClick={() => {
+                    if (!isAuthenticated) {
+                      login();
+                    } else {
+                      router.push("/become-a-seller");
+                    }
+                  }}
+                  className="flex items-center gap-1 hover:text-shop_orange transition-colors"
+                >
+                  <Store className="h-4 w-4" />
+                  <span className="hidden sm:inline">Sell on WyZar</span>
+                </button>
+              )}
               <span className="hidden md:inline text-white/60">|</span>
               <span className="hidden md:inline text-white/80">
                 Free shipping on orders over $50
@@ -368,18 +370,20 @@ export default function Header() {
               >
                 Deals
               </Link>
-              <button
-                onClick={() => {
-                  if (!isAuthenticated) {
-                    login();
-                  } else {
-                    router.push("/become-a-seller");
-                  }
-                }}
-                className="text-sm font-medium hover:text-shop_dark_green transition-colors hoverEffect"
-              >
-                Sell on WyZar
-              </button>
+              {!user?.isSeller && (
+                <button
+                  onClick={() => {
+                    if (!isAuthenticated) {
+                      login();
+                    } else {
+                      router.push("/become-a-seller");
+                    }
+                  }}
+                  className="text-sm font-medium hover:text-shop_dark_green transition-colors hoverEffect"
+                >
+                  Sell on WyZar
+                </button>
+              )}
               <Link 
                 href="/help" 
                 className="text-sm font-medium hover:text-shop_dark_green transition-colors hoverEffect"

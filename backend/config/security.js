@@ -148,7 +148,7 @@ const uploadLimiter = rateLimit({
  */
 const sellerAppLimiter = rateLimit({
   windowMs: 60 * 60 * 1000, // 1 hour
-  max: 3, // Limit each IP to 3 applications per hour
+  max: 20, // Limit each IP to 20 applications per hour
   message: { msg: 'Too many seller applications, please try again later' },
   standardHeaders: true,
   legacyHeaders: false,

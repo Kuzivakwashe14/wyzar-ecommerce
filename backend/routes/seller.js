@@ -7,7 +7,20 @@ const verificationUploadOptimized = require("../middleware/verificationUploadOpt
 const prisma = require("../config/prisma");
 const multer = require("multer");
 const path = require("path");
+const crypto = require("crypto");
+const fs = require("fs");
 const { getStoragePath, getPublicUrl } = require("../config/localStorage");
+
+// Helper to calculate file hash
+const calculateFileHash = (filePath) => {
+  return new Promise((resolve, reject) => {
+    const hash = crypto.createHash("sha256");
+    const stream = fs.createReadStream(filePath);
+    stream.on("data", (data) => hash.update(data));
+    stream.on("end", () => resolve(hash.digest("hex")));
+    stream.on("error", (err) => reject(err));
+  });
+};
 
 // ===== Rate Limiting =====
 const { sellerAppLimiter, uploadLimiter } = require('../config/security');
@@ -76,6 +89,15 @@ router.post("/apply", auth, sellerAppLimiter, flexibleUpload, validateBody(selle
       bankAccountNumber,
       whatsappNumber,
       whatsappNumber2,
+      // New fields
+      jobTitle,
+      website,
+      productCategory,
+      totalSkuCount,
+      annualRevenue,
+      primarySalesChannel,
+      catalogStandardsAgreed,
+      slaAgreed
     } = req.body;
 
     if (!businessName || !sellerType) {
@@ -124,12 +146,12 @@ router.post("/apply", auth, sellerAppLimiter, flexibleUpload, validateBody(selle
       docTypes = [defaultType];
     }
 
-    // Ensure we have a document type for each uploaded file
-    if (docTypes.length !== filesArray.length) {
-      return res
-        .status(400)
-        .json({ msg: "Please specify document type for each uploaded file." });
-    }
+    // Ensure we have a document type for each uploaded file - Removed strict check per user request
+    // if (docTypes.length !== filesArray.length) {
+    //   return res
+    //     .status(400)
+    //     .json({ msg: "Please specify document type for each uploaded file." });
+    // }
 
     // Find the user
     const user = await prisma.user.findUnique({
@@ -141,13 +163,46 @@ router.post("/apply", auth, sellerAppLimiter, flexibleUpload, validateBody(selle
     }
 
     // Prepare verification documents array
-    const verificationDocuments = filesArray.map((file, index) => ({
-      documentType: docTypes[index],
-      documentPath: file.path,
-      documentName: file.originalname,
-      uploadedAt: new Date(),
-      status: "pending",
-    }));
+    // Calculate hashes and check for duplicates
+    const processedDocuments = [];
+    
+    for (let i = 0; i < filesArray.length; i++) {
+      const file = filesArray[i];
+      const fileHash = await calculateFileHash(file.path);
+      
+      // Check if this document hash already exists for a DIFFERENT user
+      // We allow the same user to re-upload the same doc (e.g. if they applied before and got rejected, or re-applying)
+      // But we prevent different users from using the same doc.
+      const existingDoc = await prisma.verificationDocument.findFirst({
+        where: {
+          fileHash: fileHash,
+          sellerDetails: {
+            userId: {
+              not: req.user.id
+            }
+          }
+        }
+      });
+
+      if (existingDoc) {
+        // Clean up uploaded files before returning error
+        filesArray.forEach(f => {
+          try { fs.unlinkSync(f.path); } catch(e) {}
+        });
+        return res.status(400).json({ msg: `Document '${file.originalname}' has already been used by another account.` });
+      }
+
+      processedDocuments.push({
+        documentType: docTypes[i] || "other",
+        documentPath: file.path,
+        documentName: file.originalname,
+        fileHash: fileHash,
+        uploadedAt: new Date(),
+        status: "pending",
+      });
+    }
+
+    const verificationDocuments = processedDocuments;
 
     // Parse address if provided
     let parsedAddress = null;
@@ -181,6 +236,17 @@ router.post("/apply", auth, sellerAppLimiter, flexibleUpload, validateBody(selle
         bankAccountNumber: bankAccountNumber || null,
         whatsappNumber: whatsappNumber || null,
         whatsappNumber2: whatsappNumber2 || null,
+        
+        // New verification fields
+        jobTitle: req.body.jobTitle || null,
+        website: req.body.website || null,
+        productCategory: req.body.productCategory || null,
+        totalSkuCount: req.body.totalSkuCount ? parseInt(req.body.totalSkuCount) : null,
+        annualRevenue: req.body.annualRevenue || null,
+        primarySalesChannel: req.body.primarySalesChannel || null,
+        catalogStandardsAgreed: req.body.catalogStandardsAgreed === 'true' || req.body.catalogStandardsAgreed === true,
+        slaAgreed: req.body.slaAgreed === 'true' || req.body.slaAgreed === true,
+
         streetAddress: parsedAddress?.street || null,
         city: parsedAddress?.city || null,
         state: parsedAddress?.state || null,
@@ -189,9 +255,10 @@ router.post("/apply", auth, sellerAppLimiter, flexibleUpload, validateBody(selle
         verificationStatus: "UNDER_REVIEW",
         verificationDocuments: {
           create: verificationDocuments.map((doc, index) => ({
-            documentType: docTypes[index].toUpperCase().replace("-", "_"),
+            documentType: (docTypes[index] || "other").toUpperCase().replace("-", "_"),
             documentPath: doc.documentPath,
             documentName: doc.documentName,
+            fileHash: doc.fileHash,
             status: "PENDING",
           })),
         },
@@ -208,6 +275,17 @@ router.post("/apply", auth, sellerAppLimiter, flexibleUpload, validateBody(selle
         bankAccountNumber: bankAccountNumber || undefined,
         whatsappNumber: whatsappNumber || undefined,
         whatsappNumber2: whatsappNumber2 || undefined,
+        
+        // New fields update
+        jobTitle: jobTitle || undefined,
+        website: website || undefined,
+        productCategory: productCategory || undefined,
+        totalSkuCount: totalSkuCount ? parseInt(totalSkuCount) : undefined,
+        annualRevenue: annualRevenue || undefined,
+        primarySalesChannel: primarySalesChannel || undefined,
+        catalogStandardsAgreed: catalogStandardsAgreed === 'true' || catalogStandardsAgreed === true ? true : undefined,
+        slaAgreed: slaAgreed === 'true' || slaAgreed === true ? true : undefined,
+
         streetAddress: parsedAddress?.street || undefined,
         city: parsedAddress?.city || undefined,
         state: parsedAddress?.state || undefined,
@@ -216,9 +294,10 @@ router.post("/apply", auth, sellerAppLimiter, flexibleUpload, validateBody(selle
         verificationStatus: "UNDER_REVIEW",
         verificationDocuments: {
           create: verificationDocuments.map((doc, index) => ({
-            documentType: docTypes[index].toUpperCase().replace("-", "_"),
+            documentType: (docTypes[index] || "other").toUpperCase().replace("-", "_"),
             documentPath: doc.documentPath,
             documentName: doc.documentName,
+            fileHash: doc.fileHash,
             status: "PENDING",
           })),
         },
@@ -296,6 +375,26 @@ router.post("/upload-document", auth, uploadLimiter, (req, res) => {
         return res.status(400).json({ msg: "Seller details not found." });
       }
 
+      // Calculate hash
+      const fileHash = await calculateFileHash(req.file.path);
+
+      // Check for duplicates (other users)
+      const existingDoc = await prisma.verificationDocument.findFirst({
+        where: {
+          fileHash: fileHash,
+          sellerDetails: {
+            userId: {
+              not: req.user.id
+            }
+          }
+        }
+      });
+
+      if (existingDoc) {
+        try { fs.unlinkSync(req.file.path); } catch(e) {}
+        return res.status(400).json({ msg: "This document has already been used by another account." });
+      }
+
       // Add new document
       const newDocument = await prisma.verificationDocument.create({
         data: {
@@ -303,6 +402,7 @@ router.post("/upload-document", auth, uploadLimiter, (req, res) => {
           documentType: documentType.toUpperCase().replace("-", "_"),
           documentPath: req.file.path,
           documentName: req.file.originalname,
+          fileHash: fileHash,
           status: "PENDING",
         },
       });
@@ -405,5 +505,7 @@ router.put("/profile", auth, async (req, res) => {
     res.status(500).send("Server Error");
   }
 });
+
+
 
 module.exports = router;

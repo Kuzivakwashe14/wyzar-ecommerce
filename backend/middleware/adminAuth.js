@@ -84,7 +84,13 @@ async function adminAuth(req, res, next) {
 
     // 5. Check if user has admin role
     if (user.role !== 'ADMIN') {
+      console.warn(`[AdminAuth] Access denied for user ${user.email}. Role: '${user.role}', IsSuspended: ${user.isSuspended}`);
       return res.status(403).json({ msg: 'Access denied. Admin privileges required.' });
+    }
+    
+    // Explicitly check for isSuspended logic again for logging
+    if (user.isSuspended) {
+        console.warn(`[AdminAuth] User ${user.email} is suspended.`);
     }
 
     // 6. Add user to request

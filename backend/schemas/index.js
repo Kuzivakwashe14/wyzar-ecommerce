@@ -11,7 +11,7 @@ const { z } = require('zod');
  * Zimbabwe phone number format
  * Accepts: 0771234567 or +263771234567
  */
-const phoneRegex = /^(\+263|0)[0-9]{9}$/;
+const phoneRegex = /^(\+|0)[0-9]{8,15}$/;
 
 /**
  * UUID v4 format
@@ -202,6 +202,17 @@ const sellerApplicationSchema = z.object({
   bankAccountNumber: sanitizedString(50).optional(),
   whatsappNumber: sanitizedString(20).optional(),
   whatsappNumber2: sanitizedString(20).optional(),
+  
+  // New verification fields
+  jobTitle: sanitizedString(100).optional(),
+  website: z.string().url("Invalid URL").optional().or(z.literal("")),
+  productCategory: sanitizedString(100).optional(),
+  totalSkuCount: z.number({ coerce: true }).int().min(0).optional(),
+  annualRevenue: sanitizedString(100).optional(),
+  primarySalesChannel: sanitizedString(100).optional(),
+  catalogStandardsAgreed: z.preprocess((val) => val === 'true' || val === true, z.boolean()).optional(),
+  slaAgreed: z.preprocess((val) => val === 'true' || val === true, z.boolean()).optional(),
+  address: z.string().optional(),
 });
 
 // =============================================================================

@@ -254,7 +254,11 @@ router.put('/:id/verify', adminAuth, async (req, res) => {
     const seller = await prisma.user.findUnique({
       where: { id: req.params.id },
       include: {
-        sellerDetails: true
+        sellerDetails: {
+          include: {
+            verificationDocuments: true
+          }
+        }
       }
     });
 
@@ -374,6 +378,15 @@ router.put('/:id/verify', adminAuth, async (req, res) => {
 router.put('/:id/suspend', adminAuth, async (req, res) => {
   try {
     const { suspend, reason } = req.body;
+    console.log(`[AdminSellers] Suspending seller ${req.params.id}: suspend=${suspend}, reason=${reason}`);
+
+    // Prevent admin from suspending themselves
+    if (suspend && req.user.id === req.params.id) {
+        return res.status(400).json({
+            success: false,
+            msg: 'You cannot suspend your own account.'
+        });
+    }
 
     const seller = await prisma.user.findUnique({
       where: { id: req.params.id },
@@ -453,6 +466,78 @@ router.put('/:id/suspend', adminAuth, async (req, res) => {
     });
   }
 });
+
+// @route   DELETE /api/admin/sellers/:id
+// @desc    Delete a seller (only if they have no active orders)
+// @access  Private (Admin only)
+router.delete('/:id', adminAuth, async (req, res) => {
+  try {
+    const seller = await prisma.user.findUnique({
+      where: { id: req.params.id }
+    });
+
+    if (!seller) {
+      return res.status(404).json({
+        success: false,
+        msg: 'Seller not found'
+      });
+    }
+
+    // Check if seller has products designated in OrderItems
+    // effectively checking if they have ever made a sale (or part of an order)
+    const hasOrders = await prisma.orderItem.findFirst({
+      where: {
+        product: {
+          sellerId: seller.id
+        }
+      }
+    });
+
+    if (hasOrders) {
+      return res.status(400).json({
+        success: false,
+        msg: 'Cannot delete seller with existing associated orders. Please suspend the account instead to preserve order history.'
+      });
+    }
+
+    // Revert logic: Delete seller data but keep user account
+    // Use transaction to ensure data consistency
+    await prisma.$transaction([
+      // 1. Delete all products by this seller
+      prisma.product.deleteMany({
+        where: { sellerId: seller.id }
+      }),
+      // 2. Delete seller details
+      prisma.sellerDetails.delete({
+        where: { userId: seller.id }
+      }),
+      // 3. Update user to remove seller status and reset role
+      prisma.user.update({
+        where: { id: seller.id },
+        data: {
+          isSeller: false,
+          isVerified: false,
+          role: 'USER', // Revert to normal user
+          isSuspended: false,
+          suspensionReason: null
+        }
+      })
+    ]);
+
+    res.json({
+      success: true,
+      msg: 'Seller deleted successfully'
+    });
+  } catch (error) {
+    console.error('Error deleting seller:', error);
+    res.status(500).json({
+      success: false,
+      msg: 'Server error',
+      error: error.message
+    });
+  }
+});
+
 
 // ==========================================
 // VERIFICATION DOCUMENT MANAGEMENT

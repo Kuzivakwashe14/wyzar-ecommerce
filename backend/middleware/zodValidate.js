@@ -21,6 +21,14 @@ const validate = (schema, source = 'body') => {
           message: err.message,
         }));
 
+        // Debug logging
+        console.error('Validation failed:', {
+          source,
+          errors: errors,
+          body: req[source],
+          // If body is FormData/multipart, it might be large or confusing, but for Seller apply it should be just fields
+        });
+
         return res.status(400).json({
           success: false,
           msg: errors[0]?.message || 'Validation failed',
