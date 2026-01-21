@@ -20,7 +20,8 @@ import {
   ShoppingCart,
   MessageSquare,
   Shield,
-  ArrowLeft
+  ArrowLeft,
+  CreditCard
 } from 'lucide-react';
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
@@ -55,6 +56,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     { name: 'Users', href: '/admin/users', icon: Users },
     { name: 'Sellers', href: '/admin/sellers', icon: Store },
     { name: 'Pending Sellers', href: '/admin/sellers/pending', icon: CheckCircle },
+    { name: 'Verify Payments', href: '/admin/orders/payments', icon: CreditCard },
     { name: 'Products', href: '/admin/products', icon: Package },
     { name: 'Orders', href: '/admin/orders', icon: ShoppingCart },
     { name: 'Reviews', href: '/admin/reviews', icon: MessageSquare },

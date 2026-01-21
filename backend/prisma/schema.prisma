@@ -169,6 +169,7 @@ model Order {
   paymentMethod     PaymentMethod @default(ECOCASH)
   paymentResultId   String?
   paymentStatus     String?
+  paymentProof      String?       // Path to proof of payment file
   paymentUpdateTime String?
   paymentEmail      String?
   totalPrice        Float         @default(0)

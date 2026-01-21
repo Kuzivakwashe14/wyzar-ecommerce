@@ -217,9 +217,15 @@ const SellerOrdersPage = () => {
                           ${sellerRevenue.toFixed(2)}
                         </TableCell>
                         <TableCell className="text-center">
-                          <Badge variant={getStatusBadgeVariant(order.status)}>
-                            {order.status}
-                          </Badge>
+                          {order.status === 'PENDING' ? (
+                            <Badge variant="outline" className="bg-yellow-50 text-yellow-700 border-yellow-200">Payment Pending</Badge>
+                          ) : order.status === 'PAID' ? (
+                            <Badge variant="default" className="bg-green-600">Ready to Ship</Badge>
+                          ) : (
+                            <Badge variant={getStatusBadgeVariant(order.status)}>
+                              {order.status}
+                            </Badge>
+                          )}
                         </TableCell>
                         <TableCell className="text-right">
                           <DropdownMenu>
@@ -230,32 +236,18 @@ const SellerOrdersPage = () => {
                               </Button>
                             </DropdownMenuTrigger>
                             <DropdownMenuContent align="end">
-                              {/* Confirm Payment - for Pending orders */}
-                              {order.status === 'PENDING' && (
-                                <DropdownMenuItem
-                                  onClick={() => handleConfirmPayment(order.id)}
-                                  className="text-green-600"
-                                >
-                                  ✓ Confirm Payment
-                                </DropdownMenuItem>
-                              )}
+                              {/* 
+                                Removed "Confirm Payment" - Now handled by Admin 
+                                unless it's COD which auto-confirms or is handled upon delivery
+                              */}
                               
-                              {/* Mark as Paid (Legacy/Alternative) */}
-                              {order.paymentMethod === 'CASH_ON_DELIVERY' && 
-                               ['CONFIRMED', 'SHIPPED', 'DELIVERED'].includes(order.status) && (
-                                <DropdownMenuItem
-                                  onClick={() => handleStatusUpdate(order.id, 'Paid')}
-                                >
-                                  ✓ Confirm Payment Received
-                                </DropdownMenuItem>
-                              )}
-
                               <DropdownMenuItem
                                 onClick={() => handleStatusUpdate(order.id, 'Shipped')}
                                 disabled={
+                                  order.status === 'PENDING' || // Wait for Admin to verify payment
                                   order.status === 'SHIPPED' || 
                                   order.status === 'DELIVERED' ||
-                                  order.status === 'PENDING'
+                                  order.status === 'CANCELLED'
                                 }
                               >
                                 Mark as Shipped

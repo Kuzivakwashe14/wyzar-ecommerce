@@ -129,6 +129,54 @@ router.get('/stats/overview', adminAuth, async (req, res) => {
   }
 });
 
+// @route   GET /api/admin/orders
+// @desc    Get all orders with pagination and filtering
+// @access  Private (Admin only)
+router.get('/orders', adminAuth, async (req, res) => {
+  try {
+    const { page = 1, limit = 10, status, search } = req.query;
+    const skip = (page - 1) * limit;
+
+    const where = {};
+    if (status) where.status = status;
+    
+    // Optional: Add search functionality (by order ID or user email)
+    if (search) {
+       where.OR = [
+         { id: search },
+         { user: { email: { contains: search } } }
+       ];
+    }
+
+    const [orders, total] = await Promise.all([
+      prisma.order.findMany({
+        where,
+        include: {
+          user: { select: { id: true, email: true, phone: true, firstName: true, lastName: true } },
+          orderItems: true
+        },
+        orderBy: { createdAt: 'desc' },
+        skip: parseInt(skip),
+        take: parseInt(limit)
+      }),
+      prisma.order.count({ where })
+    ]);
+
+    res.json({
+      success: true,
+      orders,
+      pagination: {
+        total,
+        page: parseInt(page),
+        pages: Math.ceil(total / limit)
+      }
+    });
+  } catch (error) {
+    console.error('Error fetching admin orders:', error);
+    res.status(500).json({ success: false, msg: 'Server error', error: error.message });
+  }
+});
+
 // @route   GET /api/admin/stats/revenue
 // @desc    Get revenue analytics by date range
 // @access  Private (Admin only)
