@@ -35,7 +35,7 @@ const step1Schema = z.object({
   businessName: z.string().min(3, "Business name must be at least 3 characters"),
   sellerType: z.string().default("individual"),
   jobTitle: z.string().min(2, "Job title is required"),
-  website: z.string().url("Invalid URL").or(z.literal("")).optional(),
+  website: z.string().regex(/^(https?:\/\/)?([\da-z\.-]+)\.([a-z\.]{2,6})([\/\w \.-]*)*\/?$/, "Invalid URL").or(z.literal("")).optional(),
   productCategory: z.string().min(2, "Category is required"),
   totalSkuCount: z.string().min(1, "SKU count is required"), // Input as string, convert later
   annualRevenue: z.string().min(1, "Revenue selection is required"),
@@ -105,6 +105,10 @@ export default function BecomeASellerPage() {
       bankAccountNumber: "",
       catalogStandardsAgreed: false,
       slaAgreed: false,
+      doc_id: undefined,
+      doc_bank: undefined,
+      doc_certificate: undefined,
+      doc_tax: undefined,
     },
   });
 
@@ -164,7 +168,16 @@ export default function BecomeASellerPage() {
       formData.append("businessName", values.businessName);
       formData.append("sellerType", values.sellerType);
       formData.append("jobTitle", values.jobTitle);
-      if(values.website) formData.append("website", values.website);
+      
+      // Handle website prefixing manually
+      if (values.website) {
+        let site = values.website;
+        if (!site.startsWith("http") && site.includes(".")) {
+          site = `https://${site}`;
+        }
+        formData.append("website", site);
+      }
+
       formData.append("productCategory", values.productCategory);
       formData.append("totalSkuCount", values.totalSkuCount);
       formData.append("annualRevenue", values.annualRevenue);
