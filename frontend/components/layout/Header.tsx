@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { SignInButton, SignUpButton, UserButton, useUser } from "@clerk/nextjs";
+import { SignInButton, SignUpButton, UserButton, useUser, useAuth as useClerkAuth } from "@clerk/nextjs";
 import { api } from "@/context/AuthContent";
 import Container from "@/components/Container";
 import Logo from "@/components/Logo";
@@ -59,14 +59,21 @@ export default function Header() {
   const [searchQuery, setSearchQuery] = useState("");
   const [unreadMessages, setUnreadMessages] = useState(0);
 
+  const { getToken } = useClerkAuth();
+
   const fetchUnreadCount = useCallback(async () => {
     try {
-      const response = await api.get('/messages/unread-count');
+      const token = await getToken();
+      const response = await api.get('/messages/unread-count', {
+        headers: {
+          Authorization: `Bearer ${token}`
+        }
+      });
       setUnreadMessages(response.data.unreadCount);
     } catch (error) {
       console.error('Error fetching unread count:', error);
     }
-  }, []);
+  }, [getToken]);
 
   useEffect(() => {
     let interval: NodeJS.Timeout;
