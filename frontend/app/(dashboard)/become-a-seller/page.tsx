@@ -575,7 +575,7 @@ export default function BecomeASellerPage() {
         
         <FormField control={form.control} name="catalogStandardsAgreed" render={({ field }) => (
           <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md border p-4">
-            <FormControl><Checkbox checked={field.value} onCheckedChange={(checked) => field.onChange(checked === true)} /></FormControl>
+            <FormControl><Checkbox checked={field.value} onCheckedChange={field.onChange} /></FormControl>
             <div className="space-y-1 leading-none">
               <FormLabel>I agree to the Catalog Quality Standards</FormLabel>
               <FormDescription>All product images will be on neutral backgrounds and include accurate descriptions/UPCs.</FormDescription>
@@ -585,7 +585,7 @@ export default function BecomeASellerPage() {
 
         <FormField control={form.control} name="slaAgreed" render={({ field }) => (
           <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md border p-4">
-            <FormControl><Checkbox checked={field.value} onCheckedChange={(checked) => field.onChange(checked === true)} /></FormControl>
+            <FormControl><Checkbox checked={field.value} onCheckedChange={field.onChange} /></FormControl>
             <div className="space-y-1 leading-none">
               <FormLabel>I agree to the Service Level Agreement (SLA)</FormLabel>
               <FormDescription>I will ship orders within 48 hours, provide tracking, and maintain a low defect rate.</FormDescription>
