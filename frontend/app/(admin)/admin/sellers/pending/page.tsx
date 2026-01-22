@@ -35,6 +35,7 @@ interface PendingSeller {
   sellerDetails: {
     businessName: string;
     sellerType: string;
+    phoneNumber?: string;
     verificationDocument?: string;
     verificationDocuments?: VerificationDocument[];
     verificationStatus?: string;
