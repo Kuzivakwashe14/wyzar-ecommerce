@@ -1,15 +1,7 @@
-const prisma = require('./backend/config/prisma');
-
-async function main() {
-  const users = await prisma.user.findMany({
-    select: { id: true, email: true, role: true, firstName: true, lastName: true }
-  });
-  console.log('--- Users ---');
-  users.forEach(u => {
-    console.log(`${u.email} [${u.role}] - ${u.firstName} ${u.lastName}`);
-  });
-}
-
-main()
-  .catch(e => console.error(e))
-  .finally(async () => await prisma.$disconnect());
+// Deprecated: this file was moved to `backend/scripts/list_users.js`.
+// Run the canonical script from the repository root like:
+//
+//   node backend/scripts/list_users.js
+//
+// Keeping this small stub to avoid breaking workflows that still call the old path.
+console.log("list_users.js has been moved to backend/scripts/list_users.js. Run that file instead.");
