@@ -81,7 +81,7 @@ export default function BecomeASellerPage() {
   const [phoneCode, setPhoneCode] = useState("+263");
   const [whatsappCode, setWhatsappCode] = useState("+263");
 
-  const form = useForm<z.infer<typeof finalSchema>>({
+  const form = useForm<z.input<typeof finalSchema>>({
     resolver: zodResolver(finalSchema),
     mode: "onChange",
     defaultValues: {
@@ -159,14 +159,14 @@ export default function BecomeASellerPage() {
 
   // --- Submission ---
 
-  async function onSubmit(values: z.infer<typeof finalSchema>) {
+  async function onSubmit(values: z.input<typeof finalSchema>) {
     setIsSubmitting(true);
     try {
       const formData = new FormData();
       
       // Append Step 1 Data
       formData.append("businessName", values.businessName);
-      formData.append("sellerType", values.sellerType);
+      formData.append("sellerType", values.sellerType ?? "individual");
       formData.append("jobTitle", values.jobTitle);
       
       // Handle website prefixing manually

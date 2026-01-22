@@ -23,6 +23,8 @@ interface User {
   isSeller: boolean;
   isVerified: boolean;
   role: string;
+  isSuspended?: boolean;
+  suspensionReason?: string;
   sellerDetails?: {
     businessName: string;
   };

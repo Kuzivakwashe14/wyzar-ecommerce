@@ -67,6 +67,7 @@ interface OrderData {
   id: string;
   totalPrice: number;
   paymentMethod: string;
+  paymentProof?: string | null;
   status: string;
   createdAt: string;
   shippingFullName: string;
