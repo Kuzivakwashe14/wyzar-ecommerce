@@ -35,13 +35,7 @@ const step1Schema = z.object({
   businessName: z.string().min(3, "Business name must be at least 3 characters"),
   sellerType: z.string().default("individual"),
   jobTitle: z.string().min(2, "Job title is required"),
-  website: z.preprocess((val) => {
-    if (!val) return "";
-    if (typeof val === "string" && !val.startsWith("http") && val.includes(".")) {
-      return `https://${val}`;
-    }
-    return val;
-  }, z.string().url("Invalid URL").or(z.literal(""))),
+  website: z.string().url("Invalid URL").or(z.literal("")).optional(),
   productCategory: z.string().min(2, "Category is required"),
   totalSkuCount: z.string().min(1, "SKU count is required"), // Input as string, convert later
   annualRevenue: z.string().min(1, "Revenue selection is required"),
