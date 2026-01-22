@@ -39,11 +39,11 @@ const footerLinks = {
     { name: "Messages", href: "/messages" },
   ],
   company: [
-    { name: "About Us", href: "/about" },
-    { name: "Contact Us", href: "/contact" },
+    { name: "About Us", href: "/about-us" },
+    { name: "Contact Us", href: "/contact-us" },
     { name: "Become a Seller", href: "/become-a-seller" },
-    { name: "Privacy Policy", href: "/privacy" },
-    { name: "Terms & Conditions", href: "/terms" },
+    { name: "Privacy Policy", href: "/privacy-policy" },
+    { name: "Terms & Conditions", href: "/terms-conditions" },
   ],
   support: [
     { name: "Help Center", href: "/help" },
@@ -232,10 +232,10 @@ export default function Footer() {
               © {new Date().getFullYear()} WyZar. All rights reserved.
             </p>
             <div className="flex items-center gap-6 text-sm text-white/60">
-              <Link href="/privacy" className="hover:text-white transition-colors">
+              <Link href="/privacy-policy" className="hover:text-white transition-colors">
                 Privacy Policy
               </Link>
-              <Link href="/terms" className="hover:text-white transition-colors">
+              <Link href="/terms-conditions" className="hover:text-white transition-colors">
                 Terms of Service
               </Link>
               <Link href="/cookies" className="hover:text-white transition-colors">
