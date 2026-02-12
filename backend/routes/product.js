@@ -4,10 +4,12 @@ const express = require('express');
 const router = express.Router();
 const auth = require('../middleware/auth');
 const productUploadOptimized = require('../middleware/productUploadOptimized');
+const { uploadProductImages } = require('../middleware/imagekitUpload');
 const csvUpload = require('../middleware/csvUpload');
 const papa = require('papaparse');
 const prisma = require('../config/prisma');
 const { getPublicUrl } = require('../config/localStorage');
+const { deleteMultipleFromImageKit } = require('../config/imagekit');
 
 // ===== Zod Validation =====
 const { validateBody, validateParams } = require('../middleware/zodValidate');
@@ -149,19 +151,14 @@ router.post('/bulk-upload', auth, uploadLimiter, csvUpload, async (req, res) => 
 // @route   POST /api/products
 // @desc    Create a new product
 // @access  Private (Sellers Only)
-router.post('/', auth, (req, res) => {
-  // 1. Run the productUploadOptimized middleware
-  productUploadOptimized(req, res, async (err) => {
-    if (err) {
-      return res.status(400).json({ msg: err.message });
-    }
-
-    // 2. Check if files were uploaded
-    if (req.files === undefined || req.files.length === 0) {
+router.post('/', auth, uploadProductImages, async (req, res) => {
+  try {
+    // 1. Check if files were uploaded
+    if (!req.imagekitFiles || req.imagekitFiles.length === 0) {
       return res.status(400).json({ msg: 'No product images uploaded. At least one is required.' });
     }
 
-    // 3. Validate product input using Zod
+    // 2. Validate product input using Zod
     const validation = productSchema.safeParse(req.body);
     if (!validation.success) {
       // Zod v4 uses 'issues', v3 uses 'errors'
@@ -179,38 +176,39 @@ router.post('/', auth, (req, res) => {
 
     const { name, description, price, category, quantity, deliveryTime, countryOfOrigin } = validation.data;
 
-    try {
-      // 4. Check if user is a verified seller
-      const seller = await prisma.user.findUnique({ where: { id: req.user.id } });
-      if (!seller.isSeller) {
-        return res.status(401).json({ msg: 'Not authorized. Only sellers can create products.' });
-      }
-
-      // 5. Get image paths - convert to public URLs for Nginx
-      const images = req.files.map(file => getPublicUrl(file.path));
-
-      // 6. Create new product instance
-      const product = await prisma.product.create({
-        data: {
-          sellerId: req.user.id,
-          name,
-          description,
-          price: parseFloat(price),
-          category,
-          quantity: parseInt(quantity),
-          images,
-          deliveryTime: deliveryTime || "Not specified",
-          countryOfOrigin: countryOfOrigin || "Not specified"
-        }
-      });
-
-      res.status(201).json(product);
-
-    } catch (err) {
-      console.error(err.message);
-      res.status(500).send('Server Error');
+    // 3. Check if user is a verified seller
+    const seller = await prisma.user.findUnique({ where: { id: req.user.id } });
+    if (!seller.isSeller) {
+      return res.status(401).json({ msg: 'Not authorized. Only sellers can create products.' });
     }
-  });
+
+    // 4. Get ImageKit URLs from uploaded files
+    const images = req.imagekitFiles.map(file => file.url);
+    
+    // Only set imageFileIds if they exist (ImageKit uploads have fileIds, local storage doesn't)
+    const imageFileIds = req.imagekitFiles.map(file => file.fileId).filter(id => id !== null);
+
+    // 5. Create new product instance
+    const product = await prisma.product.create({
+      data: {
+        sellerId: req.user.id,
+        name,
+        description,
+        price: parseFloat(price),
+        category,
+        quantity: parseInt(quantity),
+        images,
+        imageFileIds: imageFileIds.length > 0 ? imageFileIds : [], // Store ImageKit file IDs for later deletion
+        deliveryTime: deliveryTime || "Not specified",
+        countryOfOrigin: countryOfOrigin || "Not specified"
+      }
+    });
+
+    res.status(201).json(product);
+  } catch (err) {
+    console.error(err.message);
+    res.status(500).send('Server Error');
+  }
 });
 
 // @route   GET /api/products
@@ -308,12 +306,8 @@ router.get('/seller/me', auth, async (req, res) => {
 // @route   PUT /api/products/:id
 // @desc    Update a product
 // @access  Private (Sellers Only)
-router.put('/:id', auth, validateParams(objectIdParamSchema), (req, res) => {
-  productUploadOptimized(req, res, async (err) => {
-    if (err) {
-      return res.status(400).json({ msg: err.message });
-    }
-
+router.put('/:id', auth, validateParams(objectIdParamSchema), uploadProductImages, async (req, res) => {
+  try {
     // Validate product update input
     const validation = productUpdateSchema.safeParse(req.body);
     if (!validation.success) {
@@ -332,57 +326,53 @@ router.put('/:id', auth, validateParams(objectIdParamSchema), (req, res) => {
 
     const { name, description, price, category, quantity, deliveryTime, countryOfOrigin } = req.body;
 
-      // Build product object
-      const productFields = {};
-      if (name) productFields.name = name;
-      if (description) productFields.description = description;
-      if (price) productFields.price = price;
-      if (category) productFields.category = category;
-      if (quantity) productFields.quantity = quantity;
-      if (deliveryTime) productFields.deliveryTime = deliveryTime;
-      if (countryOfOrigin) productFields.countryOfOrigin = countryOfOrigin;
+    let product = await prisma.product.findUnique({ where: { id: req.params.id } });
 
-      // Handle image updates - convert to public URLs for Nginx
-      if (req.files && req.files.length > 0) {
-        productFields.images = req.files.map(file => getPublicUrl(file.path));
+    if (!product) {
+      return res.status(404).json({ msg: 'Product not found' });
+    }
+
+    // Security Check: Make sure the user owns the product
+    if (product.sellerId !== req.user.id) {
+      return res.status(401).json({ msg: 'Not authorized' });
+    }
+
+    // Build update data
+    const updateData = {};
+    if (name) updateData.name = name;
+    if (description) updateData.description = description;
+    if (price) updateData.price = parseFloat(price);
+    if (category) updateData.category = category;
+    if (quantity) updateData.quantity = parseInt(quantity);
+    if (deliveryTime) updateData.deliveryTime = deliveryTime;
+    if (countryOfOrigin) updateData.countryOfOrigin = countryOfOrigin;
+    
+    // Handle ImageKit image updates
+    if (req.imagekitFiles && req.imagekitFiles.length > 0) {
+      updateData.images = req.imagekitFiles.map(file => file.url);
+      
+      // Only set imageFileIds if they exist (ImageKit uploads have fileIds, local storage doesn't)
+      const fileIds = req.imagekitFiles.map(file => file.fileId).filter(id => id !== null);
+      if (fileIds.length > 0) {
+        updateData.imageFileIds = fileIds;
       }
-
-      try {
-      let product = await prisma.product.findUnique({ where: { id: req.params.id } });
-
-      if (!product) {
-        return res.status(404).json({ msg: 'Product not found' });
+      
+      // Delete old images from ImageKit (only if using ImageKit)
+      if (product.imageFileIds && product.imageFileIds.length > 0) {
+        await deleteMultipleFromImageKit(product.imageFileIds);
       }
+    }
 
-      // Security Check: Make sure the user owns the product
-      if (product.sellerId !== req.user.id) {
-        return res.status(401).json({ msg: 'Not authorized' });
-      }
+    product = await prisma.product.update({
+      where: { id: req.params.id },
+      data: updateData
+    });
 
-      // Build update data
-      const updateData = {};
-      if (name) updateData.name = name;
-      if (description) updateData.description = description;
-      if (price) updateData.price = parseFloat(price);
-      if (category) updateData.category = category;
-      if (quantity) updateData.quantity = parseInt(quantity);
-      if (deliveryTime) updateData.deliveryTime = deliveryTime;
-      if (countryOfOrigin) updateData.countryOfOrigin = countryOfOrigin;
-      if (req.files && req.files.length > 0) {
-        updateData.images = req.files.map(file => getPublicUrl(file.path));
-      }
-
-      product = await prisma.product.update({
-        where: { id: req.params.id },
-        data: updateData
-      });
-
-      res.json(product);
-      } catch (err) {
-        console.error(err.message);
-        res.status(500).send('Server Error');
-      }
-  });
+    res.json(product);
+  } catch (err) {
+    console.error(err.message);
+    res.status(500).send('Server Error');
+  }
 });
 
 // @route   DELETE /api/products/:id
@@ -401,8 +391,12 @@ router.delete('/:id', auth, validateParams(objectIdParamSchema), async (req, res
       return res.status(401).json({ msg: 'Not authorized' });
     }
 
-    // TODO: We should also delete images from the 'uploads/' folder here
-    // For now, we'll just delete the database record
+    // Delete images from ImageKit
+    if (product.imageFileIds && product.imageFileIds.length > 0) {
+      await deleteMultipleFromImageKit(product.imageFileIds);
+    }
+
+    // Delete the database record
     await prisma.product.delete({ where: { id: req.params.id } });
 
     res.json({ msg: 'Product removed' });

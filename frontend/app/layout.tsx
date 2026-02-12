@@ -7,6 +7,7 @@ import { AuthProvider } from "@/context/AuthContent";
 import { CartProvider } from "@/context/CartContext";
 import { SocketProvider } from "@/context/SocketContext";
 import { WishlistProvider } from "@/context/WishlistContext";
+import { ImageKitProvider } from "@/components/providers/ImageKitProvider";
 import ConditionalNavbar from "@/components/layout/ConditionalNavbar";
 import ConditionalFooter from "@/components/layout/ConditionalFooter";
 import UserSync from "@/components/auth/UserSync";
@@ -27,19 +28,21 @@ export default function RootLayout({
     <ClerkProvider>
       <html lang="en">
         <body className={`${inter.className} min-h-screen flex flex-col bg-white`}>
-          <AuthProvider>
-            <SocketProvider>
-              <CartProvider>
-                <WishlistProvider>
-                  <UserSync />
-                  <ConditionalNavbar />
-                  <main className="flex-1">{children}</main>
-                  <ConditionalFooter />
-                  <Toaster richColors position="bottom-right" />
-                </WishlistProvider>
-              </CartProvider>
-            </SocketProvider>
-          </AuthProvider>
+          <ImageKitProvider>
+            <AuthProvider>
+              <SocketProvider>
+                <CartProvider>
+                  <WishlistProvider>
+                    <UserSync />
+                    <ConditionalNavbar />
+                    <main className="flex-1">{children}</main>
+                    <ConditionalFooter />
+                    <Toaster richColors position="bottom-right" />
+                  </WishlistProvider>
+                </CartProvider>
+              </SocketProvider>
+            </AuthProvider>
+          </ImageKitProvider>
         </body>
       </html>
     </ClerkProvider>

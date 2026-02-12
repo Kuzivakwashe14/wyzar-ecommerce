@@ -106,6 +106,7 @@ app.use('/api/orders', require('./routes/order'));
 app.use('/api/reviews', require('./routes/review'));
 app.use('/api/search', require('./routes/search'));
 app.use('/api/messages', require('./routes/messages'));
+app.use('/api/imagekit', require('./routes/imagekit')); // ImageKit routes
 
 // Admin routes
 app.use('/api/admin', require('./routes/admin'));

@@ -129,6 +129,7 @@ model Product {
   name            String
   description     String
   images          String[]
+  imageFileIds    String[]       @default([])
   price           Float
   category        String
   quantity        Int            @default(1)

@@ -19,6 +19,7 @@
   "type": "commonjs",
   "dependencies": {
     "@clerk/clerk-sdk-node": "^5.1.6",
+    "@imagekit/nodejs": "^7.3.0",
     "@prisma/client": "^6.2.0",
     "archiver": "^7.0.1",
     "bcryptjs": "^3.0.3",
@@ -31,6 +32,7 @@
     "express-rate-limit": "^8.2.1",
     "helmet": "^8.1.0",
     "hpp": "^0.2.3",
+    "imagekitio-react": "^4.3.0",
     "jsonwebtoken": "^9.0.2",
     "multer": "^2.0.2",
     "nodemailer": "^7.0.10",
