@@ -97,6 +97,11 @@ app.get('/api/csrf-token', csrfProtection, (req, res) => {
   });
 });
 
+// --- Health Check Route ---
+app.get('/health', (req, res) => {
+  res.status(200).json({ status: 'healthy', timestamp: new Date().toISOString() });
+});
+
 // --- API Routes ---
 app.use('/api/auth', require('./routes/auth'));
 app.use('/api/otp', require('./routes/otp'));

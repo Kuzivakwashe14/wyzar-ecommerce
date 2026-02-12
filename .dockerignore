@@ -1,0 +1,69 @@
+# ============================================
+# Docker Ignore File
+# ============================================
+# Excludes files from Docker build context
+
+# Node modules (will be installed in container)
+**/node_modules
+**/npm-debug.log
+
+# Git
+.git
+.gitignore
+.gitattributes
+
+# Environment files (use environment variables instead)
+**/.env
+**/.env.local
+**/.env.*.local
+
+# Build artifacts
+frontend/.next
+frontend/out
+backend/dist
+backend/build
+
+# Logs
+**/*.log
+**/logs
+
+# OS files
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# IDE files
+.vscode
+.idea
+*.swp
+*.swo
+*~
+
+# Test files
+**/__tests__
+**/*.test.js
+**/*.spec.js
+**/coverage
+
+# Documentation
+*.md
+
+# Docker files (not needed in image)
+Dockerfile
+docker-compose.yml
+.dockerignore
+
+# Uploads (should use cloud storage in production)
+backend/uploads
+
+# SSL certificates (use Koyeb's SSL)
+backend/ssl
+
+# Temporary files
+**/tmp
+**/temp
+**/.cache
+
+# Development scripts
+list_users.js
+make_admin.js

@@ -1,0 +1,94 @@
+services:
+  # ============================================
+  # PostgreSQL Database (for local testing only)
+  # ============================================
+  postgres:
+    image: postgres:16-alpine
+    container_name: wyzar-postgres
+    environment:
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: admin
+      POSTGRES_DB: ecommerce
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U admin -d ecommerce"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ============================================
+  # WyZar Application (Backend + Frontend + Nginx)
+  # ============================================
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        NEXT_PUBLIC_API_URL: http://localhost:8000
+        NEXT_PUBLIC_API_BASE_URL: http://localhost:8000/api
+        NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: ${CLERK_PUBLISHABLE_KEY:-pk_test_aGVscGVkLXNuYXBwZXItMjYuY2xlcmsuYWNjb3VudHMuZGV2JA}
+    container_name: wyzar-app
+    dns:
+      - 8.8.8.8
+      - 8.8.4.4
+    ports:
+      - "8000:8000"  # Nginx reverse proxy
+    environment:
+      # Database
+      DATABASE_URL: postgresql://admin:admin@postgres:5432/ecommerce?schema=public
+      
+      # Server
+      NODE_ENV: production
+      PORT: 5000
+      FRONTEND_URL: http://localhost:8000
+      
+      # CORS
+      ALLOWED_ORIGINS: http://localhost:8000,http://localhost:3000
+      
+      # Clerk Authentication (replace with your keys)
+      CLERK_PUBLISHABLE_KEY: ${CLERK_PUBLISHABLE_KEY:-pk_test_aGVscGVkLXNuYXBwZXItMjYuY2xlcmsuYWNjb3VudHMuZGV2JA}
+      CLERK_SECRET_KEY: ${CLERK_SECRET_KEY:-sk_test_GRM8KLfUkTeJQU8PKzLMi0NA1AbtS3GMTEVFk338ZX}
+      NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: ${CLERK_PUBLISHABLE_KEY:-pk_test_aGVscGVkLXNuYXBwZXItMjYuY2xlcmsuYWNjb3VudHMuZGV2JA}
+      
+      # Clerk sign-in/sign-up URLs (needed at runtime for SSR)
+      NEXT_PUBLIC_CLERK_SIGN_IN_URL: /
+      NEXT_PUBLIC_CLERK_SIGN_UP_URL: /
+      NEXT_PUBLIC_CLERK_AFTER_SIGN_IN_URL: /
+      NEXT_PUBLIC_CLERK_AFTER_SIGN_UP_URL: /
+      
+      # JWT Secret
+      JWT_SECRET: ${JWT_SECRET:-z3xGpsah64uM/cqXUISo7R5XigQwZABsGZZatG9g+ftNHbNCwaRZSrftog53t7dt}
+      
+      # Email Configuration
+      EMAIL_HOST: ${EMAIL_HOST:-smtp.gmail.com}
+      EMAIL_PORT: ${EMAIL_PORT:-587}
+      EMAIL_SECURE: ${EMAIL_SECURE:-false}
+      EMAIL_USER: ${EMAIL_USER:-tawandmahachi@gmail.com}
+      EMAIL_PASSWORD: ${EMAIL_PASSWORD:-}
+      EMAIL_FROM: ${EMAIL_FROM:-WyZar <noreply@wyzar.co.zw>}
+      
+      # Payment Gateway
+      PAYNOW_INTEGRATION_ID: ${PAYNOW_INTEGRATION_ID:-22532}
+      PAYNOW_INTEGRATION_KEY: ${PAYNOW_INTEGRATION_KEY:-379add5d-b5b1-4607-932f-64ce772c949e}
+      PAYNOW_RETURN_URL: http://localhost:8000/checkout/success
+      PAYNOW_RESULT_URL: http://localhost:8000/api/orders/paynow/callback
+      PAYNOW_TEST_EMAIL: ${PAYNOW_TEST_EMAIL:-kuzivakwashekubiku@gmail.com}
+      
+      # Encryption
+      ENCRYPTION_KEY: ${ENCRYPTION_KEY:-4b715039a142d3268501724d48f064ea08e994fc8ffba41b6e134ea0962ee67d}
+    depends_on:
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+volumes:
+  postgres_data:
+    driver: local
