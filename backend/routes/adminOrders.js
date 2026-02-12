@@ -6,7 +6,6 @@ const router = express.Router();
 const adminAuth = require('../middleware/adminAuth');
 const prisma = require('../config/prisma');
 const { sendEmail } = require('../services/emailService');
-const { sendSMS } = require('../services/smsService');
 
 // ==========================================
 // ORDER MANAGEMENT
@@ -196,14 +195,6 @@ router.put('/:id/status', adminAuth, async (req, res) => {
             <p>Thank you for shopping with WyZar!</p>
             <p>Best regards,<br>WyZar Team</p>
           `
-        });
-      }
-
-      // Also send SMS if phone is available
-      if (order.user?.phone && statusMessages[status]) {
-        await sendSMS({
-          to: order.user.phone,
-          message: `WyZar Order Update: Your order #${order._id.toString().slice(-6)} is now ${status}. ${statusMessages[status]}`
         });
       }
     } catch (notificationError) {

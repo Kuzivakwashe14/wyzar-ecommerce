@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { SignInButton, SignUpButton, UserButton, useUser, useAuth as useClerkAuth } from "@clerk/nextjs";
+import { SignInButton, SignUpButton, SignOutButton, UserButton, useUser, useAuth as useClerkAuth } from "@clerk/nextjs";
 import { api } from "@/context/AuthContent";
 import Container from "@/components/Container";
 import Logo from "@/components/Logo";
@@ -256,6 +256,41 @@ export default function Header() {
                     </DropdownMenuItem>
                   </DropdownMenuContent>
                 </DropdownMenu>
+              ) : clerkUser ? (
+                // Clerk is signed in but backend sync hasn't completed yet
+                <div className="hidden sm:flex items-center gap-2">
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button 
+                        variant="ghost" 
+                        className="hoverEffect hover:bg-shop_dark_green/10 flex items-center gap-2"
+                      >
+                        <Avatar className="h-8 w-8">
+                          {clerkUser.imageUrl && (
+                            <AvatarImage src={clerkUser.imageUrl} alt={clerkUser.primaryEmailAddress?.emailAddress || ''} />
+                          )}
+                          <AvatarFallback className="bg-shop_dark_green text-white text-sm">
+                            {clerkUser.primaryEmailAddress?.emailAddress?.charAt(0).toUpperCase() || 'U'}
+                          </AvatarFallback>
+                        </Avatar>
+                        <span className="hidden lg:inline text-sm font-medium">Syncing...</span>
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent className="w-56" align="end">
+                      <DropdownMenuLabel>
+                        <p className="text-xs text-muted-foreground">Signed in as</p>
+                        <p className="text-sm truncate">{clerkUser.primaryEmailAddress?.emailAddress}</p>
+                      </DropdownMenuLabel>
+                      <DropdownMenuSeparator />
+                      <SignOutButton>
+                        <DropdownMenuItem className="cursor-pointer text-red-600">
+                          <LogOut className="mr-2 h-4 w-4" />
+                          Sign Out
+                        </DropdownMenuItem>
+                      </SignOutButton>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                </div>
               ) : (
                 <div className="hidden sm:flex items-center gap-2">
                   <SignInButton mode="modal">

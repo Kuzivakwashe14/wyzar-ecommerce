@@ -3,7 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useAuth } from "@/context/AuthContent";
-import { SignInButton, SignUpButton } from "@clerk/nextjs";
+import { SignInButton, SignUpButton, SignOutButton, useUser } from "@clerk/nextjs";
 import Logo from "@/components/Logo";
 import { Button } from "@/components/ui/button";
 import {
@@ -50,6 +50,7 @@ interface MobileMenuProps {
 export default function MobileMenu({ categories }: MobileMenuProps) {
   const [isOpen, setIsOpen] = useState(false);
   const { isAuthenticated, user, logout } = useAuth();
+  const { user: clerkUser } = useUser();
 
   const handleClose = () => setIsOpen(false);
 
@@ -93,6 +94,26 @@ export default function MobileMenu({ categories }: MobileMenuProps) {
                   </p>
                 </div>
               </div>
+            </div>
+          ) : clerkUser ? (
+            <div className="px-4 pb-4 border-b space-y-2">
+              <div className="flex items-center gap-3 mb-2">
+                <div className="h-12 w-12 rounded-full bg-shop_dark_green text-white flex items-center justify-center text-lg font-semibold">
+                  {clerkUser.primaryEmailAddress?.emailAddress?.charAt(0).toUpperCase() || 'U'}
+                </div>
+                <div>
+                  <p className="font-semibold">Syncing account...</p>
+                  <p className="text-sm text-muted-foreground truncate max-w-[180px]">
+                    {clerkUser.primaryEmailAddress?.emailAddress}
+                  </p>
+                </div>
+              </div>
+              <SignOutButton>
+                <Button variant="outline" className="w-full justify-start gap-2 text-red-600" onClick={handleClose}>
+                  <LogOut className="h-4 w-4" />
+                  Sign Out
+                </Button>
+              </SignOutButton>
             </div>
           ) : (
             <div className="px-4 pb-4 border-b space-y-2">

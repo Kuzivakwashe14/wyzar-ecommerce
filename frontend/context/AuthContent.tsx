@@ -8,6 +8,15 @@ import axios from 'axios';
 // 1. Define the API URL and create Axios instance
 const API_URL = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:5000/api";
 
+// Warn in production if API URL still points to localhost
+if (typeof window !== 'undefined' && API_URL.includes('localhost') && window.location.hostname !== 'localhost') {
+  console.error(
+    '⚠️ NEXT_PUBLIC_API_BASE_URL is not set for production! ' +
+    'API calls are going to localhost which will fail. ' +
+    'Set NEXT_PUBLIC_API_BASE_URL in your Vercel environment variables.'
+  );
+}
+
 const api = axios.create({
   baseURL: API_URL,
 });
@@ -76,7 +85,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   }, [isSignedIn, getToken]);
 
   // Load user data from backend
-  const loadUser = useCallback(async () => {
+  const loadUser = useCallback(async (retryCount = 0) => {
     if (!clerkLoaded) return;
     
     if (!isSignedIn || !clerkUser) {
@@ -104,6 +113,12 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         console.error('Failed to load user:', error);
       }
       setUser(null);
+      
+      // Retry up to 3 times with backoff (handles cold start / slow backend)
+      if (retryCount < 3) {
+        const delay = (retryCount + 1) * 2000; // 2s, 4s, 6s
+        setTimeout(() => loadUser(retryCount + 1), delay);
+      }
     } finally {
       setLoading(false);
     }
