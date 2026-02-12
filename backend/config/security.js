@@ -20,17 +20,22 @@ const helmetConfig = helmet({
  */
 const getCorsConfig = () => {
   const allowedOrigins = process.env.ALLOWED_ORIGINS
-    ? process.env.ALLOWED_ORIGINS.split(',')
+    ? process.env.ALLOWED_ORIGINS.split(',').map(o => o.trim().replace(/\/+$/, ''))
     : ['http://localhost:3000', 'http://localhost:5173']; // Default for development
+
+  console.log('CORS allowed origins:', allowedOrigins);
+  console.log('NODE_ENV:', process.env.NODE_ENV);
 
   return cors({
     origin: (origin, callback) => {
       // Allow requests with no origin (like mobile apps or curl)
       if (!origin) return callback(null, true);
 
-      if (allowedOrigins.indexOf(origin) !== -1 || process.env.NODE_ENV === 'development') {
+      const normalizedOrigin = origin.replace(/\/+$/, '');
+      if (allowedOrigins.includes(normalizedOrigin) || process.env.NODE_ENV === 'development') {
         callback(null, true);
       } else {
+        console.error(`CORS blocked origin: ${origin}`);
         callback(new Error('Not allowed by CORS'));
       }
     },
