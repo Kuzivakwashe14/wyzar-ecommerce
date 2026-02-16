@@ -87,24 +87,24 @@ export default function MyProductsPage() {
   };
 
   if (loading || authLoading) {
-    return <div className="container py-8"><p>Loading...</p></div>;
+    return <div className="container py-8 text-brown-light"><p>Loading...</p></div>;
   }
 
   return (
-    <div className="container mx-auto py-8 px-4">
+    <div className="container mx-auto py-8 px-4 bg-cream min-h-screen">
       <div className="flex justify-between items-center mb-6">
-        <h1 className="text-3xl font-bold">My Products</h1>
+        <h1 className="text-3xl font-bold text-brown">My Products</h1>
         <div className="flex gap-2">
           <Link href="/dashboard/products/bulk-upload" passHref>
-            <Button variant="outline">Bulk Upload</Button>
+            <Button variant="outline" className="border-terracotta text-terracotta hover:bg-terracotta hover:text-white rounded-full">Bulk Upload</Button>
           </Link>
           <Link href="/dashboard/products/new" passHref>
-            <Button>Add New Product</Button>
+            <Button className="bg-terracotta hover:bg-brown text-white rounded-full">Add New Product</Button>
           </Link>
         </div>
       </div>
 
-      <div className="border rounded-lg overflow-x-auto">
+      <div className="border border-line rounded-2xl overflow-x-auto bg-white" style={{ borderRadius: '20px' }}>
         <Table>
           <TableHeader>
             <TableRow>

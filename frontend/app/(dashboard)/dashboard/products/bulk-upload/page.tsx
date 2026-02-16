@@ -107,14 +107,14 @@ const BulkUploadPage = () => {
   };
 
   if (authLoading) {
-    return <div className="container py-8"><p>Loading...</p></div>;
+    return <div className="container py-8 text-brown-light"><p>Loading...</p></div>;
   }
 
   return (
-    <div className="container mx-auto py-10">
-      <Card className="max-w-2xl mx-auto">
+    <div className="container mx-auto py-10 bg-cream min-h-screen">
+      <Card className="max-w-2xl mx-auto rounded-2xl border-line" style={{ borderRadius: '20px' }}>
         <CardHeader>
-          <CardTitle>Bulk Upload Products</CardTitle>
+          <CardTitle className="text-brown">Bulk Upload Products</CardTitle>
           <CardDescription>
             Add multiple products at once by uploading a CSV file.
           </CardDescription>
@@ -125,7 +125,7 @@ const BulkUploadPage = () => {
             <p className="text-sm text-muted-foreground">
               Download the CSV template. You can include image links in the 'images' column (comma-separated for multiple images).
             </p>
-            <Button variant="outline" onClick={handleDownloadTemplate}>
+            <Button variant="outline" onClick={handleDownloadTemplate} className="border-terracotta text-terracotta hover:bg-terracotta hover:text-white rounded-full">
               Download Template
             </Button>
           </div>
@@ -147,7 +147,7 @@ const BulkUploadPage = () => {
                   disabled={isLoading}
                 />
               </div>
-              <Button type="submit" disabled={!file || isLoading}>
+              <Button type="submit" disabled={!file || isLoading} className="bg-terracotta hover:bg-brown text-white rounded-full">
                 {isLoading ? "Uploading..." : "Upload Products"}
               </Button>
             </form>

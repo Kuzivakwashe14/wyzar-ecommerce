@@ -124,8 +124,8 @@ export default function CheckoutPage() {
     return (
       <div className="flex justify-center items-center min-h-screen">
         <div className="text-center">
-          <div className="h-12 w-12 animate-spin rounded-full border-4 border-shop_dark_green border-t-transparent mx-auto mb-4"></div>
-          <p className="text-gray-600">Loading...</p>
+          <div className="h-12 w-12 animate-spin rounded-full border-4 border-terracotta border-t-transparent mx-auto mb-4"></div>
+          <p className="text-brown-light">Loading...</p>
         </div>
       </div>
     );
@@ -133,14 +133,14 @@ export default function CheckoutPage() {
 
   // 6. Build the form component
   return (
-    <div className="container mx-auto max-w-4xl px-4 py-12">
-      <h1 className="text-3xl font-bold text-center mb-8 text-shop_dark_green">Checkout</h1>
+    <div className="container mx-auto max-w-4xl px-4 py-12 bg-cream min-h-screen">
+      <h1 className="text-3xl font-bold text-center mb-8 text-brown">Checkout</h1>
       
       <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
         
         {/* Left Side: Shipping Form */}
         <div>
-          <h2 className="text-2xl font-semibold mb-4 text-shop_dark_green">Shipping Details</h2>
+          <h2 className="text-2xl font-semibold mb-4 text-brown">Shipping Details</h2>
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
               <FormField
@@ -194,40 +194,40 @@ export default function CheckoutPage() {
                 name="paymentMethod"
                 render={({ field }) => (
                   <FormItem className="space-y-3">
-                    <FormLabel className="text-shop_dark_green font-medium">Payment Method</FormLabel>
+                    <FormLabel className="text-brown font-medium">Payment Method</FormLabel>
                     <FormControl>
                       <RadioGroup
                         onValueChange={field.onChange}
                         defaultValue={field.value}
                         className="flex flex-col space-y-2"
                       >
-                        <div className={`flex items-center space-x-3 rounded-lg border-2 p-4 cursor-pointer transition-all ${field.value === 'EcoCash' ? 'border-shop_dark_green bg-shop_dark_green/5' : 'border-gray-200 hover:border-shop_light_green'}`}>
-                          <RadioGroupItem value="EcoCash" id="ecocash" className="border-shop_dark_green text-shop_dark_green" />
+                        <div className={`flex items-center space-x-3 rounded-xl border-2 p-4 cursor-pointer transition-all ${field.value === 'EcoCash' ? 'border-terracotta bg-terracotta/5' : 'border-line hover:border-terracotta/50'}`}>
+                          <RadioGroupItem value="EcoCash" id="ecocash" className="border-terracotta text-terracotta" />
                           <Label htmlFor="ecocash" className="flex items-center gap-2 cursor-pointer flex-1">
-                            <Smartphone className="h-5 w-5 text-shop_dark_green" />
+                            <Smartphone className="h-5 w-5 text-terracotta" />
                             <div>
-                              <p className="font-medium">EcoCash</p>
-                              <p className="text-sm text-gray-500">Pay via EcoCash mobile money</p>
+                              <p className="font-medium text-brown">EcoCash</p>
+                              <p className="text-sm text-brown-light">Pay via EcoCash mobile money</p>
                             </div>
                           </Label>
                         </div>
-                        <div className={`flex items-center space-x-3 rounded-lg border-2 p-4 cursor-pointer transition-all ${field.value === 'BankTransfer' ? 'border-shop_dark_green bg-shop_dark_green/5' : 'border-gray-200 hover:border-shop_light_green'}`}>
-                          <RadioGroupItem value="BankTransfer" id="bank" className="border-shop_dark_green text-shop_dark_green" />
+                        <div className={`flex items-center space-x-3 rounded-xl border-2 p-4 cursor-pointer transition-all ${field.value === 'BankTransfer' ? 'border-terracotta bg-terracotta/5' : 'border-line hover:border-terracotta/50'}`}>
+                          <RadioGroupItem value="BankTransfer" id="bank" className="border-terracotta text-terracotta" />
                           <Label htmlFor="bank" className="flex items-center gap-2 cursor-pointer flex-1">
-                            <Building2 className="h-5 w-5 text-shop_dark_green" />
+                            <Building2 className="h-5 w-5 text-terracotta" />
                             <div>
-                              <p className="font-medium">Bank Transfer</p>
-                              <p className="text-sm text-gray-500">Pay via bank deposit or transfer</p>
+                              <p className="font-medium text-brown">Bank Transfer</p>
+                              <p className="text-sm text-brown-light">Pay via bank deposit or transfer</p>
                             </div>
                           </Label>
                         </div>
-                        <div className={`flex items-center space-x-3 rounded-lg border-2 p-4 cursor-pointer transition-all ${field.value === 'CashOnDelivery' ? 'border-shop_dark_green bg-shop_dark_green/5' : 'border-gray-200 hover:border-shop_light_green'}`}>
-                          <RadioGroupItem value="CashOnDelivery" id="cod" className="border-shop_dark_green text-shop_dark_green" />
+                        <div className={`flex items-center space-x-3 rounded-xl border-2 p-4 cursor-pointer transition-all ${field.value === 'CashOnDelivery' ? 'border-terracotta bg-terracotta/5' : 'border-line hover:border-terracotta/50'}`}>
+                          <RadioGroupItem value="CashOnDelivery" id="cod" className="border-terracotta text-terracotta" />
                           <Label htmlFor="cod" className="flex items-center gap-2 cursor-pointer flex-1">
-                            <Banknote className="h-5 w-5 text-shop_light_green" />
+                            <Banknote className="h-5 w-5 text-sage" />
                             <div>
-                              <p className="font-medium">Cash on Delivery</p>
-                              <p className="text-sm text-gray-500">Pay with cash when your order arrives</p>
+                              <p className="font-medium text-brown">Cash on Delivery</p>
+                              <p className="text-sm text-brown-light">Pay with cash when your order arrives</p>
                             </div>
                           </Label>
                         </div>
@@ -240,7 +240,7 @@ export default function CheckoutPage() {
               
               <Button 
                 type="submit" 
-                className="w-full bg-shop_dark_green hover:bg-shop_light_green text-white" 
+                className="w-full bg-terracotta hover:bg-brown text-white rounded-full" 
                 size="lg"
                 disabled={isSubmitting}
               >
@@ -257,17 +257,17 @@ export default function CheckoutPage() {
 
         {/* Right Side: Order Summary */}
         <div>
-          <h2 className="text-2xl font-semibold mb-4 text-shop_dark_green">Your Order</h2>
-          <Card className="border-gray-200">
-            <CardHeader className="bg-shop_dark_green/5 border-b border-gray-200">
-              <CardTitle className="text-shop_dark_green">Order Summary</CardTitle>
+          <h2 className="text-2xl font-semibold mb-4 text-brown">Your Order</h2>
+          <Card className="border-line rounded-2xl" style={{ borderRadius: '20px' }}>
+            <CardHeader className="bg-sand/50 border-b border-line">
+              <CardTitle className="text-brown">Order Summary</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4 pt-4">
               <div className="space-y-2">
                 {cartItems.map((item) => (
                   <div key={item.id} className="flex items-center justify-between">
                     <div className="flex items-center space-x-2">
-                      <div className="relative h-12 w-12 rounded-md overflow-hidden border border-gray-200">
+                      <div className="relative h-12 w-12 rounded-xl overflow-hidden border border-line">
                         <Image
                           src={getImageUrl(item.images?.[0])}
                           alt={item.name}
@@ -278,19 +278,19 @@ export default function CheckoutPage() {
                       </div>
                       <div>
                         <p className="text-sm font-medium">{item.name}</p>
-                        <p className="text-xs text-gray-500">Qty: {item.cartQuantity}</p>
+                        <p className="text-xs text-brown-light">Qty: {item.cartQuantity}</p>
                       </div>
                     </div>
-                    <p className="text-sm font-medium text-shop_dark_green">
+                    <p className="text-sm font-medium text-terracotta">
                       ${(item.price * item.cartQuantity).toFixed(2)}
                     </p>
                   </div>
                 ))}
               </div>
-              <div className="border-t border-gray-200 pt-4 space-y-2">
+              <div className="border-t border-line pt-4 space-y-2">
                 <div className="flex justify-between text-lg font-semibold">
-                  <p>Total</p>
-                  <p className="text-shop_orange">${cartTotal.toFixed(2)}</p>
+                  <p className="text-brown">Total</p>
+                  <p className="text-terracotta">${cartTotal.toFixed(2)}</p>
                 </div>
               </div>
             </CardContent>

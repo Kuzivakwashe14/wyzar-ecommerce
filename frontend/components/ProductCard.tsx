@@ -1,4 +1,4 @@
-// In frontend/components/ProductCard.tsx
+// frontend/components/ProductCard.tsx
 "use client";
 
 import { useState } from "react";
@@ -16,7 +16,7 @@ import { Heart, ShoppingCart, Star, Eye } from "lucide-react";
 // Define the Product type to match our API response
 export interface Product {
   id: string;
-  sellerId?: string; // Add sellerId from backend
+  sellerId?: string;
   name: string;
   description: string;
   price: number;
@@ -49,7 +49,6 @@ export default function ProductCard({ product }: ProductCardProps) {
   const router = useRouter();
 
   const imageUrl = getImageUrl(product.images[0]);
-  // Map backend fields to frontend expectation
   const rating = product.rating?.average || (product as any).ratingAverage || 0;
   const reviewCount = product.rating?.count || (product as any).ratingCount || 0;
   const isWishlisted = isInWishlist(product.id);
@@ -83,13 +82,14 @@ export default function ProductCard({ product }: ProductCardProps) {
 
   return (
     <div 
-      className="group relative bg-white rounded-lg overflow-hidden border border-gray-200 hover:shadow-xl transition-all duration-300"
+      className="group relative bg-white rounded-2xl overflow-hidden border border-line hover:shadow-lg transition-all duration-300"
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
+      style={{ borderRadius: '20px' }}
     >
       {/* Image Container */}
       <div 
-        className="relative aspect-square overflow-hidden bg-shop_light_pink/30 cursor-pointer"
+        className="relative aspect-square overflow-hidden bg-sand/30 cursor-pointer"
         onClick={handleImageClick}
       >
         <Image
@@ -104,18 +104,17 @@ export default function ProductCard({ product }: ProductCardProps) {
         {/* Badges */}
         <div className="absolute top-3 left-3 flex flex-col gap-2">
           {product.quantity < 10 && product.quantity > 0 && (
-            <Badge className="bg-shop_orange text-gray-900 text-xs">
+            <Badge className="bg-terracotta-light text-white text-xs rounded-full">
               Low Stock
             </Badge>
           )}
           {product.quantity === 0 && (
-            <Badge variant="destructive" className="text-xs">
+            <Badge variant="destructive" className="text-xs rounded-full bg-terracotta">
               Out of Stock
             </Badge>
           )}
-          {/* Check if product is new (created within last 7 days) */}
           {new Date(product.createdAt) > new Date(Date.now() - 7 * 24 * 60 * 60 * 1000) && (
-            <Badge className="bg-shop_light_green text-white text-xs">
+            <Badge className="bg-sage text-white text-xs rounded-full">
               New
             </Badge>
           )}
@@ -127,8 +126,8 @@ export default function ProductCard({ product }: ProductCardProps) {
           className={cn(
             "absolute top-3 right-3 h-9 w-9 rounded-full flex items-center justify-center transition-all duration-300",
             isWishlisted 
-              ? "bg-red-500 text-gray-900" 
-              : "bg-white/90 text-gray-600 hover:bg-red-500 hover:text-gray-900 shadow-md"
+              ? "bg-terracotta text-white" 
+              : "bg-white/90 text-brown-light hover:bg-terracotta hover:text-white shadow-md"
           )}
         >
           <Heart className={cn("h-4 w-4", isWishlisted && "fill-current")} />
@@ -142,7 +141,7 @@ export default function ProductCard({ product }: ProductCardProps) {
           <Button
             onClick={handleAddToCart}
             size="sm"
-            className="bg-shop_dark_green hover:bg-shop_light_green text-white shadow-lg"
+            className="bg-terracotta hover:bg-brown text-white shadow-lg rounded-full"
             disabled={product.quantity === 0}
           >
             <ShoppingCart className="h-4 w-4 mr-1" />
@@ -152,7 +151,7 @@ export default function ProductCard({ product }: ProductCardProps) {
             onClick={handleQuickView}
             size="sm"
             variant="outline"
-            className="bg-white/90 hover:bg-white shadow-lg"
+            className="bg-white/90 hover:bg-white shadow-lg border-line rounded-full"
           >
             <Eye className="h-4 w-4" />
           </Button>
@@ -164,14 +163,14 @@ export default function ProductCard({ product }: ProductCardProps) {
         {/* Category */}
         <Link 
           href={`/products?category=${product.category}`}
-          className="text-xs text-shop_dark_green hover:text-shop_light_green font-medium uppercase tracking-wide"
+          className="text-xs text-sage hover:text-terracotta font-medium uppercase tracking-wide"
         >
           {product.category}
         </Link>
 
         {/* Product Name */}
         <Link href={`/products/${product.id}`}>
-          <h3 className="mt-1 font-semibold text-gray-900 line-clamp-2 hover:text-shop_dark_green transition-colors">
+          <h3 className="mt-1 font-semibold text-brown line-clamp-2 hover:text-terracotta transition-colors">
             {product.name}
           </h3>
         </Link>
@@ -185,21 +184,21 @@ export default function ProductCard({ product }: ProductCardProps) {
                 className={cn(
                   "h-4 w-4",
                   star <= Math.round(rating)
-                    ? "text-yellow-400 fill-yellow-400"
-                    : "text-gray-300"
+                    ? "text-terracotta-light fill-terracotta-light"
+                    : "text-line"
                 )}
               />
             ))}
           </div>
-          <span className="text-sm text-gray-500 ml-1">
+          <span className="text-sm text-brown-light ml-1">
             ({reviewCount})
           </span>
         </div>
 
         {/* Seller */}
-        <p className="text-xs text-gray-500 mt-2">
+        <p className="text-xs text-brown-light mt-2">
           By{" "}
-          <span className="text-shop_dark_green hover:underline cursor-pointer">
+          <span className="text-sage hover:underline cursor-pointer">
             {product.seller?.sellerDetails?.businessName || 'Unknown Seller'}
           </span>
         </p>
@@ -207,7 +206,7 @@ export default function ProductCard({ product }: ProductCardProps) {
         {/* Price */}
         <div className="flex items-center justify-between mt-3">
           <div className="flex items-center gap-2">
-            <span className="text-xl font-bold text-shop_dark_green">
+            <span className="text-xl font-bold text-terracotta">
               ${product.price.toFixed(2)}
             </span>
           </div>
@@ -217,7 +216,7 @@ export default function ProductCard({ product }: ProductCardProps) {
             onClick={handleAddToCart}
             size="icon"
             variant="outline"
-            className="md:hidden border-shop_dark_green text-shop_dark_green hover:bg-shop_dark_green hover:text-white"
+            className="md:hidden border-terracotta text-terracotta hover:bg-terracotta hover:text-white rounded-full"
             disabled={product.quantity === 0}
           >
             <ShoppingCart className="h-4 w-4" />
@@ -226,7 +225,7 @@ export default function ProductCard({ product }: ProductCardProps) {
 
         {/* Stock Status */}
         {product.quantity > 0 && product.quantity <= 5 && (
-          <p className="text-xs text-shop_orange mt-2">
+          <p className="text-xs text-terracotta-light mt-2">
             Only {product.quantity} left in stock
           </p>
         )}
@@ -234,4 +233,3 @@ export default function ProductCard({ product }: ProductCardProps) {
     </div>
   );
 }
-

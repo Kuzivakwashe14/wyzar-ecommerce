@@ -194,7 +194,7 @@ export default function SellerDetailsPage({ params }: { params: Promise<{ id: st
     return (
       <div className="flex items-center justify-center h-full min-h-[400px]">
         <div className="text-center">
-          <Loader2 className="w-12 h-12 animate-spin text-indigo-500 mx-auto mb-4" />
+          <Loader2 className="w-12 h-12 animate-spin text-terracotta mx-auto mb-4" />
           <p className="text-gray-600">Loading seller details...</p>
         </div>
       </div>
@@ -393,7 +393,7 @@ export default function SellerDetailsPage({ params }: { params: Promise<{ id: st
              <div className="bg-white border border-gray-200 rounded-xl p-6 shadow-sm">
                 <div className="flex items-center justify-between mb-4">
                      <h3 className="text-lg font-bold text-gray-900">Verification Documents</h3>
-                     <span className="text-xs font-semibold bg-indigo-50 text-indigo-700 px-2.5 py-0.5 rounded-full">
+                     <span className="text-xs font-semibold bg-cream text-brown px-2.5 py-0.5 rounded-full">
                          {seller.sellerDetails.verificationDocuments.length} Files
                      </span>
                 </div>
@@ -401,11 +401,11 @@ export default function SellerDetailsPage({ params }: { params: Promise<{ id: st
                 {seller.sellerDetails.verificationDocuments.length > 0 ? (
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         {seller.sellerDetails.verificationDocuments.map((doc) => (
-                            <div key={doc.id} className="border border-gray-200 rounded-lg p-4 hover:border-indigo-300 transition-colors">
+                            <div key={doc.id} className="border border-gray-200 rounded-lg p-4 hover:border-terracotta/60 transition-colors">
                                 <div className="flex items-start justify-between mb-2">
                                      <div className="flex items-center gap-3">
-                                        <div className="p-2 bg-indigo-50 rounded-lg">
-                                            <FileText className="w-5 h-5 text-indigo-500" />
+                                        <div className="p-2 bg-cream rounded-lg">
+                                            <FileText className="w-5 h-5 text-terracotta" />
                                         </div>
                                         <div>
                                             <p className="font-medium text-gray-900 text-sm">
@@ -433,7 +433,7 @@ export default function SellerDetailsPage({ params }: { params: Promise<{ id: st
                                 
                                 <button
                                     onClick={() => handleViewDocument(doc.id)}
-                                    className="w-full mt-3 flex items-center justify-center gap-2 py-2 text-sm font-medium text-indigo-600 bg-indigo-50 hover:bg-indigo-100 rounded-lg transition-colors"
+                                    className="w-full mt-3 flex items-center justify-center gap-2 py-2 text-sm font-medium text-terracotta bg-cream hover:bg-sand rounded-lg transition-colors"
                                 >
                                     <ExternalLink className="w-4 h-4" />
                                     View Document

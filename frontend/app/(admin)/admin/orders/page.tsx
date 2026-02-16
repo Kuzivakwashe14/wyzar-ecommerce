@@ -152,7 +152,7 @@ export default function OrdersPage() {
               setStatusFilter(e.target.value);
               setCurrentPage(1);
             }}
-            className="px-4 py-2 bg-gray-50 border border-gray-300 rounded-lg text-gray-900 focus:outline-none focus:border-shop_dark_green"
+            className="px-4 py-2 bg-gray-50 border border-gray-300 rounded-lg text-gray-900 focus:outline-none focus:border-brown"
           >
             <option value="">All Orders</option>
             <option value="Pending">Pending</option>
@@ -173,7 +173,7 @@ export default function OrdersPage() {
         {loading ? (
           <div className="flex items-center justify-center py-12">
             <div className="text-center">
-              <div className="h-12 w-12 animate-spin rounded-full border-4 border-indigo-500 border-t-transparent mx-auto mb-4"></div>
+              <div className="h-12 w-12 animate-spin rounded-full border-4 border-terracotta border-t-transparent mx-auto mb-4"></div>
               <p className="text-gray-600">Loading orders...</p>
             </div>
           </div>
@@ -248,7 +248,7 @@ export default function OrdersPage() {
                         <select
                           value={order.status}
                           onChange={(e) => handleStatusChange(order.id, e.target.value)}
-                          className="px-3 py-1 bg-gray-200 border border-gray-300 rounded-lg text-gray-900 text-sm focus:outline-none focus:border-shop_dark_green"
+                          className="px-3 py-1 bg-gray-200 border border-gray-300 rounded-lg text-gray-900 text-sm focus:outline-none focus:border-brown"
                         >
                           <option value="Pending">Pending</option>
                           <option value="Paid">Paid</option>

@@ -127,7 +127,7 @@ export default function VerifiedSellersPage() {
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               placeholder="Search by business name or email..."
-              className="w-full pl-10 pr-4 py-2 bg-gray-50 border border-gray-200 rounded-lg text-gray-900 focus:outline-none focus:border-shop_dark_green focus:ring-1 focus:ring-shop_dark_green transition-all"
+              className="w-full pl-10 pr-4 py-2 bg-gray-50 border border-gray-200 rounded-lg text-gray-900 focus:outline-none focus:border-brown focus:ring-1 focus:ring-brown transition-all"
             />
           </form>
         </div>
@@ -148,7 +148,7 @@ export default function VerifiedSellersPage() {
         {loading ? (
           <div className="flex items-center justify-center py-12">
             <div className="text-center">
-              <div className="h-12 w-12 animate-spin rounded-full border-4 border-indigo-500 border-t-transparent mx-auto mb-4"></div>
+              <div className="h-12 w-12 animate-spin rounded-full border-4 border-terracotta border-t-transparent mx-auto mb-4"></div>
               <p className="text-gray-600">Loading verified sellers...</p>
             </div>
           </div>
@@ -178,7 +178,7 @@ export default function VerifiedSellersPage() {
                     <tr key={seller.id} className="hover:bg-gray-50 transition-colors">
                       <td className="px-6 py-4">
                         <div className="flex items-center gap-3">
-                          <div className="w-10 h-10 bg-indigo-100 rounded-full flex items-center justify-center text-indigo-700 font-bold">
+                          <div className="w-10 h-10 bg-sand rounded-full flex items-center justify-center text-brown font-bold">
                             {seller.sellerDetails?.businessName?.charAt(0) || 'S'}
                           </div>
                           <div>
@@ -225,7 +225,7 @@ export default function VerifiedSellersPage() {
                         <div className="flex items-center justify-end gap-2">
                           <Link
                             href={`/admin/sellers/${seller.id}`}
-                            className="p-2 text-gray-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-all"
+                            className="p-2 text-gray-400 hover:text-terracotta hover:bg-cream rounded-lg transition-all"
                             title="View Details"
                           >
                             <Eye className="w-4 h-4" />

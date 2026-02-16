@@ -140,7 +140,7 @@ export default function UsersPage() {
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 placeholder="Search by email, phone, or business name..."
-                className="w-full pl-10 pr-4 py-2 bg-gray-50 border border-gray-300 rounded-lg text-gray-900 placeholder-gray-400 focus:outline-none focus:border-shop_dark_green"
+                className="w-full pl-10 pr-4 py-2 bg-gray-50 border border-gray-300 rounded-lg text-gray-900 placeholder-gray-400 focus:outline-none focus:border-brown"
               />
             </div>
           </form>
@@ -152,7 +152,7 @@ export default function UsersPage() {
               setFilterSeller(e.target.value);
               setCurrentPage(1);
             }}
-            className="px-4 py-2 bg-gray-50 border border-gray-300 rounded-lg text-gray-900 focus:outline-none focus:border-shop_dark_green"
+            className="px-4 py-2 bg-gray-50 border border-gray-300 rounded-lg text-gray-900 focus:outline-none focus:border-brown"
           >
             <option value="">All Users</option>
             <option value="true">Sellers Only</option>
@@ -166,7 +166,7 @@ export default function UsersPage() {
               setFilterSuspended(e.target.value);
               setCurrentPage(1);
             }}
-            className="px-4 py-2 bg-gray-50 border border-gray-300 rounded-lg text-gray-900 focus:outline-none focus:border-shop_dark_green"
+            className="px-4 py-2 bg-gray-50 border border-gray-300 rounded-lg text-gray-900 focus:outline-none focus:border-brown"
           >
             <option value="">All Status</option>
             <option value="false">Active</option>
@@ -180,7 +180,7 @@ export default function UsersPage() {
         {loading ? (
           <div className="flex items-center justify-center py-12">
             <div className="text-center">
-              <div className="h-12 w-12 animate-spin rounded-full border-4 border-indigo-500 border-t-transparent mx-auto mb-4"></div>
+              <div className="h-12 w-12 animate-spin rounded-full border-4 border-terracotta border-t-transparent mx-auto mb-4"></div>
               <p className="text-gray-600">Loading users...</p>
             </div>
           </div>
@@ -215,7 +215,7 @@ export default function UsersPage() {
                     <tr key={user.id} className="hover:bg-gray-50 transition-colors">
                       <td className="px-6 py-4">
                         <div className="flex items-center gap-3">
-                          <div className="w-10 h-10 rounded-full bg-indigo-600 flex items-center justify-center text-gray-900 font-bold">
+                          <div className="w-10 h-10 rounded-full bg-brown flex items-center justify-center text-gray-900 font-bold">
                             {user.email.charAt(0).toUpperCase()}
                           </div>
                           <div>

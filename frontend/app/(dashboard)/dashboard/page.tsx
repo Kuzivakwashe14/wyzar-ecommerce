@@ -84,8 +84,8 @@ export default function DashboardPage() {
     return (
       <div className="flex justify-center items-center min-h-screen">
         <div className="text-center">
-          <div className="h-12 w-12 animate-spin rounded-full border-4 border-shop_dark_green border-t-transparent mx-auto mb-4"></div>
-          <p className="text-gray-600">Loading dashboard...</p>
+          <div className="h-12 w-12 animate-spin rounded-full border-4 border-terracotta border-t-transparent mx-auto mb-4"></div>
+          <p className="text-brown-light">Loading dashboard...</p>
         </div>
       </div>
     );
@@ -93,29 +93,29 @@ export default function DashboardPage() {
 
   // --- Main Dashboard Content ---
   return (
-    <div className="container mx-auto py-12 px-4">
-      <h1 className="text-3xl font-bold mb-4 text-shop_dark_green">
+    <div className="container mx-auto py-12 px-4 bg-cream min-h-screen">
+      <h1 className="text-3xl font-bold mb-4 text-brown">
         Welcome, {user.email}
       </h1>
       
       {/* Status Banner */}
-      <div className={`border-2 p-6 rounded-xl mb-8 ${
+      <div className={`border-2 p-6 rounded-2xl mb-8 ${
         user.isSuspended 
           ? "border-red-200 bg-red-50" 
-          : "border-shop_light_green/30 bg-shop_light_green/5"
+          : "border-sage/30 bg-sage/5"
       }`}>
         <div className="flex items-center justify-between">
           <div>
-             <h2 className={`text-lg font-bold mb-1 ${user.isSuspended ? "text-red-700" : "text-shop_dark_green"}`}>
+             <h2 className={`text-lg font-bold mb-1 ${user.isSuspended ? "text-red-700" : "text-brown"}`}>
               {user.isSuspended ? "Account Suspended" : "Seller Account Status"}
             </h2>
              <p className="text-sm">
               Status: {user.isSuspended ? (
                   <span className="text-red-600 font-bold">Suspended</span>
               ) : user.isVerified ? (
-                <span className="text-shop_light_green font-bold">Verified</span> 
+                <span className="text-sage font-bold">Verified</span> 
               ) : (
-                <span className="text-shop_orange font-bold">Pending Approval</span>
+                <span className="text-terracotta font-bold">Pending Approval</span>
               )}
             </p>
             {user.isSuspended && user.suspensionReason && (
@@ -129,77 +129,77 @@ export default function DashboardPage() {
           {user.isSuspended ? (
              <ShieldAlert className="h-12 w-12 text-red-500 opacity-20" />
           ) : (
-             <Package className="h-12 w-12 text-shop_dark_green opacity-20" />
+             <Package className="h-12 w-12 text-brown opacity-20" />
           )}
         </div>
       </div>
 
-      <h2 className="text-2xl font-semibold mb-4 text-shop_dark_green">Seller Tools</h2>
+      <h2 className="text-2xl font-semibold mb-4 text-brown">Seller Tools</h2>
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         
         {/* Card 1: Add Product */}
-        <div className="border border-gray-200 p-6 rounded-xl shadow-sm bg-white hover:shadow-md transition-shadow">
-          <h3 className="font-semibold text-lg mb-2 text-shop_dark_green">Manage Products</h3>
-          <p className="text-sm text-gray-600 mb-4">
+        <div className="border border-line p-6 rounded-2xl shadow-sm bg-white hover:shadow-md transition-shadow" style={{ borderRadius: '20px' }}>
+          <h3 className="font-semibold text-lg mb-2 text-brown">Manage Products</h3>
+          <p className="text-sm text-brown-light mb-4">
             Add new products or view your existing inventory.
           </p>
           <div className="flex gap-2">
             <Link href="/dashboard/products/new" passHref>
-              <Button className="bg-shop_dark_green hover:bg-shop_light_green text-white">Add New</Button>
+              <Button className="bg-terracotta hover:bg-brown text-white rounded-full">Add New</Button>
             </Link>
             <Link href="/dashboard/products" passHref>
-              <Button variant="outline" className="border-shop_dark_green text-shop_dark_green hover:bg-shop_dark_green hover:text-white">View All</Button>
+              <Button variant="outline" className="border-terracotta text-terracotta hover:bg-terracotta hover:text-white rounded-full">View All</Button>
             </Link>
           </div>
         </div>
 
         {/* Card 2: View Orders */}
-        <div className="border border-gray-200 p-6 rounded-xl shadow-sm bg-white hover:shadow-md transition-shadow">
-          <h3 className="font-semibold text-lg mb-2 text-shop_dark_green">View Orders</h3>
-          <p className="text-sm text-gray-600 mb-4">
+        <div className="border border-line p-6 rounded-2xl shadow-sm bg-white hover:shadow-md transition-shadow" style={{ borderRadius: '20px' }}>
+          <h3 className="font-semibold text-lg mb-2 text-brown">View Orders</h3>
+          <p className="text-sm text-brown-light mb-4">
             See and manage all your customer orders and sales.
           </p>
           <Link href="/dashboard/orders" passHref>
-            <Button className="bg-shop_dark_green hover:bg-shop_light_green text-white">View Orders</Button>
+            <Button className="bg-terracotta hover:bg-brown text-white rounded-full">View Orders</Button>
           </Link>
         </div>
 
         {/* Card 3: Earnings Summary */}
-        <div className="border border-gray-200 p-6 rounded-xl shadow-sm bg-white hover:shadow-md transition-shadow">
-          <h3 className="font-semibold text-lg mb-2 text-shop_dark_green">Earnings Summary</h3>
+        <div className="border border-line p-6 rounded-2xl shadow-sm bg-white hover:shadow-md transition-shadow" style={{ borderRadius: '20px' }}>
+          <h3 className="font-semibold text-lg mb-2 text-brown">Earnings Summary</h3>
           {statsLoading ? (
             <div className="flex items-center gap-2">
-              <div className="h-4 w-4 animate-spin rounded-full border-2 border-shop_dark_green border-t-transparent"></div>
-              <p className="text-sm text-gray-600">Loading...</p>
+              <div className="h-4 w-4 animate-spin rounded-full border-2 border-terracotta border-t-transparent"></div>
+              <p className="text-sm text-brown-light">Loading...</p>
             </div>
           ) : stats ? (
             <div className="space-y-3">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
-                  <DollarSign className="h-4 w-4 text-shop_light_green" />
-                  <span className="text-sm text-gray-600">Total Earnings</span>
+                  <DollarSign className="h-4 w-4 text-sage" />
+                  <span className="text-sm text-brown-light">Total Earnings</span>
                 </div>
-                <span className="font-bold text-lg text-shop_light_green">
+                <span className="font-bold text-lg text-sage">
                   ${stats.totalEarnings.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                 </span>
               </div>
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
-                  <Package className="h-4 w-4 text-shop_dark_green" />
-                  <span className="text-sm text-gray-600">Total Orders</span>
+                  <Package className="h-4 w-4 text-brown" />
+                  <span className="text-sm text-brown-light">Total Orders</span>
                 </div>
                 <span className="font-semibold text-lg">{stats.totalOrders}</span>
               </div>
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
-                  <Clock className="h-4 w-4 text-shop_orange" />
-                  <span className="text-sm text-gray-600">Pending Orders</span>
+                  <Clock className="h-4 w-4 text-terracotta" />
+                  <span className="text-sm text-brown-light">Pending Orders</span>
                 </div>
-                <span className="font-semibold text-lg text-shop_orange">{stats.pendingOrders}</span>
+                <span className="font-semibold text-lg text-terracotta">{stats.pendingOrders}</span>
               </div>
             </div>
           ) : (
-            <p className="text-sm text-gray-600">No data available</p>
+            <p className="text-sm text-brown-light">No data available</p>
           )}
         </div>
 

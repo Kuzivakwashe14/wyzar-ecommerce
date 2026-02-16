@@ -67,8 +67,8 @@ export default function MyOrdersPage() {
     return (
       <div className="flex justify-center items-center min-h-screen">
         <div className="text-center">
-          <div className="h-12 w-12 animate-spin rounded-full border-4 border-shop_dark_green border-t-transparent mx-auto mb-4"></div>
-          <p className="text-gray-600">Loading orders...</p>
+          <div className="h-12 w-12 animate-spin rounded-full border-4 border-terracotta border-t-transparent mx-auto mb-4"></div>
+          <p className="text-brown-light">Loading orders...</p>
         </div>
       </div>
     );
@@ -87,13 +87,13 @@ export default function MyOrdersPage() {
   const getStatusBadge = (status: string) => {
     switch (status) {
       case 'Paid':
-        return <Badge className="bg-shop_light_green text-white">{status}</Badge>;
+        return <Badge className="bg-sage text-white">{status}</Badge>;
       case 'Pending':
-        return <Badge className="bg-shop_orange/20 text-shop_orange border-shop_orange">{status}</Badge>;
+        return <Badge className="bg-terracotta/20 text-terracotta border-terracotta">{status}</Badge>;
       case 'Shipped':
-        return <Badge className="bg-shop_dark_green text-white">{status}</Badge>;
+        return <Badge className="bg-brown text-white">{status}</Badge>;
       case 'Delivered':
-        return <Badge className="bg-gray-700 text-white">{status}</Badge>;
+        return <Badge className="bg-brown-dark text-white">{status}</Badge>;
       case 'Cancelled':
         return <Badge variant="destructive">{status}</Badge>;
       default:
@@ -102,36 +102,36 @@ export default function MyOrdersPage() {
   };
 
   return (
-    <div className="container mx-auto max-w-3xl py-12 px-4">
-      <h1 className="text-3xl font-bold mb-8 text-shop_dark_green">My Orders</h1>
+    <div className="container mx-auto max-w-3xl py-12 px-4 bg-cream min-h-screen">
+      <h1 className="text-3xl font-bold mb-8 text-brown">My Orders</h1>
 
       {orders.length === 0 ? (
-        <div className="text-center py-12 bg-white rounded-xl border border-gray-200">
-          <p className="text-gray-600">You have not placed any orders yet.</p>
+        <div className="text-center py-12 bg-white rounded-2xl border border-line" style={{ borderRadius: '20px' }}>
+          <p className="text-brown-light">You have not placed any orders yet.</p>
         </div>
       ) : (
         <Accordion type="single" collapsible className="w-full space-y-4">
           {orders.map((order) => (
-            <AccordionItem value={order.id} key={order.id} className="bg-white rounded-xl border border-gray-200 px-4">
+            <AccordionItem value={order.id} key={order.id} className="bg-white rounded-2xl border border-line px-4" style={{ borderRadius: '20px' }}>
               
               <AccordionTrigger className="hover:no-underline">
                 <div className="flex justify-between w-full pr-4">
                   <div className="text-left">
-                    <p className="font-semibold text-shop_dark_green">Order ID: {order.id.substring(0, 8)}...</p>
-                    <p className="text-sm text-gray-500">
+                    <p className="font-semibold text-brown">Order ID: {order.id.substring(0, 8)}...</p>
+                    <p className="text-sm text-brown-light">
                       Placed on {formatDate(order.createdAt)}
                     </p>
                   </div>
                   <div className="flex flex-col items-end">
                     {getStatusBadge(order.status)}
-                    <p className="font-semibold text-lg text-shop_orange">
+                    <p className="font-semibold text-lg text-terracotta">
                       ${order.totalPrice.toFixed(2)}
                     </p>
                   </div>
                 </div>
               </AccordionTrigger>
               
-              <AccordionContent className="border-t border-gray-200">
+              <AccordionContent className="border-t border-line">
                 <div className="pt-4 space-y-4">
                   {/* Order Items */}
                   {order.orderItems.map((item) => (
@@ -151,17 +151,17 @@ export default function MyOrdersPage() {
                           Qty: {item.quantity}
                         </p>
                       </div>
-                      <p className="text-sm font-medium text-shop_dark_green">
+                      <p className="text-sm font-medium text-terracotta">
                         ${(item.price * item.quantity).toFixed(2)}
                       </p>
                     </div>
                   ))}
                   {/* Shipping Details */}
-                  <div className="border-t border-gray-200 pt-4">
-                    <h4 className="font-semibold mb-2 text-shop_dark_green">Shipping To:</h4>
-                    <p className="text-sm text-gray-600">{order.shippingFullName}</p>
-                    <p className="text-sm text-gray-600">{order.shippingAddress}</p>
-                    <p className="text-sm text-gray-600">{order.shippingCity}</p>
+                  <div className="border-t border-line pt-4">
+                    <h4 className="font-semibold mb-2 text-brown">Shipping To:</h4>
+                    <p className="text-sm text-brown-light">{order.shippingFullName}</p>
+                    <p className="text-sm text-brown-light">{order.shippingAddress}</p>
+                    <p className="text-sm text-brown-light">{order.shippingCity}</p>
                   </div>
                 </div>
               </AccordionContent>

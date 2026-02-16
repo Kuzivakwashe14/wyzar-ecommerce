@@ -1,5 +1,5 @@
 // frontend/app/layout.tsx
-import { Inter } from "next/font/google";
+import { Nunito, Caveat } from "next/font/google";
 import "./globals.css";
 import { Toaster } from "sonner";
 import { ClerkProvider } from "@clerk/nextjs";
@@ -11,11 +11,13 @@ import ConditionalNavbar from "@/components/layout/ConditionalNavbar";
 import ConditionalFooter from "@/components/layout/ConditionalFooter";
 import UserSync from "@/components/auth/UserSync";
 
-const inter = Inter({ subsets: ["latin"] });
+const nunito = Nunito({ subsets: ["latin"], variable: "--font-nunito" });
+const caveat = Caveat({ subsets: ["latin"], variable: "--font-caveat" });
 
 export const metadata = {
-  title: "WyZar E-Commerce",
-  description: "Buy and sell locally and internationally",
+  title: "WyZar — Zimbabwe's Community Marketplace",
+  description:
+    "Buy and sell locally with trust. Built by Zimbabweans, for Zimbabweans.",
 };
 
 export default function RootLayout({
@@ -26,7 +28,10 @@ export default function RootLayout({
   return (
     <ClerkProvider>
       <html lang="en">
-        <body className={`${inter.className} min-h-screen flex flex-col bg-white`}>
+        <body
+          className={`${nunito.variable} ${caveat.variable} font-[family-name:var(--font-nunito)] min-h-screen flex flex-col`}
+          style={{ background: "#faf7f2", color: "#3d2c1e" }}
+        >
           <AuthProvider>
             <SocketProvider>
               <CartProvider>

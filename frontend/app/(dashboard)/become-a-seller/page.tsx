@@ -498,9 +498,9 @@ export default function BecomeASellerPage() {
 
   const renderStep2 = () => (
     <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} className="space-y-6">
-      <div className="bg-blue-50 border border-blue-200 p-4 rounded-md mb-6">
-        <h4 className="font-semibold text-blue-800 mb-1">Verify Your Identity</h4>
-        <p className="text-sm text-blue-700">Please upload clear images (JPG/PNG) or PDFs. Max 5MB each.</p>
+      <div className="bg-sand border border-line p-4 rounded-xl mb-6">
+        <h4 className="font-semibold text-brown mb-1">Verify Your Identity</h4>
+        <p className="text-sm text-brown-light">Please upload clear images (JPG/PNG) or PDFs. Max 5MB each.</p>
       </div>
 
       <FormField control={form.control} name="doc_id" render={({ field: { value, onChange, ...field } }) => (
@@ -608,11 +608,11 @@ export default function BecomeASellerPage() {
       </div>
 
       <div className="space-y-4 pt-4 border-t">
-        <h3 className="text-lg font-medium text-shop_dark_green">Payout Details</h3>
+        <h3 className="text-lg font-medium text-brown">Payout Details</h3>
         
         {/* EcoCash Section */}
-        <div className="space-y-3 bg-gray-50 p-4 rounded-lg">
-          <h4 className="font-medium text-gray-700">EcoCash</h4>
+        <div className="space-y-3 bg-sand/50 p-4 rounded-xl">
+          <h4 className="font-medium text-brown">EcoCash</h4>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <FormField control={form.control} name="ecocashNumber" render={({ field }) => (
               <FormItem>
@@ -632,8 +632,8 @@ export default function BecomeASellerPage() {
         </div>
 
         {/* Bank Transfer Section */}
-        <div className="space-y-3 bg-gray-50 p-4 rounded-lg">
-          <h4 className="font-medium text-gray-700">Bank Transfer (Optional)</h4>
+        <div className="space-y-3 bg-sand/50 p-4 rounded-xl">
+          <h4 className="font-medium text-brown">Bank Transfer (Optional)</h4>
           <FormField control={form.control} name="bankName" render={({ field }) => (
               <FormItem>
                 <FormLabel>Bank Name</FormLabel>
@@ -667,16 +667,16 @@ export default function BecomeASellerPage() {
   }
 
   return (
-    <div className="container mx-auto max-w-3xl py-12 px-4">
-      <h1 className="text-3xl font-bold text-center mb-2 text-shop_dark_green">Become a WyZar Seller</h1>
-      <p className="text-center text-gray-500 mb-8">Join the premium marketplace for top brands.</p>
+    <div className="container mx-auto max-w-3xl py-12 px-4 bg-cream min-h-screen">
+      <h1 className="text-3xl font-bold text-center mb-2 text-brown">Become a WyZar Seller</h1>
+      <p className="text-center text-brown-light mb-8">Join the premium marketplace for top brands.</p>
 
       {/* Progress Bar */}
       <div className="mb-8">
-        <div className="flex justify-between text-sm font-medium mb-2 text-gray-600">
-          <span className={currentStep >= 1 ? "text-shop_dark_green" : ""}>Step 1: Application</span>
-          <span className={currentStep >= 2 ? "text-shop_dark_green" : ""}>Step 2: Documents</span>
-          <span className={currentStep >= 3 ? "text-shop_dark_green" : ""}>Step 3: Agreements</span>
+        <div className="flex justify-between text-sm font-medium mb-2 text-brown-light">
+          <span className={currentStep >= 1 ? "text-terracotta" : ""}>Step 1: Application</span>
+          <span className={currentStep >= 2 ? "text-terracotta" : ""}>Step 2: Documents</span>
+          <span className={currentStep >= 3 ? "text-terracotta" : ""}>Step 3: Agreements</span>
         </div>
         <Progress value={(currentStep / 3) * 100} className="h-2" />
       </div>
@@ -688,7 +688,7 @@ export default function BecomeASellerPage() {
           toast.error("Form Validation Failed", {
             description: Object.values(errors).map((e: any) => e.message).join(", ") || "Unknown error. Check console."
           });
-        })} className="bg-white p-6 md:p-8 rounded-xl border shadow-sm space-y-8">
+        })} className="bg-white p-6 md:p-8 rounded-2xl border border-line shadow-sm space-y-8" style={{ borderRadius: '20px' }}>
           
           <AnimatePresence mode="wait">
             {currentStep === 1 && renderStep1()}
@@ -704,11 +704,11 @@ export default function BecomeASellerPage() {
             )}
             
             {currentStep < 3 ? (
-              <Button type="button" onClick={nextStep} className="bg-shop_dark_green hover:bg-shop_dark_green/90 text-white">
+              <Button type="button" onClick={nextStep} className="bg-terracotta hover:bg-brown text-white rounded-full">
                 Next Step
               </Button>
             ) : (
-              <Button type="submit" disabled={isSubmitting} className="bg-shop_dark_green hover:bg-shop_dark_green/90 text-white w-full md:w-auto px-8">
+              <Button type="submit" disabled={isSubmitting} className="bg-terracotta hover:bg-brown text-white rounded-full w-full md:w-auto px-8">
                 {isSubmitting ? "Submitting..." : "Submit Application"}
               </Button>
             )}

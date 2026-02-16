@@ -230,7 +230,7 @@ export default function PendingSellersPage() {
     return (
       <div className="flex items-center justify-center h-full">
         <div className="text-center">
-          <div className="h-12 w-12 animate-spin rounded-full border-4 border-indigo-500 border-t-transparent mx-auto mb-4"></div>
+          <div className="h-12 w-12 animate-spin rounded-full border-4 border-terracotta border-t-transparent mx-auto mb-4"></div>
           <p className="text-gray-600">Loading pending sellers...</p>
         </div>
       </div>
@@ -265,7 +265,7 @@ export default function PendingSellersPage() {
           {sellers.map((seller) => (
             <div
               key={seller.id}
-              className="bg-white border border-gray-200 rounded-xl p-6 hover:border-indigo-500 transition-all shadow-sm"
+              className="bg-white border border-gray-200 rounded-xl p-6 hover:border-terracotta transition-all shadow-sm"
             >
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
                 {/* LEFT COLUMN: Seller Info & Business Details */}
@@ -376,8 +376,8 @@ export default function PendingSellersPage() {
                             >
                             <div className="flex items-start justify-between mb-2">
                                 <div className="flex items-center gap-3">
-                                <div className="p-2 bg-indigo-50 rounded-lg">
-                                    <FileText className="w-5 h-5 text-indigo-500" />
+                                <div className="p-2 bg-cream rounded-lg">
+                                    <FileText className="w-5 h-5 text-terracotta" />
                                 </div>
                                 <div>
                                     <h5 className="font-medium text-gray-900 text-sm">
@@ -402,7 +402,7 @@ export default function PendingSellersPage() {
                                 <span className="text-gray-400 truncate max-w-[150px]">{doc.documentName}</span>
                                 <button
                                     onClick={() => handleViewDocument(seller.id, doc.id)}
-                                    className="text-indigo-600 hover:text-indigo-800 font-medium hover:underline"
+                                    className="text-terracotta hover:text-brown font-medium hover:underline"
                                 >
                                     View File
                                 </button>
@@ -426,7 +426,7 @@ export default function PendingSellersPage() {
                                             ...prev,
                                             [doc.id]: e.target.value
                                         }))}
-                                        className="w-full px-2 py-1 bg-gray-50 border border-gray-300 rounded text-gray-900 text-xs focus:ring-1 focus:ring-indigo-500 mb-2"
+                                        className="w-full px-2 py-1 bg-gray-50 border border-gray-300 rounded text-gray-900 text-xs focus:ring-1 focus:ring-terracotta mb-2"
                                         rows={2}
                                         placeholder="Reason for rejection..."
                                         />
@@ -506,7 +506,7 @@ export default function PendingSellersPage() {
                         <button
                         onClick={() => handleApprove(seller.id)}
                         disabled={processing === seller.id}
-                        className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-shop_dark_green hover:bg-shop_dark_green/90 text-white rounded-lg font-medium shadow-sm transition-all"
+                        className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-brown hover:bg-brown/90 text-white rounded-lg font-medium shadow-sm transition-all"
                         >
                             {processing === seller.id ? <Loader2 className="w-5 h-5 animate-spin" /> : <CheckCircle className="w-5 h-5" />}
                             Approve Full Application

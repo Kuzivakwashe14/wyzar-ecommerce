@@ -8,7 +8,6 @@ import Container from "@/components/Container";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import { Slider } from "@/components/ui/slider";
@@ -73,7 +72,6 @@ function ProductsContent() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  // Filter states
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
   const [sortBy, setSortBy] = useState("newest");
@@ -83,20 +81,17 @@ function ProductsContent() {
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
   const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
 
-  // Calculate max price from products
   const maxPrice = useMemo(() => {
     if (products.length === 0) return 10000;
     return Math.ceil(Math.max(...products.map(p => p.price)) / 100) * 100;
   }, [products]);
 
-  // Update price range when products load
   useEffect(() => {
     if (maxPrice > 0) {
       setPriceRange([0, maxPrice]);
     }
   }, [maxPrice]);
 
-  // Get category counts
   const categoryCounts = useMemo(() => {
     const counts: Record<string, number> = {};
     products.forEach(product => {
@@ -106,17 +101,11 @@ function ProductsContent() {
     return counts;
   }, [products]);
 
-  // Get category and search from URL params
   useEffect(() => {
     const category = searchParams.get("category");
     const search = searchParams.get("search");
-
-    if (category) {
-      setSelectedCategories([category.toLowerCase()]);
-    }
-    if (search) {
-      setSearchQuery(search);
-    }
+    if (category) setSelectedCategories([category.toLowerCase()]);
+    if (search) setSearchQuery(search);
   }, [searchParams]);
 
   useEffect(() => {
@@ -133,15 +122,11 @@ function ProductsContent() {
         setLoading(false);
       }
     };
-
     fetchProducts();
   }, []);
 
-  // Filter and sort products
   const filteredAndSortedProducts = useMemo(() => {
     let result = [...products];
-
-    // Apply search filter
     if (searchQuery.trim()) {
       const query = searchQuery.toLowerCase();
       result = result.filter(
@@ -151,56 +136,28 @@ function ProductsContent() {
           product.category?.toLowerCase().includes(query)
       );
     }
-
-    // Apply category filter
     if (selectedCategories.length > 0) {
       result = result.filter((product) =>
-        selectedCategories.some(
-          (cat) => product.category?.toLowerCase().includes(cat)
-        )
+        selectedCategories.some((cat) => product.category?.toLowerCase().includes(cat))
       );
     }
-
-    // Apply price range filter
     result = result.filter(
       (product) => product.price >= priceRange[0] && product.price <= priceRange[1]
     );
-
-    // Apply rating filter
     if (minRating > 0) {
-      result = result.filter(
-        (product) => (product.rating?.average || 0) >= minRating
-      );
+      result = result.filter((product) => (product.rating?.average || 0) >= minRating);
     }
-
-    // Apply stock filter
     if (inStockOnly) {
       result = result.filter((product) => product.quantity > 0);
     }
-
-    // Apply sorting
     switch (sortBy) {
-      case "price-low":
-        result.sort((a, b) => a.price - b.price);
-        break;
-      case "price-high":
-        result.sort((a, b) => b.price - a.price);
-        break;
-      case "name-asc":
-        result.sort((a, b) => a.name.localeCompare(b.name));
-        break;
-      case "name-desc":
-        result.sort((a, b) => b.name.localeCompare(a.name));
-        break;
-      case "rating":
-        result.sort((a, b) => (b.rating?.average || 0) - (a.rating?.average || 0));
-        break;
-      case "newest":
-      default:
-        result.reverse();
-        break;
+      case "price-low": result.sort((a, b) => a.price - b.price); break;
+      case "price-high": result.sort((a, b) => b.price - a.price); break;
+      case "name-asc": result.sort((a, b) => a.name.localeCompare(b.name)); break;
+      case "name-desc": result.sort((a, b) => b.name.localeCompare(a.name)); break;
+      case "rating": result.sort((a, b) => (b.rating?.average || 0) - (a.rating?.average || 0)); break;
+      case "newest": default: result.reverse(); break;
     }
-
     return result;
   }, [products, searchQuery, selectedCategories, sortBy, priceRange, minRating, inStockOnly]);
 
@@ -215,9 +172,7 @@ function ProductsContent() {
 
   const toggleCategory = (categoryId: string) => {
     setSelectedCategories((prev) =>
-      prev.includes(categoryId)
-        ? prev.filter((c) => c !== categoryId)
-        : [...prev, categoryId]
+      prev.includes(categoryId) ? prev.filter((c) => c !== categoryId) : [...prev, categoryId]
     );
   };
 
@@ -229,12 +184,11 @@ function ProductsContent() {
     searchQuery.trim() !== "",
   ].filter(Boolean).length;
 
-  // Filter Sidebar Content
   const FilterContent = () => (
     <div className="space-y-6">
       {/* Categories */}
       <div>
-        <h3 className="font-semibold text-gray-900 mb-4 flex items-center gap-2">
+        <h3 className="font-semibold text-brown mb-4 flex items-center gap-2">
           <Filter className="h-4 w-4" />
           Categories
         </h3>
@@ -247,15 +201,15 @@ function ProductsContent() {
                   id={category.id}
                   checked={selectedCategories.includes(category.id)}
                   onCheckedChange={() => toggleCategory(category.id)}
-                  className="border-gray-300 data-[state=checked]:bg-shop_dark_green data-[state=checked]:border-shop_dark_green"
+                  className="border-line data-[state=checked]:bg-terracotta data-[state=checked]:border-terracotta"
                 />
                 <Label
                   htmlFor={category.id}
-                  className="flex-1 text-sm font-normal cursor-pointer text-gray-700 hover:text-shop_dark_green transition-colors"
+                  className="flex-1 text-sm font-normal cursor-pointer text-brown-light hover:text-terracotta transition-colors"
                 >
                   {category.name}
                 </Label>
-                <span className="text-xs text-gray-400 bg-gray-100 px-2 py-0.5 rounded-full">
+                <span className="text-xs text-brown-light bg-sand px-2 py-0.5 rounded-full">
                   {count}
                 </span>
               </div>
@@ -264,13 +218,11 @@ function ProductsContent() {
         </div>
       </div>
 
-      <Separator />
+      <Separator className="bg-line" />
 
       {/* Price Range */}
       <div>
-        <h3 className="font-semibold text-gray-900 mb-4">
-          Price Range
-        </h3>
+        <h3 className="font-semibold text-brown mb-4">Price Range</h3>
         <div className="px-2">
           <Slider
             value={priceRange}
@@ -281,24 +233,24 @@ function ProductsContent() {
           />
           <div className="flex items-center justify-between gap-4">
             <div className="flex-1">
-              <Label className="text-xs text-gray-500 mb-1 block">Min</Label>
+              <Label className="text-xs text-brown-light mb-1 block">Min</Label>
               <Input
                 type="number"
                 value={priceRange[0]}
                 onChange={(e) => setPriceRange([Number(e.target.value), priceRange[1]])}
-                className="h-9 text-sm"
+                className="h-9 text-sm border-line"
                 min={0}
                 max={priceRange[1]}
               />
             </div>
-            <span className="text-gray-400 mt-5">-</span>
+            <span className="text-brown-light mt-5">-</span>
             <div className="flex-1">
-              <Label className="text-xs text-gray-500 mb-1 block">Max</Label>
+              <Label className="text-xs text-brown-light mb-1 block">Max</Label>
               <Input
                 type="number"
                 value={priceRange[1]}
                 onChange={(e) => setPriceRange([priceRange[0], Number(e.target.value)])}
-                className="h-9 text-sm"
+                className="h-9 text-sm border-line"
                 min={priceRange[0]}
                 max={maxPrice}
               />
@@ -307,23 +259,21 @@ function ProductsContent() {
         </div>
       </div>
 
-      <Separator />
+      <Separator className="bg-line" />
 
       {/* Rating Filter */}
       <div>
-        <h3 className="font-semibold text-gray-900 mb-4">
-          Customer Rating
-        </h3>
+        <h3 className="font-semibold text-brown mb-4">Customer Rating</h3>
         <div className="space-y-2">
           {ratingFilters.map((rating) => (
             <button
               key={rating.value}
               onClick={() => setMinRating(minRating === rating.value ? 0 : rating.value)}
               className={cn(
-                "w-full flex items-center gap-2 px-3 py-2 rounded-lg text-sm transition-all",
+                "w-full flex items-center gap-2 px-3 py-2 rounded-xl text-sm transition-all",
                 minRating === rating.value
-                  ? "bg-shop_dark_green/10 text-shop_dark_green border border-shop_dark_green/30"
-                  : "hover:bg-gray-100 text-gray-700"
+                  ? "bg-terracotta/10 text-terracotta border border-terracotta/30"
+                  : "hover:bg-sand text-brown-light"
               )}
             >
               <div className="flex items-center gap-0.5">
@@ -333,8 +283,8 @@ function ProductsContent() {
                     className={cn(
                       "h-4 w-4",
                       i < rating.value
-                        ? "text-yellow-400 fill-yellow-400"
-                        : "text-gray-300"
+                        ? "text-terracotta-light fill-terracotta-light"
+                        : "text-line"
                     )}
                   />
                 ))}
@@ -345,36 +295,30 @@ function ProductsContent() {
         </div>
       </div>
 
-      <Separator />
+      <Separator className="bg-line" />
 
       {/* Availability */}
       <div>
-        <h3 className="font-semibold text-gray-900 mb-4">
-          Availability
-        </h3>
+        <h3 className="font-semibold text-brown mb-4">Availability</h3>
         <div className="flex items-center space-x-3">
           <Checkbox
             id="in-stock"
             checked={inStockOnly}
             onCheckedChange={(checked) => setInStockOnly(checked as boolean)}
-            className="border-gray-300 data-[state=checked]:bg-shop_dark_green data-[state=checked]:border-shop_dark_green"
+            className="border-line data-[state=checked]:bg-terracotta data-[state=checked]:border-terracotta"
           />
-          <Label
-            htmlFor="in-stock"
-            className="text-sm font-normal cursor-pointer text-gray-700"
-          >
+          <Label htmlFor="in-stock" className="text-sm font-normal cursor-pointer text-brown-light">
             In Stock Only
           </Label>
         </div>
       </div>
 
-      <Separator />
+      <Separator className="bg-line" />
 
-      {/* Clear Filters Button */}
       <Button
         variant="outline"
         onClick={clearFilters}
-        className="w-full border-gray-300 text-gray-700 hover:bg-gray-100"
+        className="w-full border-line text-brown-light hover:bg-sand rounded-full"
       >
         <RotateCcw className="h-4 w-4 mr-2" />
         Reset Filters
@@ -383,14 +327,15 @@ function ProductsContent() {
   );
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-cream">
       {/* Header Section */}
-      <div className="bg-shop_dark_green text-white py-12">
+      <div className="py-12" style={{ background: 'linear-gradient(135deg, #3d2c1e 0%, #5e4a3a 100%)' }}>
         <Container>
-          <h1 className="text-3xl md:text-4xl font-bold mb-2">
+          <span className="font-[family-name:var(--font-caveat)] text-terracotta-light text-xl">Browse</span>
+          <h1 className="text-3xl md:text-4xl font-bold mb-2 text-cream mt-1">
             Discover Products
           </h1>
-          <p className="text-white/80">
+          <p className="text-sand-warm/60">
             Browse through our extensive collection of quality products
           </p>
         </Container>
@@ -400,177 +345,171 @@ function ProductsContent() {
         <div className="flex gap-8">
           {/* Desktop Sidebar Filters */}
           <aside className="hidden lg:block w-72 shrink-0">
-            <Card className="sticky top-24 border-gray-200">
-              <CardHeader className="pb-4">
-                <CardTitle className="text-lg flex items-center justify-between">
-                  <span className="flex items-center gap-2">
-                    <SlidersHorizontal className="h-5 w-5" />
-                    Filters
-                  </span>
-                  {activeFiltersCount > 0 && (
-                    <Badge className="bg-shop_dark_green text-white">
-                      {activeFiltersCount}
-                    </Badge>
-                  )}
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <FilterContent />
-              </CardContent>
-            </Card>
+            <div className="sticky top-24 bg-white rounded-2xl border border-line p-6" style={{ borderRadius: '20px' }}>
+              <div className="flex items-center justify-between mb-6">
+                <span className="text-lg font-semibold text-brown flex items-center gap-2">
+                  <SlidersHorizontal className="h-5 w-5" />
+                  Filters
+                </span>
+                {activeFiltersCount > 0 && (
+                  <Badge className="bg-terracotta text-white">
+                    {activeFiltersCount}
+                  </Badge>
+                )}
+              </div>
+              <FilterContent />
+            </div>
           </aside>
 
           {/* Main Content */}
           <div className="flex-1 min-w-0">
             {/* Search and Sort Bar */}
-            <Card className="mb-6 border-gray-200">
-              <CardContent className="p-4">
-                <div className="flex flex-col sm:flex-row gap-4">
-                  {/* Search */}
-                  <div className="flex-1 relative">
-                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
-                    <Input
-                      type="text"
-                      placeholder="Search products..."
-                      value={searchQuery}
-                      onChange={(e) => setSearchQuery(e.target.value)}
-                      className="pl-10 border-gray-300 focus:border-shop_dark_green"
-                    />
-                    {searchQuery && (
-                      <button
-                        onClick={() => setSearchQuery("")}
-                        className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
-                      >
-                        <X className="h-4 w-4" />
-                      </button>
-                    )}
-                  </div>
-
-                  {/* Sort */}
-                  <div className="w-full sm:w-48">
-                    <Select value={sortBy} onValueChange={setSortBy}>
-                      <SelectTrigger className="border-gray-300">
-                        <SelectValue placeholder="Sort by" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {sortOptions.map((option) => (
-                          <SelectItem key={option.value} value={option.value}>
-                            {option.label}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-
-                  {/* View Mode Toggle */}
-                  <div className="hidden sm:flex items-center border border-gray-300 rounded-lg overflow-hidden">
+            <div className="bg-white rounded-2xl border border-line p-4 mb-6" style={{ borderRadius: '20px' }}>
+              <div className="flex flex-col sm:flex-row gap-4">
+                {/* Search */}
+                <div className="flex-1 relative">
+                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-brown-light" />
+                  <Input
+                    type="text"
+                    placeholder="Search products..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="pl-10 border-line focus:border-terracotta rounded-full"
+                  />
+                  {searchQuery && (
                     <button
-                      onClick={() => setViewMode("grid")}
-                      className={cn(
-                        "p-2 transition-colors",
-                        viewMode === "grid"
-                          ? "bg-shop_dark_green text-white"
-                          : "bg-white text-gray-600 hover:bg-gray-100"
-                      )}
+                      onClick={() => setSearchQuery("")}
+                      className="absolute right-3 top-1/2 transform -translate-y-1/2 text-brown-light hover:text-brown"
                     >
-                      <Grid3X3 className="h-5 w-5" />
+                      <X className="h-4 w-4" />
                     </button>
-                    <button
-                      onClick={() => setViewMode("list")}
-                      className={cn(
-                        "p-2 transition-colors",
-                        viewMode === "list"
-                          ? "bg-shop_dark_green text-white"
-                          : "bg-white text-gray-600 hover:bg-gray-100"
-                      )}
-                    >
-                      <LayoutList className="h-5 w-5" />
-                    </button>
-                  </div>
-
-                  {/* Mobile Filters Button */}
-                  <Sheet open={mobileFiltersOpen} onOpenChange={setMobileFiltersOpen}>
-                    <SheetTrigger asChild>
-                      <Button
-                        variant="outline"
-                        className="lg:hidden border-shop_dark_green text-shop_dark_green hover:bg-shop_dark_green hover:text-white"
-                      >
-                        <SlidersHorizontal className="h-5 w-5 mr-2" />
-                        Filters
-                        {activeFiltersCount > 0 && (
-                          <Badge className="ml-2 bg-shop_dark_green text-white">
-                            {activeFiltersCount}
-                          </Badge>
-                        )}
-                      </Button>
-                    </SheetTrigger>
-                    <SheetContent side="left" className="w-80 overflow-y-auto">
-                      <SheetHeader>
-                        <SheetTitle className="flex items-center gap-2">
-                          <SlidersHorizontal className="h-5 w-5" />
-                          Filters
-                        </SheetTitle>
-                      </SheetHeader>
-                      <div className="mt-6">
-                        <FilterContent />
-                      </div>
-                    </SheetContent>
-                  </Sheet>
+                  )}
                 </div>
 
-                {/* Active Filters Pills */}
-                {(selectedCategories.length > 0 || searchQuery) && (
-                  <div className="flex flex-wrap gap-2 mt-4 pt-4 border-t border-gray-200">
-                    {searchQuery && (
-                      <Badge className="gap-1 bg-shop_light_pink text-shop_dark_green hover:bg-shop_light_pink/80 pl-3">
-                        Search: &quot;{searchQuery}&quot;
+                {/* Sort */}
+                <div className="w-full sm:w-48">
+                  <Select value={sortBy} onValueChange={setSortBy}>
+                    <SelectTrigger className="border-line rounded-xl">
+                      <SelectValue placeholder="Sort by" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {sortOptions.map((option) => (
+                        <SelectItem key={option.value} value={option.value}>
+                          {option.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                {/* View Mode Toggle */}
+                <div className="hidden sm:flex items-center border border-line rounded-xl overflow-hidden">
+                  <button
+                    onClick={() => setViewMode("grid")}
+                    className={cn(
+                      "p-2 transition-colors",
+                      viewMode === "grid"
+                        ? "bg-terracotta text-white"
+                        : "bg-white text-brown-light hover:bg-sand"
+                    )}
+                  >
+                    <Grid3X3 className="h-5 w-5" />
+                  </button>
+                  <button
+                    onClick={() => setViewMode("list")}
+                    className={cn(
+                      "p-2 transition-colors",
+                      viewMode === "list"
+                        ? "bg-terracotta text-white"
+                        : "bg-white text-brown-light hover:bg-sand"
+                    )}
+                  >
+                    <LayoutList className="h-5 w-5" />
+                  </button>
+                </div>
+
+                {/* Mobile Filters Button */}
+                <Sheet open={mobileFiltersOpen} onOpenChange={setMobileFiltersOpen}>
+                  <SheetTrigger asChild>
+                    <Button
+                      variant="outline"
+                      className="lg:hidden border-terracotta text-terracotta hover:bg-terracotta hover:text-white rounded-full"
+                    >
+                      <SlidersHorizontal className="h-5 w-5 mr-2" />
+                      Filters
+                      {activeFiltersCount > 0 && (
+                        <Badge className="ml-2 bg-terracotta text-white">
+                          {activeFiltersCount}
+                        </Badge>
+                      )}
+                    </Button>
+                  </SheetTrigger>
+                  <SheetContent side="left" className="w-80 overflow-y-auto bg-cream">
+                    <SheetHeader>
+                      <SheetTitle className="flex items-center gap-2 text-brown">
+                        <SlidersHorizontal className="h-5 w-5" />
+                        Filters
+                      </SheetTitle>
+                    </SheetHeader>
+                    <div className="mt-6">
+                      <FilterContent />
+                    </div>
+                  </SheetContent>
+                </Sheet>
+              </div>
+
+              {/* Active Filters Pills */}
+              {(selectedCategories.length > 0 || searchQuery) && (
+                <div className="flex flex-wrap gap-2 mt-4 pt-4 border-t border-line">
+                  {searchQuery && (
+                    <Badge className="gap-1 bg-sand text-brown hover:bg-sand/80 pl-3 rounded-full">
+                      Search: &quot;{searchQuery}&quot;
+                      <button
+                        onClick={() => setSearchQuery("")}
+                        className="ml-1 hover:bg-brown/10 rounded-full p-0.5"
+                      >
+                        <X className="h-3 w-3" />
+                      </button>
+                    </Badge>
+                  )}
+                  {selectedCategories.map((cat) => {
+                    const category = categories.find((c) => c.id === cat);
+                    return (
+                      <Badge
+                        key={cat}
+                        className="gap-1 bg-sand text-brown hover:bg-sand/80 pl-3 rounded-full"
+                      >
+                        {category?.name || cat}
                         <button
-                          onClick={() => setSearchQuery("")}
-                          className="ml-1 hover:bg-shop_dark_green/10 rounded-full p-0.5"
+                          onClick={() => toggleCategory(cat)}
+                          className="ml-1 hover:bg-brown/10 rounded-full p-0.5"
                         >
                           <X className="h-3 w-3" />
                         </button>
                       </Badge>
-                    )}
-                    {selectedCategories.map((cat) => {
-                      const category = categories.find((c) => c.id === cat);
-                      return (
-                        <Badge
-                          key={cat}
-                          className="gap-1 bg-shop_light_pink text-shop_dark_green hover:bg-shop_light_pink/80 pl-3"
-                        >
-                          {category?.name || cat}
-                          <button
-                            onClick={() => toggleCategory(cat)}
-                            className="ml-1 hover:bg-shop_dark_green/10 rounded-full p-0.5"
-                          >
-                            <X className="h-3 w-3" />
-                          </button>
-                        </Badge>
-                      );
-                    })}
-                    {(selectedCategories.length > 0 || searchQuery) && (
-                      <button
-                        onClick={clearFilters}
-                        className="text-sm text-shop_dark_green hover:underline"
-                      >
-                        Clear all
-                      </button>
-                    )}
-                  </div>
-                )}
-              </CardContent>
-            </Card>
+                    );
+                  })}
+                  {(selectedCategories.length > 0 || searchQuery) && (
+                    <button
+                      onClick={clearFilters}
+                      className="text-sm text-terracotta hover:underline"
+                    >
+                      Clear all
+                    </button>
+                  )}
+                </div>
+              )}
+            </div>
 
             {/* Results Count */}
             <div className="flex justify-between items-center mb-6">
-              <p className="text-gray-600">
+              <p className="text-brown-light">
                 {loading ? (
                   "Loading products..."
                 ) : (
                   <>
                     Showing{" "}
-                    <span className="font-semibold text-shop_dark_green">
+                    <span className="font-semibold text-terracotta">
                       {filteredAndSortedProducts.length}
                     </span>{" "}
                     {filteredAndSortedProducts.length === 1 ? "product" : "products"}
@@ -588,58 +527,54 @@ function ProductsContent() {
                   : "flex flex-col"
               )}>
                 {[...Array(6)].map((_, i) => (
-                  <Card key={i} className="overflow-hidden border-gray-200">
+                  <div key={i} className="bg-white rounded-2xl overflow-hidden border border-line" style={{ borderRadius: '20px' }}>
                     <div className={cn(
-                      "bg-gray-200 animate-pulse",
+                      "bg-sand animate-pulse",
                       viewMode === "grid" ? "aspect-square" : "h-48 w-48"
                     )} />
-                    <CardContent className="p-4 space-y-2">
-                      <div className="h-4 bg-gray-200 rounded animate-pulse" />
-                      <div className="h-4 bg-gray-200 rounded w-2/3 animate-pulse" />
-                      <div className="h-6 bg-gray-200 rounded w-1/2 animate-pulse mt-4" />
-                    </CardContent>
-                  </Card>
+                    <div className="p-4 space-y-2">
+                      <div className="h-4 bg-sand rounded animate-pulse" />
+                      <div className="h-4 bg-sand rounded w-2/3 animate-pulse" />
+                      <div className="h-6 bg-sand rounded w-1/2 animate-pulse mt-4" />
+                    </div>
+                  </div>
                 ))}
               </div>
             )}
 
             {/* Error State */}
             {error && !loading && (
-              <Card className="border-red-300">
-                <CardContent className="p-12 text-center">
-                  <p className="text-red-600 text-lg">{error}</p>
-                  <Button
-                    onClick={() => window.location.reload()}
-                    className="mt-4 bg-shop_dark_green hover:bg-shop_light_green text-white"
-                  >
-                    Try Again
-                  </Button>
-                </CardContent>
-              </Card>
+              <div className="bg-white rounded-2xl border border-terracotta/30 p-12 text-center" style={{ borderRadius: '20px' }}>
+                <p className="text-terracotta text-lg">{error}</p>
+                <Button
+                  onClick={() => window.location.reload()}
+                  className="mt-4 bg-terracotta hover:bg-brown text-white rounded-full"
+                >
+                  Try Again
+                </Button>
+              </div>
             )}
 
             {/* Products Grid */}
             {!loading && !error && (
               <>
                 {filteredAndSortedProducts.length === 0 ? (
-                  <Card className="border-gray-200">
-                    <CardContent className="p-12 text-center">
-                      <Package className="mx-auto h-16 w-16 text-shop_dark_green/50 mb-4" />
-                      <h3 className="text-xl font-semibold mb-2 text-shop_dark_green">
-                        No products found
-                      </h3>
-                      <p className="text-gray-600 mb-6">
-                        Try adjusting your filters or search term
-                      </p>
-                      <Button
-                        onClick={clearFilters}
-                        className="bg-shop_dark_green hover:bg-shop_light_green text-white"
-                      >
-                        <RotateCcw className="h-4 w-4 mr-2" />
-                        Reset Filters
-                      </Button>
-                    </CardContent>
-                  </Card>
+                  <div className="bg-white rounded-2xl border border-line p-12 text-center" style={{ borderRadius: '20px' }}>
+                    <Package className="mx-auto h-16 w-16 text-brown-light/30 mb-4" />
+                    <h3 className="text-xl font-semibold mb-2 text-brown">
+                      No products found
+                    </h3>
+                    <p className="text-brown-light mb-6">
+                      Try adjusting your filters or search term
+                    </p>
+                    <Button
+                      onClick={clearFilters}
+                      className="bg-terracotta hover:bg-brown text-white rounded-full"
+                    >
+                      <RotateCcw className="h-4 w-4 mr-2" />
+                      Reset Filters
+                    </Button>
+                  </div>
                 ) : (
                   <div className={cn(
                     "gap-6",
@@ -664,12 +599,11 @@ function ProductsContent() {
 export default function ProductsPage() {
   return (
     <Suspense fallback={
-      <div className="flex justify-center items-center min-h-screen">
-        <p>Loading products...</p>
+      <div className="flex justify-center items-center min-h-screen bg-cream">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-terracotta"></div>
       </div>
     }>
       <ProductsContent />
     </Suspense>
   );
 }
-

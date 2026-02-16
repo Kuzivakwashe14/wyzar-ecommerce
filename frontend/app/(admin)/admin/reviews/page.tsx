@@ -102,7 +102,7 @@ export default function ReviewsPage() {
     return (
       <div className="flex items-center justify-center h-full">
         <div className="text-center">
-          <div className="h-12 w-12 animate-spin rounded-full border-4 border-indigo-500 border-t-transparent mx-auto mb-4"></div>
+          <div className="h-12 w-12 animate-spin rounded-full border-4 border-terracotta border-t-transparent mx-auto mb-4"></div>
           <p className="text-gray-600">Loading reviews...</p>
         </div>
       </div>
@@ -127,7 +127,7 @@ export default function ReviewsPage() {
               setStatusFilter(e.target.value);
               setCurrentPage(1);
             }}
-            className="px-4 py-2 bg-gray-50 border border-gray-300 rounded-lg text-gray-900 focus:outline-none focus:border-shop_dark_green"
+            className="px-4 py-2 bg-gray-50 border border-gray-300 rounded-lg text-gray-900 focus:outline-none focus:border-brown"
           >
             <option value="">All Reviews</option>
             <option value="approved">Approved</option>

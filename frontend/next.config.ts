@@ -2,6 +2,9 @@ import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
   output: 'standalone', // For Docker deployment
+  turbopack: {
+    root: __dirname, // Fix: prevent Turbopack from using stray lockfile in user home
+  },
   images: {
     remotePatterns: [
       {

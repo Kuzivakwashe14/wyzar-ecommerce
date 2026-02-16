@@ -167,7 +167,7 @@ export default function ProductsPage() {
                   setCurrentPage(1);
                 }}
                 placeholder="Search products..."
-                className="w-full pl-10 pr-4 py-2 bg-gray-50 border border-gray-300 rounded-lg text-gray-900 placeholder-gray-400 focus:outline-none focus:border-shop_dark_green"
+                className="w-full pl-10 pr-4 py-2 bg-gray-50 border border-gray-300 rounded-lg text-gray-900 placeholder-gray-400 focus:outline-none focus:border-brown"
               />
             </div>
           </div>
@@ -179,7 +179,7 @@ export default function ProductsPage() {
               setCategory(e.target.value);
               setCurrentPage(1);
             }}
-            className="px-4 py-2 bg-gray-50 border border-gray-300 rounded-lg text-gray-900 focus:outline-none focus:border-shop_dark_green"
+            className="px-4 py-2 bg-gray-50 border border-gray-300 rounded-lg text-gray-900 focus:outline-none focus:border-brown"
           >
             <option value="">All Categories</option>
             <option value="Electronics">Electronics</option>
@@ -197,7 +197,7 @@ export default function ProductsPage() {
               setFeatured(e.target.value);
               setCurrentPage(1);
             }}
-            className="px-4 py-2 bg-gray-50 border border-gray-300 rounded-lg text-gray-900 focus:outline-none focus:border-shop_dark_green"
+            className="px-4 py-2 bg-gray-50 border border-gray-300 rounded-lg text-gray-900 focus:outline-none focus:border-brown"
           >
             <option value="">All Products</option>
             <option value="true">Featured Only</option>
@@ -211,7 +211,7 @@ export default function ProductsPage() {
         {loading ? (
           <div className="flex items-center justify-center py-12">
             <div className="text-center">
-              <div className="h-12 w-12 animate-spin rounded-full border-4 border-indigo-500 border-t-transparent mx-auto mb-4"></div>
+              <div className="h-12 w-12 animate-spin rounded-full border-4 border-terracotta border-t-transparent mx-auto mb-4"></div>
               <p className="text-gray-600">Loading products...</p>
             </div>
           </div>

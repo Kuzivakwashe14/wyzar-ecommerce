@@ -158,7 +158,7 @@ const SellerOrdersPage = () => {
   };
 
   if (authLoading || loading) {
-    return <div className="flex justify-center items-center h-64">Loading your orders...</div>;
+    return <div className="flex justify-center items-center h-64 text-brown-light">Loading your orders...</div>;
   }
 
   if (error) {
@@ -166,16 +166,16 @@ const SellerOrdersPage = () => {
   }
 
   return (
-    <div className="container mx-auto p-4">
-      <Card>
+    <div className="container mx-auto p-4 bg-cream min-h-screen">
+      <Card className="rounded-2xl border-line" style={{ borderRadius: '20px' }}>
         <CardHeader>
-          <CardTitle>My Sales</CardTitle>
+          <CardTitle className="text-brown">My Sales</CardTitle>
         </CardHeader>
         <CardContent>
           {orders.length === 0 ? (
             <p>You have no sales yet.</p>
           ) : (
-            <div className="rounded-md border overflow-x-auto">
+            <div className="rounded-xl border border-line overflow-x-auto">
               <Table>
                 <TableHeader>
                   <TableRow>

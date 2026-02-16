@@ -93,14 +93,14 @@ export default function SettingsPage() {
 
   // 5. Loading State
   if (loading || !user) {
-    return <div className="container py-8"><p>Loading...</p></div>;
+    return <div className="container py-8 text-brown-light"><p>Loading...</p></div>;
   }
 
   return (
-    <div className="container mx-auto max-w-2xl py-12">
-      <h1 className="text-3xl font-bold mb-8">Seller Settings</h1>
+    <div className="container mx-auto max-w-2xl py-12 bg-cream min-h-screen">
+      <h1 className="text-3xl font-bold mb-8 text-brown">Seller Settings</h1>
 
-      <Card>
+      <Card className="rounded-2xl border-line" style={{ borderRadius: '20px' }}>
         <CardHeader>
           <CardTitle>Business Profile</CardTitle>
           <CardDescription>
@@ -128,7 +128,7 @@ export default function SettingsPage() {
                 )}
               />
 
-              <Button type="submit" disabled={isSubmitting}>
+              <Button type="submit" disabled={isSubmitting} className="bg-terracotta hover:bg-brown text-white rounded-full">
                 {isSubmitting ? "Saving..." : "Save Changes"}
               </Button>
             </form>

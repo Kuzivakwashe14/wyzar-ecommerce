@@ -153,16 +153,16 @@ export default function EditProductPage() {
 
   // 6. Loading State
   if (authLoading || !product) {
-    return <div className="flex justify-center items-center min-h-screen"><p>Loading product...</p></div>;
+    return <div className="flex justify-center items-center min-h-screen text-brown-light"><p>Loading product...</p></div>;
   }
 
   // 7. Build the form
   return (
-    <div className="container mx-auto max-w-2xl px-4 py-12">
-      <Button variant="outline" size="sm" onClick={() => router.back()} className="mb-4">
+    <div className="container mx-auto max-w-2xl px-4 py-12 bg-cream min-h-screen">
+      <Button variant="outline" size="sm" onClick={() => router.back()} className="mb-4 border-terracotta text-terracotta hover:bg-terracotta hover:text-white rounded-full">
         &larr; Back to Products
       </Button>
-      <h2 className="text-3xl font-bold text-center mb-8">Edit Product</h2>
+      <h2 className="text-3xl font-bold text-center mb-8 text-brown">Edit Product</h2>
 
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
@@ -284,7 +284,7 @@ export default function EditProductPage() {
             />
           </div>
 
-          <Button type="submit" className="w-full" disabled={isSubmitting}>
+          <Button type="submit" className="w-full bg-terracotta hover:bg-brown text-white rounded-full" disabled={isSubmitting}>
             {isSubmitting ? "Saving Changes..." : "Save Changes"}
           </Button>
         </form>
