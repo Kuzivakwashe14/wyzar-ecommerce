@@ -2,6 +2,7 @@
 // Updated to use Clerk authentication
 
 const { createClerkClient } = require('@clerk/clerk-sdk-node');
+const { resolveRoleFromClerkMetadata } = require('../utils/clerkRoleSync');
 
 // Initialize Clerk client
 const clerk = createClerkClient({
@@ -56,29 +57,41 @@ async function auth(req, res, next) {
           });
 
           if (existingUser) {
-            // Link existing user to Clerk ID
+            // Link existing user to Clerk ID and sync role from metadata
+            const resolvedRole = resolveRoleFromClerkMetadata(clerkUser, existingUser.role);
+            const updateData = {
+              clerkId: clerkUserId,
+              firstName: clerkUser.firstName || undefined,
+              lastName: clerkUser.lastName || undefined,
+              imageUrl: clerkUser.imageUrl || undefined,
+            };
+            if (resolvedRole) {
+              updateData.role = resolvedRole;
+              console.log(`[auth] Role synced for ${email}: ${existingUser.role} -> ${resolvedRole}`);
+            }
             user = await prisma.user.update({
               where: { id: existingUser.id },
-              data: { 
-                clerkId: clerkUserId,
-                firstName: clerkUser.firstName || undefined,
-                lastName: clerkUser.lastName || undefined,
-                imageUrl: clerkUser.imageUrl || undefined,
-              },
+              data: updateData,
               include: { sellerDetails: true }
             });
             console.log(`Linked existing user ${email} to Clerk ID ${clerkUserId}`);
           } else {
-            // Create new user
+            // Create new user with role from Clerk metadata if set
+            const resolvedRole = resolveRoleFromClerkMetadata(clerkUser, null);
+            const createData = {
+              clerkId: clerkUserId,
+              email: email,
+              firstName: clerkUser.firstName || '',
+              lastName: clerkUser.lastName || '',
+              imageUrl: clerkUser.imageUrl || '',
+              isVerified: clerkUser.emailAddresses[0]?.verification?.status === 'verified',
+            };
+            if (resolvedRole) {
+              createData.role = resolvedRole;
+              console.log(`[auth] New user ${email} created with role ${resolvedRole} from Clerk metadata`);
+            }
             user = await prisma.user.create({
-              data: {
-                clerkId: clerkUserId,
-                email: email,
-                firstName: clerkUser.firstName || '',
-                lastName: clerkUser.lastName || '',
-                imageUrl: clerkUser.imageUrl || '',
-                isVerified: clerkUser.emailAddresses[0]?.verification?.status === 'verified',
-              },
+              data: createData,
               include: { sellerDetails: true }
             });
             console.log(`Created new user ${email} from Clerk`);

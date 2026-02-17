@@ -13,6 +13,12 @@ const { validateBody } = require('../middleware/zodValidate');
 const { registrationSchema, loginSchema } = require('../schemas');
 const { sanitizeRequestBody } = require('../utils/security/inputValidation');
 const { validatePasswordMiddleware } = require('../utils/passwordSecurity');
+const { createClerkClient } = require('@clerk/clerk-sdk-node');
+const { resolveRoleFromClerkMetadata } = require('../utils/clerkRoleSync');
+
+const clerk = createClerkClient({
+  secretKey: process.env.CLERK_SECRET_KEY,
+});
 
 // --- Registration Route ---
 // @route   POST /api/auth/register
@@ -251,29 +257,49 @@ router.get('/me', auth, async (req, res) => {
 
 // --- Clerk User Sync Route ---
 // @route   POST /api/auth/clerk-sync
-// @desc    Sync Clerk user with database
+// @desc    Sync Clerk user with database (including role from publicMetadata)
 // @access  Private (requires Clerk token)
 router.post('/clerk-sync', auth, async (req, res) => {
   try {
-    const { clerkId, email, firstName, lastName, imageUrl } = req.body;
+    const { clerkId } = req.body;
 
     // Validate clerkId matches the authenticated user
     if (clerkId !== req.user.clerkId) {
-      return res.status(403).json({ 
-        success: false, 
-        msg: 'Clerk ID mismatch' 
+      return res.status(403).json({
+        success: false,
+        msg: 'Clerk ID mismatch'
       });
+    }
+
+    // Fetch authoritative user data from Clerk API (never trust frontend for role)
+    const clerkUser = await clerk.users.getUser(clerkId);
+
+    // Get current DB role to compare
+    const currentUser = await prisma.user.findUnique({
+      where: { clerkId },
+      select: { role: true }
+    });
+
+    // Resolve role from Clerk publicMetadata
+    const resolvedRole = resolveRoleFromClerkMetadata(clerkUser, currentUser?.role);
+
+    // Build update data from server-side Clerk data
+    const updateData = {
+      email: clerkUser.emailAddresses[0]?.emailAddress || undefined,
+      firstName: clerkUser.firstName || undefined,
+      lastName: clerkUser.lastName || undefined,
+      imageUrl: clerkUser.imageUrl || undefined,
+    };
+
+    if (resolvedRole) {
+      updateData.role = resolvedRole;
+      console.log(`[clerk-sync] Role updated for ${clerkId}: ${currentUser?.role} -> ${resolvedRole}`);
     }
 
     // Update user with latest Clerk data
     const user = await prisma.user.update({
       where: { clerkId },
-      data: {
-        email: email || undefined,
-        firstName: firstName || undefined,
-        lastName: lastName || undefined,
-        imageUrl: imageUrl || undefined,
-      },
+      data: updateData,
       include: { sellerDetails: true }
     });
 
@@ -294,9 +320,9 @@ router.post('/clerk-sync', auth, async (req, res) => {
     });
   } catch (err) {
     console.error('Clerk sync error:', err.message);
-    res.status(500).json({ 
-      success: false, 
-      msg: 'Failed to sync user' 
+    res.status(500).json({
+      success: false,
+      msg: 'Failed to sync user'
     });
   }
 });

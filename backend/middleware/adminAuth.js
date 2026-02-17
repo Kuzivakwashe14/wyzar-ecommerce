@@ -2,6 +2,7 @@
 
 const { createClerkClient } = require('@clerk/clerk-sdk-node');
 const prisma = require('../config/prisma');
+const { resolveRoleFromClerkMetadata } = require('../utils/clerkRoleSync');
 
 // Initialize Clerk client
 const clerk = createClerkClient({
@@ -60,10 +61,16 @@ async function adminAuth(req, res, next) {
           });
 
           if (existingUser) {
-            // Link existing user
+            // Link existing user and sync role from Clerk metadata
+            const resolvedRole = resolveRoleFromClerkMetadata(clerkUser, existingUser.role);
+            const updateData = { clerkId: clerkUserId };
+            if (resolvedRole) {
+              updateData.role = resolvedRole;
+              console.log(`[adminAuth] Role synced for ${email}: ${existingUser.role} -> ${resolvedRole}`);
+            }
             user = await prisma.user.update({
               where: { id: existingUser.id },
-              data: { clerkId: clerkUserId },
+              data: updateData,
               select: { id: true, email: true, role: true, isSuspended: true, clerkId: true }
             });
           }
