@@ -3,6 +3,7 @@
 const { createClerkClient } = require('@clerk/clerk-sdk-node');
 const prisma = require('../config/prisma');
 const { resolveRoleFromClerkMetadata } = require('../utils/clerkRoleSync');
+const jwt = require('jsonwebtoken');
 
 // Initialize Clerk client
 const clerk = createClerkClient({
@@ -11,7 +12,7 @@ const clerk = createClerkClient({
 
 /**
  * Admin authentication middleware
- * Checks if the user is authenticated via Clerk AND has admin role
+ * Checks if the user is authenticated (Clerk or local JWT) AND has admin role
  */
 async function adminAuth(req, res, next) {
   try {
@@ -28,55 +29,79 @@ async function adminAuth(req, res, next) {
       return res.status(401).json({ msg: 'No token, authorization denied' });
     }
 
-    // 2. Verify the token with Clerk
-    const { sub: clerkUserId } = await clerk.verifyToken(token);
+    let user = null;
 
-    if (!clerkUserId) {
-      return res.status(401).json({ msg: 'Token is not valid' });
-    }
+    // 2. Try Clerk verification first
+    try {
+      const { sub: clerkUserId } = await clerk.verifyToken(token);
 
-    // 3. Get user from database using Clerk ID
-    let user = await prisma.user.findUnique({
-      where: { clerkId: clerkUserId },
-      select: {
-        id: true,
-        email: true,
-        role: true,
-        isSuspended: true,
-        clerkId: true
-      }
-    });
+      if (clerkUserId) {
+        user = await prisma.user.findUnique({
+          where: { clerkId: clerkUserId },
+          select: {
+            id: true,
+            email: true,
+            role: true,
+            isSuspended: true,
+            clerkId: true
+          }
+        });
 
-    // If user doesn't exist, try to find by email and link (just like auth.js)
-    // This ensures that even if they log in for the first time as admin, it works if they exist
-    if (!user) {
-         try {
-        const clerkUser = await clerk.users.getUser(clerkUserId);
-        const email = clerkUser.emailAddresses[0]?.emailAddress;
+        if (!user) {
+          try {
+            const clerkUser = await clerk.users.getUser(clerkUserId);
+            const email = clerkUser.emailAddresses[0]?.emailAddress;
 
-        if (email) {
-          const existingUser = await prisma.user.findUnique({
-            where: { email },
-            select: { id: true, email: true, role: true, isSuspended: true }
-          });
+            if (email) {
+              const existingUser = await prisma.user.findUnique({
+                where: { email },
+                select: { id: true, email: true, role: true, isSuspended: true }
+              });
 
-          if (existingUser) {
-            // Link existing user and sync role from Clerk metadata
-            const resolvedRole = resolveRoleFromClerkMetadata(clerkUser, existingUser.role);
-            const updateData = { clerkId: clerkUserId };
-            if (resolvedRole) {
-              updateData.role = resolvedRole;
-              console.log(`[adminAuth] Role synced for ${email}: ${existingUser.role} -> ${resolvedRole}`);
+              if (existingUser) {
+                const resolvedRole = resolveRoleFromClerkMetadata(clerkUser, existingUser.role);
+                const updateData = { clerkId: clerkUserId };
+                if (resolvedRole) {
+                  updateData.role = resolvedRole;
+                  console.log(`[adminAuth] Role synced for ${email}: ${existingUser.role} -> ${resolvedRole}`);
+                }
+                user = await prisma.user.update({
+                  where: { id: existingUser.id },
+                  data: updateData,
+                  select: { id: true, email: true, role: true, isSuspended: true, clerkId: true }
+                });
+              }
             }
-            user = await prisma.user.update({
-              where: { id: existingUser.id },
-              data: updateData,
-              select: { id: true, email: true, role: true, isSuspended: true, clerkId: true }
-            });
+          } catch (err) {
+            console.error("Admin sync check failed", err);
           }
         }
-      } catch (err) {
-        console.error("Admin sync check failed", err);
+      }
+    } catch (clerkError) {
+      // Clerk verification failed — try local JWT fallback
+    }
+
+    // 3. Fallback: Try local JWT verification
+    if (!user) {
+      try {
+        const decoded = jwt.verify(token, process.env.JWT_SECRET);
+
+        if (decoded && decoded.user && decoded.user.id) {
+          user = await prisma.user.findUnique({
+            where: { id: decoded.user.id },
+            select: {
+              id: true,
+              email: true,
+              role: true,
+              isSuspended: true,
+              clerkId: true
+            }
+          });
+        }
+      } catch (jwtError) {
+        if (jwtError.name === 'TokenExpiredError') {
+          return res.status(401).json({ msg: 'Token has expired' });
+        }
       }
     }
 
@@ -93,11 +118,6 @@ async function adminAuth(req, res, next) {
     if (user.role !== 'ADMIN') {
       console.warn(`[AdminAuth] Access denied for user ${user.email}. Role: '${user.role}', IsSuspended: ${user.isSuspended}`);
       return res.status(403).json({ msg: 'Access denied. Admin privileges required.' });
-    }
-    
-    // Explicitly check for isSuspended logic again for logging
-    if (user.isSuspended) {
-        console.warn(`[AdminAuth] User ${user.email} is suspended.`);
     }
 
     // 6. Add user to request

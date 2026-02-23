@@ -1,0 +1,52 @@
+[
+  {
+    "id": "TC001",
+    "title": "post api auth register user registration",
+    "description": "Test user registration with valid email, password, firstName, and lastName. Verify response status 201 with user object and JWT token. Also test registration with an already registered email to receive 409 error."
+  },
+  {
+    "id": "TC002",
+    "title": "post api auth login user login",
+    "description": "Test user login with valid email and password. Verify response status 200 with JWT token and seller details. Also test login with invalid credentials to receive 401 error."
+  },
+  {
+    "id": "TC003",
+    "title": "get api auth me get authenticated user profile",
+    "description": "Test retrieval of current authenticated user profile with valid JWT token. Verify response status 200 with user object and seller details. Test with invalid or missing token to receive 401 unauthorized."
+  },
+  {
+    "id": "TC004",
+    "title": "post api auth clerk sync sync clerk user data",
+    "description": "Test syncing Clerk user data with valid JWT token. Verify response status 200 with synced user data."
+  },
+  {
+    "id": "TC005",
+    "title": "post api otp send send otp to email",
+    "description": "Test sending OTP to email for registration, login, and password-reset types. Verify response status 200 for success, 400 for invalid input, and 429 for rate limiting on repeated requests."
+  },
+  {
+    "id": "TC006",
+    "title": "post api otp verify verify otp code",
+    "description": "Test verifying OTP code with valid email, otp, and type. Verify response status 200 for successful verification and 400 for invalid or expired OTP."
+  },
+  {
+    "id": "TC007",
+    "title": "post api otp resend resend otp code",
+    "description": "Test resending OTP code to email for given type. Verify response status 200 with OTP resent confirmation."
+  },
+  {
+    "id": "TC008",
+    "title": "post api products create new product",
+    "description": "Test creating a new product as a seller with valid JWT token and multipart form data including name, description, price, category, quantity, and images. Verify response status 201 with created product. Test with non-seller token to receive 403 error."
+  },
+  {
+    "id": "TC009",
+    "title": "post api orders create create order with payment",
+    "description": "Test creating an order as a buyer with valid JWT token and body containing items, shipping details, and payment method (ECOCASH, BANK_TRANSFER, CASH_ON_DELIVERY). Verify response status 201 with created order. Test order creation with quantity exceeding stock to receive 400 error."
+  },
+  {
+    "id": "TC010",
+    "title": "post api reviews create create product review",
+    "description": "Test creating a product review as a buyer who purchased the product with valid JWT token and body containing productId, rating, title, and comment. Verify response status 201 with created review. Test creating a review for the same product again to receive 400 error."
+  }
+]

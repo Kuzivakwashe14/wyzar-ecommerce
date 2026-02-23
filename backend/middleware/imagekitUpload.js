@@ -92,7 +92,12 @@ const verificationDocUpload = multer({
  * Falls back to local storage if ImageKit is not configured
  */
 const uploadProductImages = (req, res, next) => {
-  const upload = productImageUpload.array('productImages', 5);
+  // Accept files from multiple field names for API compatibility
+  const upload = productImageUpload.fields([
+    { name: 'productImages', maxCount: 5 },
+    { name: 'images', maxCount: 5 },
+    { name: 'images[]', maxCount: 5 }
+  ]);
 
   upload(req, res, async (err) => {
     if (err) {
@@ -107,6 +112,15 @@ const uploadProductImages = (req, res, next) => {
       }
       return res.status(400).json({ msg: err.message });
     }
+
+    // Consolidate files from any of the accepted field names
+    const allFiles = [];
+    if (req.files) {
+      if (req.files['productImages']) allFiles.push(...req.files['productImages']);
+      if (req.files['images']) allFiles.push(...req.files['images']);
+      if (req.files['images[]']) allFiles.push(...req.files['images[]']);
+    }
+    req.files = allFiles;
 
     // If no files, continue to next middleware
     if (!req.files || req.files.length === 0) {

@@ -26,7 +26,7 @@ const clerk = createClerkClient({
 // @access  Public
 router.post('/register', authLimiter, sanitizeRequestBody, validateBody(registrationSchema), validatePasswordMiddleware, async (req, res) => {
   // 1. Get email and password from the request body
-  const { email, password } = req.body;
+  const { email, password, firstName, lastName } = req.body;
   console.log('Registration request received:', { email, passwordLength: password?.length });
 
   try {
@@ -42,9 +42,10 @@ router.post('/register', authLimiter, sanitizeRequestBody, validateBody(registra
     // 2. Check if the email already exists
     let existingEmail = await prisma.user.findUnique({ where: { email } });
     if (existingEmail) {
-      return res.status(400).json({
+      return res.status(409).json({
         success: false,
-        msg: 'Email already registered'
+        msg: 'Email already exists',
+        message: 'Email already exists'
       });
     }
 
@@ -65,6 +66,8 @@ router.post('/register', authLimiter, sanitizeRequestBody, validateBody(registra
       data: {
         email,
         password: hashedPassword,
+        firstName: firstName || null,
+        lastName: lastName || null,
         isEmailVerified: false, // Will be set to true after OTP verification
         role: role
       }
@@ -96,9 +99,12 @@ router.post('/register', authLimiter, sanitizeRequestBody, validateBody(registra
           success: true,
           msg: 'User registered successfully. Please verify your email address.',
           token,
+          email: user.email,
           user: {
             id: user.id,
             email: user.email,
+            firstName: user.firstName,
+            lastName: user.lastName,
             isEmailVerified: user.isEmailVerified,
             isSeller: user.isSeller,
             role: user.role
@@ -139,16 +145,24 @@ router.post('/login', authLimiter, sanitizeRequestBody, validateBody(loginSchema
     });
 
     if (!user) {
-      return res.status(400).json({
+      return res.status(401).json({
         success: false,
         msg: 'Invalid credentials'
       });
     }
 
     // 3. Compare the provided password with the hashed password in DB
+    // Handle users who registered via Clerk (no local password)
+    if (!user.password) {
+      return res.status(401).json({
+        success: false,
+        msg: 'Invalid credentials. Please use your SSO provider to log in.'
+      });
+    }
+
     const isMatch = await bcrypt.compare(password, user.password);
     if (!isMatch) {
-      return res.status(400).json({
+      return res.status(401).json({
         success: false,
         msg: 'Invalid credentials'
       });
@@ -191,9 +205,13 @@ router.post('/login', authLimiter, sanitizeRequestBody, validateBody(loginSchema
         res.json({
           success: true,
           token,
+          seller: user.sellerDetails || null,
+          sellerDetails: user.sellerDetails || null,
           user: {
             id: user.id,
             email: user.email,
+            firstName: user.firstName,
+            lastName: user.lastName,
             isEmailVerified: user.isEmailVerified,
             isSeller: user.isSeller,
             isVerified: user.isVerified,
@@ -261,10 +279,38 @@ router.get('/me', auth, async (req, res) => {
 // @access  Private (requires Clerk token)
 router.post('/clerk-sync', auth, async (req, res) => {
   try {
-    const { clerkId } = req.body;
+    const { clerkId } = req.body || {};
+
+    // If no clerkId provided, return current user data from DB
+    if (!clerkId) {
+      const user = await prisma.user.findUnique({
+        where: { id: req.user.id },
+        include: { sellerDetails: true }
+      });
+      if (!user) {
+        return res.status(404).json({ success: false, msg: 'User not found' });
+      }
+      return res.json({
+        success: true,
+        id: user.id,
+        email: user.email,
+        user: {
+          id: user.id,
+          clerkId: user.clerkId,
+          email: user.email,
+          firstName: user.firstName,
+          lastName: user.lastName,
+          imageUrl: user.imageUrl,
+          isSeller: user.isSeller,
+          isVerified: user.isVerified,
+          role: user.role,
+          sellerDetails: user.sellerDetails
+        }
+      });
+    }
 
     // Validate clerkId matches the authenticated user
-    if (clerkId !== req.user.clerkId) {
+    if (req.user.clerkId && clerkId !== req.user.clerkId) {
       return res.status(403).json({
         success: false,
         msg: 'Clerk ID mismatch'

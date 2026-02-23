@@ -52,7 +52,7 @@ const getCorsConfig = () => {
  */
 const authLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 10, // Limit each IP to 10 login attempts per windowMs
+  max: process.env.NODE_ENV === 'development' ? 1000 : 10, // Higher limit in dev
   message: { msg: 'Too many login attempts, please try again after 15 minutes' },
   standardHeaders: true,
   legacyHeaders: false,
@@ -65,7 +65,7 @@ const authLimiter = rateLimit({
  */
 const otpLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 5, // Limit each IP to 5 OTP requests per windowMs
+  max: process.env.NODE_ENV === 'development' ? 1000 : 5, // Higher limit in dev
   message: { msg: 'Too many OTP requests, please try again after 15 minutes' },
   standardHeaders: true,
   legacyHeaders: false,
@@ -131,7 +131,7 @@ const messageLimiter = rateLimit({
  */
 const reviewLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 5, // Limit each IP to 5 reviews per 15 minutes
+  max: process.env.NODE_ENV === 'development' ? 1000 : 5, // Higher limit in dev
   message: { msg: 'Too many reviews submitted, please try again later' },
   standardHeaders: true,
   legacyHeaders: false,

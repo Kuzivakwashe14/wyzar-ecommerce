@@ -1,0 +1,648 @@
+version: "2"
+type: backend
+tech_stack:
+  - javascript
+  - express5
+  - postgresql
+  - prisma
+  - clerk-auth
+  - jwt
+  - socket.io
+  - imagekit
+  - zod
+  - multer
+  - paynow
+  - nodemailer
+features:
+  - name: Authentication API
+    description: User registration, login, and profile management with Clerk integration
+    files:
+      - backend/routes/auth.js
+      - backend/middleware/auth.js
+    endpoints:
+      - method: POST
+        path: /api/auth/register
+        description: Register a new user with email and password
+        auth_required: false
+        request_schema:
+          body:
+            email: string
+            password: string
+            firstName: string
+            lastName: string
+        response_schema:
+          "201": User object with JWT token
+          "400": Validation error
+          "409": Email already exists
+      - method: POST
+        path: /api/auth/login
+        description: Login with email and password
+        auth_required: false
+        request_schema:
+          body:
+            email: string
+            password: string
+        response_schema:
+          "200": User object with JWT token and seller details
+          "401": Invalid credentials
+      - method: GET
+        path: /api/auth/me
+        description: Get current authenticated user profile
+        auth_required: true
+        response_schema:
+          "200": User object with seller details
+          "401": Unauthorized
+      - method: POST
+        path: /api/auth/clerk-sync
+        description: Sync Clerk user with database
+        auth_required: true
+        response_schema:
+          "200": Synced user data
+    depends_on: []
+
+  - name: OTP Management
+    description: Send, verify, and resend OTP codes for registration, login, and password reset
+    files:
+      - backend/routes/otp.js
+    endpoints:
+      - method: POST
+        path: /api/otp/send
+        description: Send OTP to email address
+        auth_required: false
+        request_schema:
+          body:
+            email: string
+            type: string (registration|login|password-reset)
+        response_schema:
+          "200": OTP sent success
+          "400": Invalid input
+          "429": Rate limited
+      - method: POST
+        path: /api/otp/verify
+        description: Verify an OTP code
+        auth_required: false
+        request_schema:
+          body:
+            email: string
+            otp: string
+            type: string
+        response_schema:
+          "200": OTP verified
+          "400": Invalid or expired OTP
+      - method: POST
+        path: /api/otp/resend
+        description: Resend OTP code
+        auth_required: false
+        request_schema:
+          body:
+            email: string
+            type: string
+        response_schema:
+          "200": OTP resent
+    depends_on: []
+
+  - name: Product Management API
+    description: CRUD operations for products including image uploads and bulk CSV upload
+    files:
+      - backend/routes/product.js
+      - backend/models/Product.js
+    endpoints:
+      - method: GET
+        path: /api/products
+        description: List all products with seller info
+        auth_required: false
+        response_schema:
+          "200": Product[]
+      - method: GET
+        path: /api/products/:id
+        description: Get single product by ID, increments view count
+        auth_required: false
+        response_schema:
+          "200": Product with seller info
+          "404": Product not found
+      - method: POST
+        path: /api/products
+        description: Create a new product with ImageKit image uploads (sellers only)
+        auth_required: true
+        request_schema:
+          body:
+            name: string
+            description: string
+            price: number
+            category: string
+            quantity: number
+            images: file[]
+        response_schema:
+          "201": Created product
+          "400": Validation error
+          "403": Not a seller
+      - method: PUT
+        path: /api/products/:id
+        description: Update product (owner only)
+        auth_required: true
+        request_schema:
+          body:
+            name: string
+            description: string
+            price: number
+            category: string
+        response_schema:
+          "200": Updated product
+          "403": Not owner
+          "404": Not found
+      - method: DELETE
+        path: /api/products/:id
+        description: Delete product (owner only)
+        auth_required: true
+        response_schema:
+          "200": Deleted
+          "403": Not owner
+          "404": Not found
+      - method: GET
+        path: /api/products/seller/me
+        description: Get logged-in seller's products
+        auth_required: true
+        response_schema:
+          "200": Product[]
+      - method: POST
+        path: /api/products/bulk-upload
+        description: Bulk upload products via CSV file
+        auth_required: true
+        request_schema:
+          body:
+            file: csv file
+        response_schema:
+          "201": Bulk upload results
+          "400": Invalid CSV
+    depends_on:
+      - Authentication API
+
+  - name: Order Management API
+    description: Create orders, manage payment, update order status with stock management
+    files:
+      - backend/routes/order.js
+      - backend/models/Order.js
+    endpoints:
+      - method: POST
+        path: /api/orders/create
+        description: Create order with manual payment method
+        auth_required: true
+        request_schema:
+          body:
+            items: array of {productId, quantity}
+            shippingFullName: string
+            shippingAddress: string
+            shippingCity: string
+            shippingPhone: string
+            paymentMethod: string (ECOCASH|BANK_TRANSFER|CASH_ON_DELIVERY)
+        response_schema:
+          "201": Created order
+          "400": Validation error or out of stock
+      - method: GET
+        path: /api/orders/myorders
+        description: Get buyer's orders
+        auth_required: true
+        response_schema:
+          "200": Order[]
+      - method: GET
+        path: /api/orders/:id
+        description: Get single order (buyer only)
+        auth_required: true
+        response_schema:
+          "200": Order with items
+          "403": Not order owner
+          "404": Not found
+      - method: PUT
+        path: /api/orders/:id/status
+        description: Update order status (seller only)
+        auth_required: true
+        request_schema:
+          body:
+            status: string
+        response_schema:
+          "200": Updated order
+          "400": Invalid status transition
+      - method: PUT
+        path: /api/orders/:id/cancel
+        description: Cancel a pending/confirmed order (buyer)
+        auth_required: true
+        response_schema:
+          "200": Cancelled order
+          "400": Cannot cancel
+      - method: GET
+        path: /api/orders/seller/orders
+        description: Get orders containing seller's products
+        auth_required: true
+        response_schema:
+          "200": Order[]
+      - method: GET
+        path: /api/orders/seller/stats
+        description: Get seller earnings and statistics
+        auth_required: true
+        response_schema:
+          "200": Stats object with totalEarnings, totalOrders, pendingOrders
+      - method: POST
+        path: /api/orders/:id/confirm-payment
+        description: Seller confirms payment received
+        auth_required: true
+        response_schema:
+          "200": Updated order
+      - method: POST
+        path: /api/orders/:id/proof
+        description: Upload payment proof (buyer)
+        auth_required: true
+        request_schema:
+          body:
+            file: image or pdf
+        response_schema:
+          "200": Updated order with proof
+    depends_on:
+      - Authentication API
+      - Product Management API
+
+  - name: Review System
+    description: Product reviews with ratings, verified purchase tracking, helpful votes, admin moderation
+    files:
+      - backend/routes/review.js
+      - backend/models/Review.js
+    endpoints:
+      - method: GET
+        path: /api/reviews/product/:productId
+        description: Get approved reviews for a product with pagination and sorting
+        auth_required: false
+        response_schema:
+          "200": Reviews with rating distribution
+      - method: POST
+        path: /api/reviews
+        description: Create a review (checks verified purchase)
+        auth_required: true
+        request_schema:
+          body:
+            productId: string
+            rating: number (1-5)
+            title: string
+            comment: string
+        response_schema:
+          "201": Created review
+          "400": Already reviewed or validation error
+      - method: PUT
+        path: /api/reviews/:id
+        description: Update own review
+        auth_required: true
+        response_schema:
+          "200": Updated review
+      - method: DELETE
+        path: /api/reviews/:id
+        description: Delete own review
+        auth_required: true
+        response_schema:
+          "200": Deleted
+      - method: GET
+        path: /api/reviews/user/me
+        description: Get current user's reviews
+        auth_required: true
+        response_schema:
+          "200": Review[]
+      - method: POST
+        path: /api/reviews/:id/helpful
+        description: Mark a review as helpful
+        auth_required: false
+        response_schema:
+          "200": Updated review with incremented helpful count
+    depends_on:
+      - Authentication API
+      - Product Management API
+      - Order Management API
+
+  - name: Search API
+    description: Product search with filters, suggestions, trending, and related products
+    files:
+      - backend/routes/search.js
+    endpoints:
+      - method: GET
+        path: /api/search
+        description: Search products with filters
+        auth_required: false
+        request_schema:
+          query:
+            q: string
+            category: string
+            minPrice: number
+            maxPrice: number
+            location: string
+            condition: string
+            brand: string
+            sort: string
+            page: number
+            limit: number
+        response_schema:
+          "200": Products with pagination
+      - method: GET
+        path: /api/search/suggestions
+        description: Get search suggestions/autocomplete
+        auth_required: false
+        request_schema:
+          query:
+            q: string (min 2 chars)
+        response_schema:
+          "200": Suggestions array
+      - method: GET
+        path: /api/search/filters
+        description: Get available filter options
+        auth_required: false
+        response_schema:
+          "200": Filter options (categories, brands, locations, price range)
+      - method: GET
+        path: /api/search/trending
+        description: Get trending products
+        auth_required: false
+        response_schema:
+          "200": Trending products (mostViewed, recentlyAdded, featured)
+      - method: GET
+        path: /api/search/related/:productId
+        description: Get related products
+        auth_required: false
+        response_schema:
+          "200": Product[]
+    depends_on: []
+
+  - name: Seller Management
+    description: Seller application, document upload, and profile management
+    files:
+      - backend/routes/seller.js
+    endpoints:
+      - method: POST
+        path: /api/seller/apply
+        description: Submit seller application with verification documents
+        auth_required: true
+        request_schema:
+          body:
+            businessName: string
+            sellerType: string
+            phoneNumber: string
+            documents: file[]
+        response_schema:
+          "201": Seller application submitted
+          "400": Validation error
+      - method: POST
+        path: /api/seller/upload-document
+        description: Upload additional verification document
+        auth_required: true
+        request_schema:
+          body:
+            documentType: string
+            document: file
+        response_schema:
+          "200": Document uploaded
+      - method: PUT
+        path: /api/seller/profile
+        description: Update seller profile
+        auth_required: true
+        request_schema:
+          body:
+            businessName: string
+            phoneNumber: string
+        response_schema:
+          "200": Updated profile
+    depends_on:
+      - Authentication API
+
+  - name: Messaging System
+    description: Real-time messaging between users with conversations, blocking, and reporting
+    files:
+      - backend/routes/messages.js
+    endpoints:
+      - method: GET
+        path: /api/messages/conversations
+        description: List user's conversations
+        auth_required: true
+        response_schema:
+          "200": Conversation[]
+      - method: GET
+        path: /api/messages/conversation/:conversationId
+        description: Get messages in a conversation
+        auth_required: true
+        response_schema:
+          "200": Messages[]
+          "403": Not participant
+      - method: POST
+        path: /api/messages/send
+        description: Send a message
+        auth_required: true
+        request_schema:
+          body:
+            receiverId: string
+            message: string
+            productId: string (optional)
+        response_schema:
+          "200": Sent message
+      - method: GET
+        path: /api/messages/unread-count
+        description: Get total unread count
+        auth_required: true
+        response_schema:
+          "200": Unread count
+      - method: POST
+        path: /api/messages/block/:userId
+        description: Block a user
+        auth_required: true
+        response_schema:
+          "200": User blocked
+      - method: POST
+        path: /api/messages/unblock/:userId
+        description: Unblock a user
+        auth_required: true
+        response_schema:
+          "200": User unblocked
+      - method: POST
+        path: /api/messages/report
+        description: Report a user
+        auth_required: true
+        request_schema:
+          body:
+            reportedUserId: string
+            reason: string
+            description: string (optional)
+        response_schema:
+          "200": Report submitted
+    depends_on:
+      - Authentication API
+
+  - name: Admin Dashboard
+    description: Admin stats, overview, revenue analytics, user growth
+    files:
+      - backend/routes/admin.js
+    endpoints:
+      - method: GET
+        path: /api/admin/stats/overview
+        description: Dashboard overview with counts and revenue
+        auth_required: true
+        response_schema:
+          "200": Stats overview
+          "403": Not admin
+      - method: GET
+        path: /api/admin/orders
+        description: All orders paginated
+        auth_required: true
+        response_schema:
+          "200": Paginated orders
+      - method: GET
+        path: /api/admin/stats/revenue
+        description: Revenue analytics by period
+        auth_required: true
+        request_schema:
+          query:
+            period: string (7days|30days|90days|365days)
+        response_schema:
+          "200": Revenue data
+      - method: GET
+        path: /api/admin/stats/users
+        description: User growth analytics
+        auth_required: true
+        response_schema:
+          "200": User growth data
+      - method: GET
+        path: /api/admin/stats/products
+        description: Product analytics
+        auth_required: true
+        response_schema:
+          "200": Product stats
+    depends_on:
+      - Authentication API
+
+  - name: Admin User Management
+    description: Admin CRUD operations on users
+    files:
+      - backend/routes/adminUsers.js
+    endpoints:
+      - method: GET
+        path: /api/admin/users
+        description: List all users with filters
+        auth_required: true
+        response_schema:
+          "200": Paginated users
+          "403": Not admin
+      - method: GET
+        path: /api/admin/users/:id
+        description: Get user details
+        auth_required: true
+        response_schema:
+          "200": User details
+          "404": Not found
+      - method: PUT
+        path: /api/admin/users/:id
+        description: Update user
+        auth_required: true
+        response_schema:
+          "200": Updated user
+      - method: PUT
+        path: /api/admin/users/:id/suspend
+        description: Suspend or unsuspend user
+        auth_required: true
+        request_schema:
+          body:
+            suspend: boolean
+            reason: string (optional)
+        response_schema:
+          "200": Suspended/unsuspended user
+      - method: DELETE
+        path: /api/admin/users/:id
+        description: Soft-delete (suspend) user
+        auth_required: true
+        response_schema:
+          "200": Deleted user
+    depends_on:
+      - Authentication API
+
+  - name: Admin Seller Management
+    description: Admin verification and management of sellers
+    files:
+      - backend/routes/adminSellers.js
+    endpoints:
+      - method: GET
+        path: /api/admin/sellers/pending
+        description: Get pending seller verifications
+        auth_required: true
+        response_schema:
+          "200": Pending sellers
+      - method: GET
+        path: /api/admin/sellers/verified
+        description: Get verified sellers
+        auth_required: true
+        response_schema:
+          "200": Verified sellers
+      - method: PUT
+        path: /api/admin/sellers/:id/verify
+        description: Approve or reject seller verification
+        auth_required: true
+        request_schema:
+          body:
+            approve: boolean
+            reason: string (optional)
+        response_schema:
+          "200": Updated seller
+    depends_on:
+      - Authentication API
+      - Seller Management
+
+  - name: Admin Access Control
+    description: Manage admin users and roles
+    files:
+      - backend/routes/adminAccessControl.js
+    endpoints:
+      - method: GET
+        path: /api/admin/access-control/admins
+        description: List all admin users
+        auth_required: true
+        response_schema:
+          "200": Admin users list
+      - method: POST
+        path: /api/admin/access-control/admins
+        description: Create new admin user
+        auth_required: true
+        request_schema:
+          body:
+            email: string
+            password: string
+            confirmPassword: string
+        response_schema:
+          "201": Created admin
+      - method: GET
+        path: /api/admin/access-control/role-stats
+        description: User role statistics
+        auth_required: true
+        response_schema:
+          "200": Role counts
+    depends_on:
+      - Authentication API
+
+  - name: ImageKit Integration
+    description: ImageKit authentication and configuration for client-side uploads
+    files:
+      - backend/routes/imagekit.js
+      - backend/config/imagekit.js
+    endpoints:
+      - method: GET
+        path: /api/imagekit/auth
+        description: Get ImageKit auth params for client uploads
+        auth_required: true
+        response_schema:
+          "200": Auth parameters (token, expire, signature)
+      - method: GET
+        path: /api/imagekit/config
+        description: Get public ImageKit configuration
+        auth_required: false
+        response_schema:
+          "200": Config (urlEndpoint, publicKey, configured)
+    depends_on: []
+
+known_limitations:
+  - issue: Some admin routes (adminProducts, adminOrders) reference Mongoose models instead of Prisma
+    location: backend/routes/adminProducts.js, backend/routes/adminOrders.js
+    impact: Those admin endpoints may fail at runtime
+  - issue: CSRF protection is disabled (commented out) in index.js
+    location: backend/index.js
+    impact: State-changing routes lack CSRF protection
+  - issue: mongoSanitizeConfig is disabled (incompatible with Express 5)
+    location: backend/index.js
+    impact: No MongoDB injection sanitization

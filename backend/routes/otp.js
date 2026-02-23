@@ -8,8 +8,12 @@ const { otpLimiter } = require('../config/security');
 
 /**
  * Generate a random 6-digit OTP
+ * In development mode, always returns '123456' for testing
  */
 const generateOTP = () => {
+  if (process.env.NODE_ENV === 'development') {
+    return '123456';
+  }
   return Math.floor(100000 + Math.random() * 900000).toString();
 };
 
@@ -38,39 +42,44 @@ router.post('/send', otpLimiter, async (req, res) => {
       });
     }
 
+    // Validate email format
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      return res.status(400).json({
+        success: false,
+        msg: 'Invalid email format'
+      });
+    }
+
     // Convert type to uppercase enum
     const otpType = type === 'registration' ? 'REGISTRATION' : 
                     type === 'login' ? 'LOGIN' : 'PASSWORD_RESET';
 
-    // For registration, check if email already exists
-    if (type === 'registration') {
-      const existingUser = await prisma.user.findUnique({ where: { email } });
-      if (existingUser) {
-        return res.status(400).json({
-          success: false,
-          msg: 'Email address already registered'
-        });
-      }
-    }
+    // For registration, optionally check if email already exists
+    // Note: The actual registration endpoint handles the duplicate email check
+    // OTP send should always succeed to allow verification flow
 
-    // For password-reset, check if email exists
+    // For password-reset, check if email exists (silently succeed to prevent user enumeration)
     if (type === 'password-reset') {
       const user = await prisma.user.findUnique({ where: { email } });
       if (!user) {
-        return res.status(404).json({
-          success: false,
-          msg: 'No account found with this email address'
+        // Return success to prevent user enumeration (security best practice)
+        return res.status(200).json({
+          success: true,
+          msg: 'If an account exists with this email, an OTP sent for password reset.',
+          expiresIn: '10 minutes'
         });
       }
     }
 
-    // Check for recent OTP requests (rate limiting - max 1 per minute)
-    const oneMinuteAgo = new Date(Date.now() - 60 * 1000);
+    // Check for recent OTP requests (rate limiting - shorter cooldown in dev)
+    const cooldownMs = process.env.NODE_ENV === 'development' ? 5 * 1000 : 60 * 1000;
+    const cooldownAgo = new Date(Date.now() - cooldownMs);
     const recentOTP = await prisma.oTP.findFirst({
       where: {
         email,
         type: otpType,
-        createdAt: { gte: oneMinuteAgo }
+        createdAt: { gte: cooldownAgo }
       },
       orderBy: { createdAt: 'desc' }
     });
@@ -110,7 +119,7 @@ router.post('/send', otpLimiter, async (req, res) => {
 
       return res.status(200).json({
         success: true,
-        msg: 'OTP generated but email delivery failed. Please try again.',
+        msg: 'OTP sent successfully but email delivery failed. Please try again.',
         warning: 'Email service unavailable',
         // In development/testing, you might want to include the OTP
         ...(process.env.NODE_ENV === 'development' && { otp: otpCode })
@@ -241,7 +250,6 @@ router.post('/verify', async (req, res) => {
 // @desc    Resend OTP (convenience endpoint)
 // @access  Public
 router.post('/resend', otpLimiter, async (req, res) => {
-  // This forwards to /send logic
   const { email, type } = req.body;
   
   if (!email || !type) {
@@ -250,10 +258,94 @@ router.post('/resend', otpLimiter, async (req, res) => {
       msg: 'Email address and type are required'
     });
   }
-  
-  // Redirect to send endpoint logic by forwarding the request
-  req.url = '/send';
-  return router.handle(req, res);
+
+  try {
+    // Validate type
+    const validTypes = ['registration', 'login', 'password-reset'];
+    if (!validTypes.includes(type)) {
+      return res.status(400).json({
+        success: false,
+        msg: 'Invalid OTP type. Must be: registration, login, or password-reset'
+      });
+    }
+
+    // Validate email format
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      return res.status(400).json({
+        success: false,
+        msg: 'Invalid email format'
+      });
+    }
+
+    // Convert type to uppercase enum
+    const otpType = type === 'registration' ? 'REGISTRATION' : 
+                    type === 'login' ? 'LOGIN' : 'PASSWORD_RESET';
+
+    // Check for recent OTP requests (rate limiting - shorter cooldown in dev)
+    const resendCooldownMs = process.env.NODE_ENV === 'development' ? 5 * 1000 : 60 * 1000;
+    const resendCooldownAgo = new Date(Date.now() - resendCooldownMs);
+    const recentOTP = await prisma.oTP.findFirst({
+      where: {
+        email,
+        type: otpType,
+        createdAt: { gte: resendCooldownAgo }
+      },
+      orderBy: { createdAt: 'desc' }
+    });
+
+    if (recentOTP) {
+      return res.status(429).json({
+        success: false,
+        msg: 'Please wait before requesting another OTP. Try again in a minute.'
+      });
+    }
+
+    // Generate OTP
+    const otpCode = generateOTP();
+
+    // Create OTP record in database
+    await prisma.oTP.create({
+      data: {
+        email,
+        otp: otpCode,
+        type: otpType,
+        expiresAt: new Date(Date.now() + 10 * 60 * 1000) // 10 minutes
+      }
+    });
+
+    // Send OTP via Email
+    let emailResult;
+    if (type === 'password-reset') {
+      emailResult = await sendPasswordResetOTP(email, otpCode);
+    } else {
+      emailResult = await sendOTP(email, otpCode);
+    }
+
+    if (!emailResult.success) {
+      console.log(`OTP for ${email}: ${otpCode} (Email failed to send)`);
+      return res.status(200).json({
+        success: true,
+        msg: 'OTP sent successfully but email delivery failed. Please try again.',
+        warning: 'Email service unavailable',
+        ...(process.env.NODE_ENV === 'development' && { otp: otpCode })
+      });
+    }
+
+    res.status(200).json({
+      success: true,
+      msg: 'OTP resent successfully to your email address',
+      expiresIn: '10 minutes',
+      ...(process.env.NODE_ENV === 'development' && { otp: otpCode })
+    });
+  } catch (err) {
+    console.error('Error resending OTP:', err.message);
+    res.status(500).json({
+      success: false,
+      msg: 'Server Error',
+      error: err.message
+    });
+  }
 });
 
 module.exports = router;

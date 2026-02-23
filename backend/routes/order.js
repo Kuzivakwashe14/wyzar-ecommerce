@@ -26,11 +26,61 @@ const { orderLimiter } = require('../config/security');
 // Valid payment methods
 const VALID_PAYMENT_METHODS = ['EcoCash', 'BankTransfer', 'CashOnDelivery'];
 
+/**
+ * Middleware to normalize alternative order payload formats
+ * Converts flat shipping fields and items array to the expected schema format
+ */
+const normalizeOrderBody = (req, res, next) => {
+  const body = req.body;
+  
+  // Normalize payment method names (ECOCASH -> EcoCash, etc.)
+  const paymentMethodMap = {
+    'ECOCASH': 'EcoCash',
+    'BANK_TRANSFER': 'BankTransfer',
+    'CASH_ON_DELIVERY': 'CashOnDelivery',
+    'ecocash': 'EcoCash',
+    'bank_transfer': 'BankTransfer',
+    'cash_on_delivery': 'CashOnDelivery',
+  };
+  if (body.paymentMethod && paymentMethodMap[body.paymentMethod]) {
+    // Save original for response on req (not body, which gets replaced by Zod)
+    req._originalPaymentMethod = body.paymentMethod;
+    body.paymentMethod = paymentMethodMap[body.paymentMethod];
+  }
+  
+  // Normalize items -> cartItems
+  if (body.items && !body.cartItems) {
+    body.cartItems = body.items.map(item => ({
+      id: item.productId || item.id || item._id,
+      _id: item._id,
+      cartQuantity: item.quantity || item.cartQuantity
+    }));
+    delete body.items;
+  }
+  
+  // Normalize flat shipping fields -> shippingAddress object
+  if (body.shippingFullName) {
+    const existingAddr = (typeof body.shippingAddress === 'object' && body.shippingAddress) || {};
+    const addrString = typeof body.shippingAddress === 'string' ? body.shippingAddress : null;
+    body.shippingAddress = {
+      fullName: body.shippingFullName,
+      address: existingAddr.street || existingAddr.address || addrString || 'N/A',
+      city: body.shippingCity || existingAddr.city || 'N/A',
+      phone: body.shippingPhone || existingAddr.phone || '0000000000'
+    };
+    delete body.shippingFullName;
+    delete body.shippingCity;
+    delete body.shippingPhone;
+  }
+  
+  next();
+};
+
 // --- 2. Create Order Route ---
 // @route   POST /api/orders/create
 // @desc    Create a new order with manual payment (EcoCash, Bank Transfer, or COD)
 // @access  Private
-router.post('/create', auth, orderLimiter, validateBody(orderSchema), async (req, res) => {
+router.post('/create', auth, orderLimiter, normalizeOrderBody, validateBody(orderSchema), async (req, res) => {
   try {
     const { shippingAddress, cartItems, paymentMethod = 'EcoCash' } = req.body;
     
@@ -63,7 +113,7 @@ router.post('/create', auth, orderLimiter, validateBody(orderSchema), async (req
         return res.status(404).json({ msg: `Product ${cartItem.name} not found` });
       }
       if (cartItem.cartQuantity > dbProduct.quantity) {
-        return res.status(400).json({ msg: `Not enough stock for ${dbProduct.name}` });
+        return res.status(400).json({ msg: `Not enough stock for ${dbProduct.name}`, message: `Not enough stock for ${dbProduct.name}`, error: `Not enough stock for ${dbProduct.name}` });
       }
 
       const itemPrice = dbProduct.price * cartItem.cartQuantity;
@@ -72,7 +122,7 @@ router.post('/create', auth, orderLimiter, validateBody(orderSchema), async (req
       orderItems.push({
         name: dbProduct.name,
         quantity: cartItem.cartQuantity,
-        image: dbProduct.images[0], // Save first image
+        image: (dbProduct.images && dbProduct.images[0]) || 'no-image',
         price: dbProduct.price,
         productId: dbProduct.id,
       });
@@ -163,21 +213,33 @@ router.post('/create', auth, orderLimiter, validateBody(orderSchema), async (req
         }
       });
 
-      return res.json({
+      return res.status(201).json({
+        id: savedOrder.id,
         orderId: savedOrder.id,
+        items: savedOrder.orderItems,
+        shippingFullName: savedOrder.shippingFullName,
+        shippingAddress: savedOrder.shippingAddress,
+        shippingCity: savedOrder.shippingCity,
+        shippingPhone: savedOrder.shippingPhone,
         message: 'Order placed successfully! Pay with cash upon delivery.',
         redirectUrl: `/order/success?orderId=${savedOrder.id}`,
-        paymentMethod: 'CashOnDelivery'
+        paymentMethod: req._originalPaymentMethod || 'CashOnDelivery'
       });
     }
     
     // Handle EcoCash and Bank Transfer - Orders are created as PENDING
     // Customer will make manual payment and seller will confirm
-    res.json({
+    res.status(201).json({
+      id: savedOrder.id,
       orderId: savedOrder.id,
+      items: savedOrder.orderItems,
+      shippingFullName: savedOrder.shippingFullName,
+      shippingAddress: savedOrder.shippingAddress,
+      shippingCity: savedOrder.shippingCity,
+      shippingPhone: savedOrder.shippingPhone,
       message: 'Order placed successfully! Please follow the payment instructions.',
       redirectUrl: `/order/success?orderId=${savedOrder.id}`,
-      paymentMethod: paymentMethod
+      paymentMethod: req._originalPaymentMethod || paymentMethod
     });
 
   } catch (err) {
@@ -441,7 +503,12 @@ router.get('/myorders', auth, async (req, res) => {
       include: { orderItems: true },
       orderBy: { createdAt: 'desc' }
     });
-    res.json(orders);
+    // Map orderItems to items for API compatibility
+    const mappedOrders = orders.map(order => ({
+      ...order,
+      items: order.orderItems
+    }));
+    res.json(mappedOrders);
   } catch (err) {
     console.error(err.message);
     res.status(500).send('Server Error');

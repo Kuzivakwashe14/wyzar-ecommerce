@@ -179,7 +179,7 @@ router.post('/', auth, uploadProductImages, async (req, res) => {
     // 3. Check if user is a verified seller
     const seller = await prisma.user.findUnique({ where: { id: req.user.id } });
     if (!seller.isSeller) {
-      return res.status(401).json({ msg: 'Not authorized. Only sellers can create products.' });
+      return res.status(403).json({ msg: 'Not authorized. Only sellers can create products.' });
     }
 
     // 4. Get ImageKit URLs from uploaded files

@@ -1,0 +1,20 @@
+{
+  "status": "commited",
+  "type": "backend",
+  "scope": "codebase",
+  "localEndpoint": "http://localhost:5000/backend",
+  "backendAuthType": "basic token",
+  "backendUsername": "tawandamhch@gmail.com",
+  "backendPassword": "AlPha21Thxkvng",
+  "executionArgs": {
+    "projectName": "wyzar-ecommerce",
+    "projectPath": "c:\\Users\\tawan\\Desktop\\wyzar-ecommerce",
+    "testIds": [],
+    "additionalInstruction": "Backend is running on localhost:5000. Tests should use strong passwords meeting requirements: 8+ chars, uppercase, lowercase, number, special char. Database has 12 seeded products available for order tests. The Clerk API (TC004) may fail as there are no real Clerk credentials - that is expected.",
+    "envs": {
+      "API_KEY": "sk-user-OuDjNoNylUBsTSajguj8dk6ZYeYFtjl4-jCPK-48HiQTuY8UnSAgI9n-sjnihtW39w5h5PrjfvTCgQBT2CGYieqP9_yEtdYrYLz00FULNO05Eed3KXQFnkBUpmkvpXckcJU"
+    }
+  },
+  "serverPort": 49827,
+  "proxy": "http://eddbe85d-b2ab-432e-bbd3-33e651d74fab:iZs8sHzMXINrVUG83aZs1PAnJ6nsm0xA@tun.testsprite.com:8080"
+}
