@@ -167,7 +167,7 @@ if (USE_HTTPS) {
 // --- Socket.IO Setup ---
 io = socketIO(server, {
   cors: {
-    origin: [process.env.FRONTEND_URL || 'http://localhost:3000', "https://wyzar-ecommerce.vercel.app"],
+    origin: [process.env.FRONTEND_URL || 'http://localhost:3000', "https://www.wyzar.co.zw/"],
     methods: ['GET', 'POST'],
     credentials: true
   }

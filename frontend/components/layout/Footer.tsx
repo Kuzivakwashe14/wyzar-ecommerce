@@ -5,22 +5,14 @@ import { useState } from "react";
 import { toast } from "sonner";
 import Container from "@/components/Container";
 import Logo from "@/components/Logo";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { 
-  Facebook, 
-  Twitter, 
-  Instagram, 
-  Youtube, 
   Mail, 
   Phone, 
   MapPin,
-  Send,
   CreditCard,
   Truck,
   Shield,
   RotateCcw,
-  Loader2,
 } from "lucide-react";
 
 const footerLinks = {
@@ -32,7 +24,7 @@ const footerLinks = {
     { name: "Mobile & Accessories", href: "/products?category=Mobile" },
   ],
   account: [
-    { name: "My Account", href: "/account" },
+    { name: "My Account", href: "/my-orders" },
     { name: "My Orders", href: "/my-orders" },
     { name: "Wishlist", href: "/wishlist" },
     { name: "Track Order", href: "/my-orders" },
@@ -54,12 +46,7 @@ const footerLinks = {
   ],
 };
 
-const socialLinks = [
-  { icon: Facebook, href: "https://facebook.com", label: "Facebook" },
-  { icon: Twitter, href: "https://twitter.com", label: "Twitter" },
-  { icon: Instagram, href: "https://instagram.com", label: "Instagram" },
-  { icon: Youtube, href: "https://youtube.com", label: "YouTube" },
-];
+
 
 const features = [
   { icon: Truck, title: "Free Shipping", description: "On orders over $50" },
@@ -137,21 +124,7 @@ export default function Footer() {
                 <span className="text-white/70">support@wyzar.com</span>
               </div>
             </div>
-            {/* Social Links */}
-            <div className="flex gap-3 mt-6">
-              {socialLinks.map((social, index) => (
-                <Link 
-                  key={index} 
-                  href={social.href}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="h-10 w-10 rounded-full bg-white/10 flex items-center justify-center hover:bg-shop_orange transition-colors"
-                  aria-label={social.label}
-                >
-                  <social.icon className="h-5 w-5" />
-                </Link>
-              ))}
-            </div>
+
           </div>
 
           {/* Shop Links */}

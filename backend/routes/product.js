@@ -405,8 +405,15 @@ router.delete('/:id', auth, validateParams(objectIdParamSchema), async (req, res
       await deleteMultipleFromImageKit(product.imageFileIds);
     }
 
-    // Delete the database record
-    await prisma.product.delete({ where: { id: req.params.id } });
+    // Delete the product and all related records in a transaction
+    await prisma.$transaction(async (tx) => {
+      // Delete order items referencing this product
+      await tx.orderItem.deleteMany({ where: { productId: req.params.id } });
+      // Delete reviews referencing this product
+      await tx.review.deleteMany({ where: { productId: req.params.id } });
+      // Delete the product itself
+      await tx.product.delete({ where: { id: req.params.id } });
+    });
 
     res.json({ msg: 'Product removed' });
   } catch (err) {
