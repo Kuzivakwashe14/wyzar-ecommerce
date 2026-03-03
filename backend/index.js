@@ -97,6 +97,31 @@ app.get('/api/csrf-token', csrfProtection, (req, res) => {
   });
 });
 
+// 🔧 TEMPORARY: Database connectivity test route (remove after debugging)
+app.get('/api/db-test', async (req, res) => {
+  try {
+    const rawResult = await prisma.$queryRaw`SELECT 1 as connected`;
+    const userCount = await prisma.user.count();
+    const productCount = await prisma.product.count();
+    res.json({
+      success: true,
+      database: 'connected',
+      rawQuery: rawResult,
+      counts: { users: userCount, products: productCount },
+      timestamp: new Date().toISOString(),
+    });
+  } catch (error) {
+    console.error('DB test route error:', error);
+    res.status(500).json({
+      success: false,
+      database: 'unreachable',
+      error: error.message,
+      code: error.code || null,
+      timestamp: new Date().toISOString(),
+    });
+  }
+});
+
 // --- API Routes ---
 app.use('/api/auth', require('./routes/auth'));
 app.use('/api/otp', require('./routes/otp'));
