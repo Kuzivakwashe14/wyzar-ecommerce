@@ -102,48 +102,7 @@ export default function Header() {
 
   return (
     <header className="sticky top-0 z-50 bg-white shadow-sm">
-      {/* Top Announcement Bar */}
-      <div className="bg-shop_dark_green text-white py-2">
-        <Container>
-          <div className="flex items-center justify-between text-sm">
-            <div className="flex items-center gap-4">
-              {!user?.isSeller && (
-                <button
-                  onClick={() => {
-                    if (!isAuthenticated) {
-                      login();
-                    } else {
-                      router.push("/become-a-seller");
-                    }
-                  }}
-                  className="flex items-center gap-1 hover:text-shop_orange transition-colors"
-                >
-                  <Store className="h-4 w-4" />
-                  <span className="hidden sm:inline">Sell on WyZar</span>
-                </button>
-              )}
-              <span className="hidden md:inline text-white/60">|</span>
-              <span className="hidden md:inline text-white/80">
-                Free shipping on orders over $50
-              </span>
-            </div>
-            <div className="flex items-center gap-4 text-white/80">
-              <Link 
-                href="/my-orders" 
-                className="hover:text-shop_orange transition-colors hidden sm:inline"
-              >
-                Track Order
-              </Link>
-              <Link 
-                href="/help" 
-                className="hover:text-shop_orange transition-colors hidden sm:inline"
-              >
-                Help
-              </Link>
-            </div>
-          </div>
-        </Container>
-      </div>
+
 
       {/* Main Header */}
       <div className="bg-shop_light_pink py-4">
