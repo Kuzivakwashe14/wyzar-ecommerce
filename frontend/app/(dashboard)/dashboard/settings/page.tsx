@@ -51,6 +51,8 @@ export default function SettingsPage() {
         login();
       } else if (!user?.isSeller) {
         router.push("/become-a-seller");
+      } else if (user?.isSeller && !user?.isVerified) {
+        router.push("/dashboard");
       } else {
         // Pre-fill the form with user's current business name
         form.reset({

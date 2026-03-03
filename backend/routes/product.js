@@ -31,6 +31,9 @@ router.post('/bulk-upload', auth, uploadLimiter, csvUpload, async (req, res) => 
     if (!seller.isSeller) {
       return res.status(401).json({ msg: 'Not authorized. Only sellers can upload products.' });
     }
+    if (!seller.isVerified) {
+      return res.status(403).json({ msg: 'Your seller application is pending approval. You cannot add products until approved.', pendingApproval: true });
+    }
 
     const csvFile = req.file.buffer.toString('utf8');
 
@@ -181,6 +184,9 @@ router.post('/', auth, uploadProductImages, async (req, res) => {
     if (!seller.isSeller) {
       return res.status(403).json({ msg: 'Not authorized. Only sellers can create products.' });
     }
+    if (!seller.isVerified) {
+      return res.status(403).json({ msg: 'Your seller application is pending approval. You cannot add products until approved.', pendingApproval: true });
+    }
 
     // 4. Get ImageKit URLs from uploaded files
     const images = req.imagekitFiles.map(file => file.url);
@@ -289,6 +295,9 @@ router.get('/seller/me', auth, async (req, res) => {
     const seller = await prisma.user.findUnique({ where: { id: req.user.id } });
     if (!seller.isSeller) {
       return res.status(401).json({ msg: 'Not authorized.' });
+    }
+    if (!seller.isVerified) {
+      return res.status(403).json({ msg: 'Your seller application is pending approval.', pendingApproval: true });
     }
 
     const products = await prisma.product.findMany({

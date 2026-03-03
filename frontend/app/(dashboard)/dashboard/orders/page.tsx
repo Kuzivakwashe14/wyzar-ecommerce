@@ -57,6 +57,12 @@ const SellerOrdersPage = () => {
         return;
       }
 
+      if (user?.isSeller && !user?.isVerified) {
+        setLoading(false);
+        setError('Your seller application is pending approval. You cannot access orders until your account is verified.');
+        return;
+      }
+
       try {
         setLoading(true);
         const { data } = await api.get('/orders/seller/orders');

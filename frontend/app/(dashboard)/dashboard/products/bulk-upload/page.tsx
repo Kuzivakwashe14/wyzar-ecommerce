@@ -20,6 +20,7 @@ const BulkUploadPage = () => {
     if (!authLoading) {
       if (!isAuthenticated) login();
       else if (!user?.isSeller) router.push("/become-a-seller");
+      else if (user?.isSeller && !user?.isVerified) router.push("/dashboard");
     }
   }, [isAuthenticated, user, authLoading, router]);
 

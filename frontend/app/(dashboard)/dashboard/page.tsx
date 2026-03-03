@@ -7,7 +7,7 @@ import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { DollarSign, Package, Clock, ShieldAlert, AlertTriangle } from "lucide-react";
+import { DollarSign, Package, Clock, ShieldAlert, AlertTriangle, HourglassIcon } from "lucide-react";
 import { toast } from "sonner";
 
 interface SellerStats {
@@ -92,6 +92,54 @@ export default function DashboardPage() {
   }
 
   // --- Main Dashboard Content ---
+  // If seller is not yet verified, show pending approval view
+  if (user.isSeller && !user.isVerified && !user.isSuspended) {
+    return (
+      <div className="container mx-auto py-12 px-4">
+        <h1 className="text-3xl font-bold mb-4 text-shop_dark_green">
+          Welcome, {user.email}
+        </h1>
+        
+        {/* Pending Approval Banner */}
+        <div className="border-2 border-amber-300 bg-amber-50 p-8 rounded-xl mb-8">
+          <div className="flex flex-col items-center text-center">
+            <div className="bg-amber-100 p-4 rounded-full mb-4">
+              <HourglassIcon className="h-12 w-12 text-amber-600" />
+            </div>
+            <h2 className="text-2xl font-bold text-amber-800 mb-2">Application Under Review</h2>
+            <p className="text-amber-700 max-w-md mb-4">
+              Your seller application has been submitted and is currently being reviewed by our admin team. 
+              You will be notified once your application is approved.
+            </p>
+            <div className="bg-white border border-amber-200 rounded-lg p-4 max-w-sm w-full">
+              <p className="text-sm text-gray-600 mb-1">Application Status</p>
+              <p className="text-lg font-bold text-amber-600">Pending Approval</p>
+            </div>
+          </div>
+        </div>
+
+        {/* What happens next section */}
+        <div className="border border-gray-200 p-6 rounded-xl bg-white">
+          <h3 className="font-semibold text-lg mb-3 text-shop_dark_green">What happens next?</h3>
+          <ul className="space-y-2 text-sm text-gray-600">
+            <li className="flex items-start gap-2">
+              <span className="text-shop_light_green font-bold">1.</span>
+              Our admin team will review your submitted documents and business details.
+            </li>
+            <li className="flex items-start gap-2">
+              <span className="text-shop_light_green font-bold">2.</span>
+              Once approved, you'll receive an email notification.
+            </li>
+            <li className="flex items-start gap-2">
+              <span className="text-shop_light_green font-bold">3.</span>
+              After approval, you can start adding products and managing your store.
+            </li>
+          </ul>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="container mx-auto py-12 px-4">
       <h1 className="text-3xl font-bold mb-4 text-shop_dark_green">
