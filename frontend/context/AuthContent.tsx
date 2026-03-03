@@ -6,7 +6,8 @@ import { useUser, useAuth as useClerkAuth, useClerk } from '@clerk/nextjs';
 import axios from 'axios';
 
 // 1. Define the API URL and create Axios instance
-const API_URL = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:5000/api";
+// Strip trailing slashes to prevent double-slash issues (e.g. baseURL/ + /path = baseURL//path)
+const API_URL = (process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:5000/api").replace(/\/+$/, '');
 
 // Warn in production if API URL still points to localhost
 if (typeof window !== 'undefined' && API_URL.includes('localhost') && window.location.hostname !== 'localhost') {

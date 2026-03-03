@@ -46,7 +46,11 @@ const USE_HTTPS = process.env.USE_HTTPS === 'true';
 // --- Security Middleware (Applied First) ---
 app.use(helmetConfig); // Security headers
 app.use(securityHeaders); // Additional custom security headers
-app.use(getCorsConfig()); // CORS with proper configuration
+
+// CORS with proper configuration
+const corsMiddleware = getCorsConfig();
+app.use(corsMiddleware);
+app.options('{*path}', corsMiddleware); // Explicitly handle preflight requests (Express 5 syntax)
 app.use(generalLimiter); // Rate limiting
 // app.use(mongoSanitizeConfig); // TODO: Temporarily disabled - incompatible with Express 5
 app.use(hppConfig); // Prevent HTTP Parameter Pollution

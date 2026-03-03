@@ -5,7 +5,8 @@ import { useUser, useAuth as useClerkAuth } from "@clerk/nextjs";
 import { useAuth } from "@/context/AuthContent";
 import axios from "axios";
 
-const API_URL = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:5000/api";
+// Strip trailing slashes to prevent double-slash issues
+const API_URL = (process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:5000/api").replace(/\/+$/, '');
 
 /**
  * UserSync component - syncs Clerk user with backend database

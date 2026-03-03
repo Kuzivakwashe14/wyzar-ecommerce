@@ -19,9 +19,18 @@ const helmetConfig = helmet({
  * Configure CORS with proper restrictions
  */
 const getCorsConfig = () => {
-  const allowedOrigins = process.env.ALLOWED_ORIGINS
+  // Always include production origins
+  const productionOrigins = [
+    'https://wyzar.co.zw',
+    'https://www.wyzar.co.zw',
+  ];
+
+  const envOrigins = process.env.ALLOWED_ORIGINS
     ? process.env.ALLOWED_ORIGINS.split(',').map(o => o.trim().replace(/\/+$/, ''))
     : ['http://localhost:3000', 'http://localhost:5173']; // Default for development
+
+  // Merge env origins with production origins (deduplicated)
+  const allowedOrigins = [...new Set([...envOrigins, ...productionOrigins])];
 
   console.log('CORS allowed origins:', allowedOrigins);
   console.log('NODE_ENV:', process.env.NODE_ENV);
