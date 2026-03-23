@@ -144,19 +144,12 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
   const login = useCallback(() => {
     openSignIn({
-      withSignUp: true,
-      initialValues: {
-        identifier: ''
-      }
+      withSignUp: true
     });
   }, [openSignIn]);
 
   const signup = useCallback(() => {
-    openSignUp({
-      initialValues: {
-        emailAddress: ''
-      }
-    });
+    openSignUp();
   }, [openSignUp]);
 
   return (

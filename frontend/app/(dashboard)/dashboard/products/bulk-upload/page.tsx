@@ -167,7 +167,8 @@ const BulkUploadPage = () => {
 
       if (parsed.errors.length > 0) {
         parsed.errors.forEach((err) => {
-          rowErrors.push(`Row ${err.row + 1}: ${err.message}`);
+          const rowLabel = typeof err.row === 'number' ? String(err.row + 1) : 'unknown';
+          rowErrors.push(`Row ${rowLabel}: ${err.message}`);
         });
       }
 
