@@ -3,7 +3,7 @@
 <html lang="en">
 
 <head>
-    <title>Code coverage report for middleware/upload.js</title>
+    <title>Code coverage report for routes/imagekit.js</title>
     <meta charset="utf-8" />
     <link rel="stylesheet" href="../prettify.css" />
     <link rel="stylesheet" href="../base.css" />
@@ -19,13 +19,13 @@
 <body>
 <div class='wrapper'>
     <div class='pad1'>
-        <h1><a href="../index.html">All files</a> / <a href="index.html">middleware</a> upload.js</h1>
+        <h1><a href="../index.html">All files</a> / <a href="index.html">routes</a> imagekit.js</h1>
         <div class='clearfix'>
             
             <div class='fl pad1y space-right2'>
                 <span class="strong">0% </span>
                 <span class="quiet">Statements</span>
-                <span class='fraction'>0/15</span>
+                <span class='fraction'>0/20</span>
             </div>
         
             
@@ -39,14 +39,14 @@
             <div class='fl pad1y space-right2'>
                 <span class="strong">0% </span>
                 <span class="quiet">Functions</span>
-                <span class='fraction'>0/3</span>
+                <span class='fraction'>0/2</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
                 <span class="strong">0% </span>
                 <span class="quiet">Lines</span>
-                <span class='fraction'>0/15</span>
+                <span class='fraction'>0/20</span>
             </div>
         
             
@@ -104,25 +104,22 @@
 <a name='L39'></a><a href='#L39'>39</a>
 <a name='L40'></a><a href='#L40'>40</a>
 <a name='L41'></a><a href='#L41'>41</a>
-<a name='L42'></a><a href='#L42'>42</a></td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
+<a name='L42'></a><a href='#L42'>42</a>
+<a name='L43'></a><a href='#L43'>43</a>
+<a name='L44'></a><a href='#L44'>44</a>
+<a name='L45'></a><a href='#L45'>45</a>
+<a name='L46'></a><a href='#L46'>46</a>
+<a name='L47'></a><a href='#L47'>47</a>
+<a name='L48'></a><a href='#L48'>48</a>
+<a name='L49'></a><a href='#L49'>49</a>
+<a name='L50'></a><a href='#L50'>50</a>
+<a name='L51'></a><a href='#L51'>51</a>
+<a name='L52'></a><a href='#L52'>52</a>
+<a name='L53'></a><a href='#L53'>53</a>
+<a name='L54'></a><a href='#L54'>54</a>
+<a name='L55'></a><a href='#L55'>55</a>
+<a name='L56'></a><a href='#L56'>56</a>
+<a name='L57'></a><a href='#L57'>57</a></td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
@@ -130,63 +127,111 @@
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span></td><td class="text"><pre class="prettyprint lang-js">// In backend/middleware/upload.js
-const multer = <span class="cstat-no" title="statement not covered" >require('multer');</span>
-const path = <span class="cstat-no" title="statement not covered" >require('path');</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span></td><td class="text"><pre class="prettyprint lang-js">// routes/imagekit.js
+// ImageKit authentication and utility routes
 &nbsp;
-// 1. Configure Storage
-// We are setting up how to store the files
-const storage = <span class="cstat-no" title="statement not covered" >multer.diskStorage({</span>
-  destination: <span class="fstat-no" title="function not covered" >(r</span>eq, file, cb) =&gt; {
-    // The 'uploads/' folder we just created
-<span class="cstat-no" title="statement not covered" >    cb(null, 'uploads/');</span>
-  },
-  filename: <span class="fstat-no" title="function not covered" >(r</span>eq, file, cb) =&gt; {
-    // Create a unique filename to avoid conflicts
-    // e.g., 'user_id-timestamp.jpg'
-    const uniqueSuffix = <span class="cstat-no" title="statement not covered" >Date.now() + '-' + Math.round(Math.random() * 1E9);</span>
-<span class="cstat-no" title="statement not covered" >    cb(null, req.user.id + '-' + uniqueSuffix + path.extname(file.originalname));</span>
+const express = <span class="cstat-no" title="statement not covered" >require('express');</span>
+const router = <span class="cstat-no" title="statement not covered" >express.Router();</span>
+const { getAuthenticationParameters, validateConfig } = <span class="cstat-no" title="statement not covered" >require('../config/imagekit');</span>
+const auth = <span class="cstat-no" title="statement not covered" >require('../middleware/auth');</span>
+&nbsp;
+// @route   GET /api/imagekit/auth
+// @desc    Get ImageKit authentication parameters for client-side uploads
+// @access  Private
+<span class="cstat-no" title="statement not covered" >router.get('/auth', auth, <span class="fstat-no" title="function not covered" >(r</span>eq, res) =&gt; {</span>
+<span class="cstat-no" title="statement not covered" >  try {</span>
+    // Validate ImageKit configuration
+<span class="cstat-no" title="statement not covered" >    if (!validateConfig()) {</span>
+<span class="cstat-no" title="statement not covered" >      return res.status(500).json({ </span>
+        msg: 'ImageKit is not configured properly. Please check your environment variables.' 
+      });
+    }
+&nbsp;
+    // Get authentication parameters
+    const authParams = <span class="cstat-no" title="statement not covered" >getAuthenticationParameters();</span>
+    
+<span class="cstat-no" title="statement not covered" >    res.json(authParams);</span>
+  } catch (error) {
+<span class="cstat-no" title="statement not covered" >    console.error('ImageKit auth error:', error);</span>
+<span class="cstat-no" title="statement not covered" >    res.status(500).json({ msg: 'Failed to get ImageKit authentication' });</span>
   }
 });
 &nbsp;
-// 2. File Filter (Optional but recommended)
-// Ensure we only accept images or PDFs
-const fileFilter = <span class="cstat-no" title="statement not covered" ><span class="fstat-no" title="function not covered" >(r</span>eq, file, cb) =&gt; {</span>
-  const allowedTypes = <span class="cstat-no" title="statement not covered" >/jpeg|jpg|png|pdf/;</span>
-  const extname = <span class="cstat-no" title="statement not covered" >allowedTypes.test(path.extname(file.originalname).toLowerCase());</span>
-  const mimetype = <span class="cstat-no" title="statement not covered" >allowedTypes.test(file.mimetype);</span>
+// @route   GET /api/imagekit/config
+// @desc    Get public ImageKit configuration (URL endpoint and public key)
+// @access  Public
+<span class="cstat-no" title="statement not covered" >router.get('/config', <span class="fstat-no" title="function not covered" >(r</span>eq, res) =&gt; {</span>
+<span class="cstat-no" title="statement not covered" >  try {</span>
+<span class="cstat-no" title="statement not covered" >    if (!validateConfig()) {</span>
+      // Return empty config if not configured (frontend will handle gracefully)
+<span class="cstat-no" title="statement not covered" >      return res.json({</span>
+        urlEndpoint: '',
+        publicKey: '',
+        configured: false
+      });
+    }
 &nbsp;
-<span class="cstat-no" title="statement not covered" >  if (mimetype &amp;&amp; extname) {</span>
-<span class="cstat-no" title="statement not covered" >    return cb(null, true);</span>
-  } else {
-<span class="cstat-no" title="statement not covered" >    cb(new Error('Error: Only images (jpeg, jpg, png) or PDF files are allowed!'), false);</span>
+<span class="cstat-no" title="statement not covered" >    res.json({</span>
+      urlEndpoint: process.env.IMAGEKIT_URL_ENDPOINT,
+      publicKey: process.env.IMAGEKIT_PUBLIC_KEY,
+      configured: true
+    });
+  } catch (error) {
+<span class="cstat-no" title="statement not covered" >    console.error('ImageKit config error:', error);</span>
+<span class="cstat-no" title="statement not covered" >    res.status(500).json({ msg: 'Failed to get ImageKit configuration' });</span>
   }
-};
+});
 &nbsp;
-// 3. Initialize Multer
-// We'll upload a single file with the field name 'verificationDocument'
-const upload = <span class="cstat-no" title="statement not covered" >multer({</span>
-  storage: storage,
-  limits: { fileSize: 5000000 }, // Limit file size to 5MB
-  fileFilter: fileFilter
-}).single('verificationDocument'); // This name *must* match the frontend form
-&nbsp;
-<span class="cstat-no" title="statement not covered" >module.exports = upload;</span></pre></td></tr></table></pre>
+<span class="cstat-no" title="statement not covered" >module.exports = router;</span>
+&nbsp;</pre></td></tr></table></pre>
 
                 <div class='push'></div><!-- for sticky footer -->
             </div><!-- /wrapper -->

@@ -388,9 +388,11 @@ function validateObjectId(id, fieldName = 'ID') {
     return { isValid: false, errors };
   }
 
-  // UUID format validation (PostgreSQL/Prisma uses UUIDs)
-  // Format: 8-4-4-4-12 hexadecimal characters
-  if (!/^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/i.test(id)) {
+  // Accepts MongoDB ObjectId (24 hex chars) or UUID (8-4-4-4-12 hex chars)
+  const isMongoObjectId = /^[0-9a-fA-F]{24}$/.test(id);
+  const isUUID = /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/i.test(id);
+
+  if (!isMongoObjectId && !isUUID) {
     errors.push(`${fieldName} is not a valid ID format`);
   }
 
