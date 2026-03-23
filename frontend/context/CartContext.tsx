@@ -4,6 +4,7 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { Product } from '@/components/ProductCard'; // Reuse our Product type
 import { toast } from "sonner"
+import { useAuth } from '@/context/AuthContent';
 
 // 1. Define the shape of a cart item
 export interface CartItem extends Product {
@@ -26,20 +27,44 @@ const CartContext = createContext<CartContextType | undefined>(undefined);
 
 // 4. Create the CartProvider component
 export const CartProvider = ({ children }: { children: ReactNode }) => {
+  const { user, isAuthenticated, loading } = useAuth();
   const [cartItems, setCartItems] = useState<CartItem[]>([]);
+  const [isHydrated, setIsHydrated] = useState(false);
 
-  // 5. Load cart from localStorage on app start
+  const storageKey = isAuthenticated && user?.id
+    ? `cartItems:${user.id}`
+    : 'cartItems:guest';
+
+  // 5. Load cart whenever auth scope changes (guest/user)
   useEffect(() => {
-    const savedCart = localStorage.getItem('cartItems');
-    if (savedCart) {
-      setCartItems(JSON.parse(savedCart));
+    if (loading) return;
+
+    setCartItems([]);
+
+    try {
+      const savedCart = localStorage.getItem(storageKey);
+      if (savedCart) {
+        const parsed = JSON.parse(savedCart);
+        if (Array.isArray(parsed)) {
+          setCartItems(parsed);
+        }
+      }
+    } catch (error) {
+      console.error('Error loading cart from localStorage:', error);
     }
-  }, []);
+    setIsHydrated(true);
+  }, [storageKey, loading]);
 
-  // 6. Save cart to localStorage whenever it changes
+  // 6. Save cart to scoped localStorage key whenever it changes
   useEffect(() => {
-    localStorage.setItem('cartItems', JSON.stringify(cartItems));
-  }, [cartItems]);
+    if (!isHydrated || loading) return;
+
+    try {
+      localStorage.setItem(storageKey, JSON.stringify(cartItems));
+    } catch (error) {
+      console.error('Error saving cart to localStorage:', error);
+    }
+  }, [cartItems, storageKey, isHydrated, loading]);
 
   // 7. Add to Cart function
   const addToCart = (product: Product) => {

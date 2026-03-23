@@ -46,6 +46,7 @@ interface AuthContextType {
   loading: boolean;
   logout: () => void;
   login: () => void;
+  signup: () => void;
   refreshUser: () => Promise<void>;
   axiosInstance: typeof api;
 }
@@ -57,7 +58,7 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const { isLoaded: clerkLoaded, isSignedIn, user: clerkUser } = useUser();
   const { getToken, signOut } = useClerkAuth();
-  const { openSignIn } = useClerk();
+  const { openSignIn, openSignUp } = useClerk();
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -141,13 +142,31 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     setUser(null);
   }, [signOut]);
 
+  const login = useCallback(() => {
+    openSignIn({
+      withSignUp: true,
+      initialValues: {
+        identifier: ''
+      }
+    });
+  }, [openSignIn]);
+
+  const signup = useCallback(() => {
+    openSignUp({
+      initialValues: {
+        emailAddress: ''
+      }
+    });
+  }, [openSignUp]);
+
   return (
     <AuthContext.Provider value={{
       user,
       isAuthenticated: !!user && !!isSignedIn,
       loading: !clerkLoaded || loading,
       logout,
-      login: () => openSignIn(),
+      login,
+      signup,
       refreshUser,
       axiosInstance: api
     }}>

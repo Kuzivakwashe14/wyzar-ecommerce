@@ -7,6 +7,7 @@ import { AuthProvider } from "@/context/AuthContent";
 import { CartProvider } from "@/context/CartContext";
 import { SocketProvider } from "@/context/SocketContext";
 import { WishlistProvider } from "@/context/WishlistContext";
+import { UnreadMessagesProvider } from "@/context/UnreadMessagesContext";
 import { ImageKitProvider } from "@/components/providers/ImageKitProvider";
 import ConditionalNavbar from "@/components/layout/ConditionalNavbar";
 import ConditionalFooter from "@/components/layout/ConditionalFooter";
@@ -31,15 +32,17 @@ export default function RootLayout({
           <ImageKitProvider>
             <AuthProvider>
               <SocketProvider>
-                <CartProvider>
-                  <WishlistProvider>
-                    <UserSync />
-                    <ConditionalNavbar />
-                    <main className="flex-1">{children}</main>
-                    <ConditionalFooter />
-                    <Toaster richColors position="bottom-right" />
-                  </WishlistProvider>
-                </CartProvider>
+                <UnreadMessagesProvider>
+                  <CartProvider>
+                    <WishlistProvider>
+                      <UserSync />
+                      <ConditionalNavbar />
+                      <main className="flex-1">{children}</main>
+                      <ConditionalFooter />
+                      <Toaster richColors position="bottom-right" />
+                    </WishlistProvider>
+                  </CartProvider>
+                </UnreadMessagesProvider>
               </SocketProvider>
             </AuthProvider>
           </ImageKitProvider>

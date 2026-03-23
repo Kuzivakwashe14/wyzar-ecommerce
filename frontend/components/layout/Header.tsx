@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { SignInButton, SignUpButton, SignOutButton, UserButton, useUser, useAuth as useClerkAuth } from "@clerk/nextjs";
+import { SignOutButton, UserButton, useUser, useAuth as useClerkAuth } from "@clerk/nextjs";
 import { api } from "@/context/AuthContent";
 import Container from "@/components/Container";
 import Logo from "@/components/Logo";
@@ -22,6 +22,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useAuth } from "@/context/AuthContent";
 import { useCart } from "@/context/CartContext";
 import { useWishlist } from "@/context/WishlistContext";
+import { useUnreadMessages } from "@/context/UnreadMessagesContext";
 import CartSheet from "./CartSheet";
 import MobileMenu from "./MobileMenu";
 import {
@@ -51,46 +52,13 @@ const categories = [
 ];
 
 export default function Header() {
-  const { isAuthenticated, user, logout, login } = useAuth();
+  const { isAuthenticated, user, logout, login, signup } = useAuth();
   const { user: clerkUser } = useUser();
   const { itemCount } = useCart();
   const { wishlistCount } = useWishlist();
+  const { unreadCount } = useUnreadMessages();
   const router = useRouter();
   const [searchQuery, setSearchQuery] = useState("");
-  const [unreadMessages, setUnreadMessages] = useState(0);
-
-  const { getToken } = useClerkAuth();
-
-  const fetchUnreadCount = useCallback(async () => {
-    try {
-      const token = await getToken();
-      const response = await api.get('/messages/unread-count', {
-        headers: {
-          Authorization: `Bearer ${token}`
-        }
-      });
-      setUnreadMessages(response.data.unreadCount);
-    } catch (error) {
-      console.error('Error fetching unread count:', error);
-    }
-  }, [getToken]);
-
-  useEffect(() => {
-    let interval: NodeJS.Timeout;
-    
-    const initFetch = async () => {
-      if (isAuthenticated && user) {
-        await fetchUnreadCount();
-        interval = setInterval(fetchUnreadCount, 30000);
-      }
-    };
-    
-    initFetch();
-    
-    return () => {
-      if (interval) clearInterval(interval);
-    };
-  }, [isAuthenticated, user, fetchUnreadCount]);
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
@@ -252,20 +220,17 @@ export default function Header() {
                 </div>
               ) : (
                 <div className="hidden sm:flex items-center gap-2">
-                  <SignInButton mode="modal">
-                    <Button 
-                      variant="ghost" 
-                      className="hoverEffect hover:bg-shop_dark_green/10"
-                    >
-                      <User className="h-5 w-5 mr-2" />
-                      Login
-                    </Button>
-                  </SignInButton>
-                  <SignUpButton mode="modal">
-                    <Button className="bg-shop_dark_green hover:bg-shop_light_green text-white">
-                      Sign Up
-                    </Button>
-                  </SignUpButton>
+                  <Button 
+                    variant="ghost" 
+                    className="hoverEffect hover:bg-shop_dark_green/10"
+                    onClick={login}
+                  >
+                    <User className="h-5 w-5 mr-2" />
+                    Login
+                  </Button>
+                  <Button className="bg-shop_dark_green hover:bg-shop_light_green text-white" onClick={signup}>
+                    Sign Up
+                  </Button>
                 </div>
               )}
 
@@ -294,9 +259,9 @@ export default function Header() {
                     className="hoverEffect hover:bg-shop_dark_green/10 relative hidden sm:flex"
                   >
                     <MessageCircle className="h-5 w-5" />
-                    {unreadMessages > 0 && (
+                    {unreadCount > 0 && (
                       <Badge className="absolute -top-1 -right-1 h-5 w-5 flex items-center justify-center p-0 text-xs bg-shop_orange text-white">
-                        {unreadMessages > 9 ? '9+' : unreadMessages}
+                        {unreadCount > 9 ? '9+' : unreadCount}
                       </Badge>
                     )}
                   </Button>

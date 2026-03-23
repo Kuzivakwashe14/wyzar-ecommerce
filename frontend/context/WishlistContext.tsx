@@ -2,6 +2,7 @@
 
 import React, { createContext, useContext, useState, useEffect, useCallback, useLayoutEffect } from "react";
 import { Product } from "@/components/ProductCard";
+import { useAuth } from "@/context/AuthContent";
 
 interface WishlistContextType {
   wishlist: Product[];
@@ -21,13 +22,22 @@ const WISHLIST_KEY = "wyzar_wishlist";
 const useIsomorphicLayoutEffect = typeof window !== "undefined" ? useLayoutEffect : useEffect;
 
 export function WishlistProvider({ children }: { children: React.ReactNode }) {
+  const { user, isAuthenticated, loading } = useAuth();
   const [wishlist, setWishlist] = useState<Product[]>([]);
   const [isHydrated, setIsHydrated] = useState(false);
 
-  // Load wishlist from localStorage on mount using layout effect
+  const storageKey = isAuthenticated && user?.id
+    ? `${WISHLIST_KEY}:${user.id}`
+    : `${WISHLIST_KEY}:guest`;
+
+  // Load wishlist when auth scope changes (guest/user)
   useIsomorphicLayoutEffect(() => {
+    if (loading) return;
+
+    setWishlist([]);
+
     try {
-      const stored = localStorage.getItem(WISHLIST_KEY);
+      const stored = localStorage.getItem(storageKey);
       if (stored) {
         const parsed = JSON.parse(stored);
         if (Array.isArray(parsed)) {
@@ -38,18 +48,18 @@ export function WishlistProvider({ children }: { children: React.ReactNode }) {
       console.error("Error loading wishlist from localStorage:", error);
     }
     setIsHydrated(true);
-  }, []);
+  }, [storageKey, loading]);
 
-  // Save wishlist to localStorage whenever it changes
+  // Save wishlist to user-scoped localStorage whenever it changes
   useEffect(() => {
-    if (isHydrated) {
+    if (isHydrated && !loading) {
       try {
-        localStorage.setItem(WISHLIST_KEY, JSON.stringify(wishlist));
+        localStorage.setItem(storageKey, JSON.stringify(wishlist));
       } catch (error) {
         console.error("Error saving wishlist to localStorage:", error);
       }
     }
-  }, [wishlist, isHydrated]);
+  }, [wishlist, storageKey, isHydrated, loading]);
 
   const isInWishlist = useCallback(
     (productId: string) => {

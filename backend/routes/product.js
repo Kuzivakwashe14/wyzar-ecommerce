@@ -312,6 +312,83 @@ router.get('/seller/me', auth, async (req, res) => {
   }
 });
 
+// @route   GET /api/products/seller/:sellerId
+// @desc    Get public seller profile info with all their listed products
+// @access  Public
+router.get('/seller/:sellerId', async (req, res) => {
+  try {
+    const seller = await prisma.user.findUnique({
+      where: { id: req.params.sellerId },
+      select: {
+        id: true,
+        createdAt: true,
+        isSeller: true,
+        isVerified: true,
+        isSuspended: true,
+        sellerDetails: {
+          select: {
+            businessName: true,
+            sellerType: true,
+            productCategory: true,
+            city: true,
+            state: true,
+            country: true,
+            website: true,
+            whatsappNumber: true
+          }
+        }
+      }
+    });
+
+    if (!seller || !seller.isSeller) {
+      return res.status(404).json({ msg: 'Seller not found' });
+    }
+
+    if (seller.isSuspended) {
+      return res.status(403).json({ msg: 'Seller profile is temporarily unavailable' });
+    }
+
+    const products = await prisma.product.findMany({
+      where: { sellerId: seller.id },
+      include: {
+        seller: {
+          select: {
+            id: true,
+            email: true,
+            sellerDetails: {
+              select: {
+                businessName: true
+              }
+            }
+          }
+        }
+      },
+      orderBy: { createdAt: 'desc' }
+    });
+
+    return res.json({
+      seller: {
+        id: seller.id,
+        businessName: seller.sellerDetails?.businessName || 'Seller',
+        sellerType: seller.sellerDetails?.sellerType || null,
+        productCategory: seller.sellerDetails?.productCategory || null,
+        city: seller.sellerDetails?.city || null,
+        state: seller.sellerDetails?.state || null,
+        country: seller.sellerDetails?.country || null,
+        website: seller.sellerDetails?.website || null,
+        whatsappNumber: seller.sellerDetails?.whatsappNumber || null,
+        isVerified: seller.isVerified,
+        joinedAt: seller.createdAt
+      },
+      products,
+      totalProducts: products.length
+    });
+  } catch (err) {
+    console.error(err.message);
+    return res.status(500).send('Server Error');
+  }
+});
+
 // @route   PUT /api/products/:id
 // @desc    Update a product
 // @access  Private (Sellers Only)

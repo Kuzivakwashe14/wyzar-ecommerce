@@ -88,9 +88,20 @@ export default function CartSheet() {
                     <h4 className="font-medium text-sm line-clamp-2 mb-1">
                       {item.name}
                     </h4>
-                    <p className="text-shop_dark_green font-semibold">
-                      ${item.price.toFixed(2)}
-                    </p>
+                    {item.cartQuantity > 1 ? (
+                      <div className="space-y-0.5">
+                        <p className="text-shop_dark_green font-semibold">
+                          ${(item.price * item.cartQuantity).toFixed(2)}
+                        </p>
+                        <p className="text-xs text-muted-foreground">
+                          ${item.price.toFixed(2)} each x {item.cartQuantity}
+                        </p>
+                      </div>
+                    ) : (
+                      <p className="text-shop_dark_green font-semibold">
+                        ${item.price.toFixed(2)}
+                      </p>
+                    )}
                     
                     {/* Quantity Controls */}
                     <div className="flex items-center gap-2 mt-2">

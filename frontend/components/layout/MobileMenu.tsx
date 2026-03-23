@@ -1,11 +1,13 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useAuth } from "@/context/AuthContent";
-import { SignInButton, SignUpButton, SignOutButton, useUser } from "@clerk/nextjs";
+import { useUnreadMessages } from "@/context/UnreadMessagesContext";
+import { SignOutButton, useUser } from "@clerk/nextjs";
 import Logo from "@/components/Logo";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import {
   Sheet,
   SheetContent,
@@ -49,8 +51,9 @@ interface MobileMenuProps {
 
 export default function MobileMenu({ categories }: MobileMenuProps) {
   const [isOpen, setIsOpen] = useState(false);
-  const { isAuthenticated, user, logout } = useAuth();
+  const { isAuthenticated, user, logout, login, signup } = useAuth();
   const { user: clerkUser } = useUser();
+  const { unreadCount } = useUnreadMessages();
 
   const handleClose = () => setIsOpen(false);
 
@@ -117,18 +120,27 @@ export default function MobileMenu({ categories }: MobileMenuProps) {
             </div>
           ) : (
             <div className="px-4 pb-4 border-b space-y-2">
-              <SignInButton mode="modal">
-                <Button variant="outline" className="w-full justify-start gap-2" onClick={handleClose}>
-                  <LogIn className="h-4 w-4" />
-                  Login
-                </Button>
-              </SignInButton>
-              <SignUpButton mode="modal">
-                <Button className="w-full justify-start gap-2 bg-shop_dark_green hover:bg-shop_light_green text-white" onClick={handleClose}>
-                  <UserPlus className="h-4 w-4" />
-                  Create Account
-                </Button>
-              </SignUpButton>
+              <Button
+                variant="outline"
+                className="w-full justify-start gap-2"
+                onClick={() => {
+                  handleClose();
+                  login();
+                }}
+              >
+                <LogIn className="h-4 w-4" />
+                Login
+              </Button>
+              <Button
+                className="w-full justify-start gap-2 bg-shop_dark_green hover:bg-shop_light_green text-white"
+                onClick={() => {
+                  handleClose();
+                  signup();
+                }}
+              >
+                <UserPlus className="h-4 w-4" />
+                Create Account
+              </Button>
             </div>
           )}
 
@@ -189,6 +201,11 @@ export default function MobileMenu({ categories }: MobileMenuProps) {
                 <Button variant="ghost" className="w-full justify-start gap-3 h-12">
                   <MessageCircle className="h-5 w-5 text-shop_dark_green" />
                   Messages
+                  {unreadCount > 0 && (
+                    <Badge className="ml-auto h-5 min-w-5 px-1.5 flex items-center justify-center text-xs bg-shop_orange text-white">
+                      {unreadCount > 9 ? '9+' : unreadCount}
+                    </Badge>
+                  )}
                 </Button>
               </Link>
             )}

@@ -372,6 +372,116 @@ router.put('/:id/verify', adminAuth, async (req, res) => {
   }
 });
 
+// @route   PUT /api/admin/sellers/:id/reverse-verification
+// @desc    Reverse seller verification (set verified seller back to under review)
+// @access  Private (Admin only)
+router.put('/:id/reverse-verification', adminAuth, async (req, res) => {
+  try {
+    const { reason, resetDocuments = false } = req.body || {};
+
+    const seller = await prisma.user.findUnique({
+      where: { id: req.params.id },
+      include: {
+        sellerDetails: {
+          include: {
+            verificationDocuments: true
+          }
+        }
+      }
+    });
+
+    if (!seller) {
+      return res.status(404).json({
+        success: false,
+        msg: 'Seller not found'
+      });
+    }
+
+    if (!seller.isSeller) {
+      return res.status(400).json({
+        success: false,
+        msg: 'User is not a seller'
+      });
+    }
+
+    if (!seller.isVerified) {
+      return res.status(400).json({
+        success: false,
+        msg: 'Seller is already unverified'
+      });
+    }
+
+    const updates = [
+      prisma.user.update({
+        where: { id: seller.id },
+        data: {
+          isVerified: false
+        }
+      })
+    ];
+
+    if (seller.sellerDetails) {
+      updates.push(
+        prisma.sellerDetails.update({
+          where: { id: seller.sellerDetails.id },
+          data: {
+            verificationStatus: 'UNDER_REVIEW',
+            verificationNotes: reason || seller.sellerDetails.verificationNotes || null,
+            verifiedAt: null,
+            verifiedById: null
+          }
+        })
+      );
+
+      if (resetDocuments) {
+        updates.push(
+          prisma.verificationDocument.updateMany({
+            where: { sellerDetailsId: seller.sellerDetails.id },
+            data: {
+              status: 'PENDING',
+              rejectionReason: null
+            }
+          })
+        );
+      }
+    }
+
+    await prisma.$transaction(updates);
+
+    try {
+      await sendEmail({
+        to: seller.email,
+        subject: 'Seller Verification Reopened - WyZar',
+        html: `
+          <h1>Seller Verification Reopened</h1>
+          <p>Hello ${seller.sellerDetails?.businessName || 'Seller'},</p>
+          <p>Your verification status has been moved back to review by our admin team.</p>
+          ${reason ? `<p><strong>Reason:</strong> ${reason}</p>` : ''}
+          <p>We will notify you once the review is complete.</p>
+          <p>Best regards,<br>WyZar Team</p>
+        `
+      });
+    } catch (emailError) {
+      console.error('Error sending reverse verification email:', emailError);
+    }
+
+    return res.json({
+      success: true,
+      msg: 'Seller verification reversed successfully',
+      sellerId: seller.id,
+      isVerified: false,
+      verificationStatus: 'UNDER_REVIEW'
+    });
+  } catch (error) {
+    console.error('Error reversing seller verification:', error);
+    return res.status(500).json({
+      success: false,
+      msg: 'Server error',
+      error: error.message
+    });
+  }
+});
+
 // @route   PUT /api/admin/sellers/:id/suspend
 // @desc    Suspend or unsuspend a seller
 // @access  Private (Admin only)
@@ -629,18 +739,80 @@ router.get('/:sellerId/documents/:documentId/view', adminAuth, async (req, res) 
     const path = require('path');
     const fs = require('fs');
 
-    // Resolve to absolute path
-    const filePath = path.resolve(document.documentPath);
+    const rawPath = String(document.documentPath || '').trim();
 
-    // Check if file exists
-    if (!fs.existsSync(filePath)) {
+    if (!rawPath) {
+      return res.status(404).json({
+        success: false,
+        msg: 'Document file path is missing'
+      });
+    }
+
+    // If a cloud URL is stored, stream it through this endpoint.
+    if (/^https?:\/\//i.test(rawPath)) {
+      const upstream = await fetch(rawPath);
+
+      if (!upstream.ok) {
+        return res.status(404).json({
+          success: false,
+          msg: 'Document file not found on remote storage'
+        });
+      }
+
+      const contentType = upstream.headers.get('content-type') || 'application/octet-stream';
+      const buffer = Buffer.from(await upstream.arrayBuffer());
+
+      res.setHeader('Content-Type', contentType);
+      res.setHeader('Content-Disposition', `inline; filename="${document.documentName || 'document'}"`);
+      return res.send(buffer);
+    }
+
+    const normalizedPath = rawPath.replace(/\\/g, '/');
+    const backendRoot = path.join(__dirname, '..');
+    const uploadsRoot = path.join(backendRoot, 'uploads');
+    const withoutLeadingSlash = normalizedPath.replace(/^\/+/, '');
+    const uploadsRelative = withoutLeadingSlash.startsWith('uploads/')
+      ? withoutLeadingSlash.slice('uploads/'.length)
+      : withoutLeadingSlash.replace(/^verification\//, 'verification/');
+
+    const candidates = [];
+
+    if (path.isAbsolute(rawPath)) {
+      candidates.push(path.normalize(rawPath));
+    }
+
+    candidates.push(path.resolve(rawPath));
+    candidates.push(path.join(backendRoot, withoutLeadingSlash));
+    candidates.push(path.join(uploadsRoot, uploadsRelative));
+
+    const filePath = candidates.find((candidate) => {
+      try {
+        return fs.existsSync(candidate);
+      } catch (_) {
+        return false;
+      }
+    });
+
+    if (!filePath) {
       return res.status(404).json({
         success: false,
         msg: 'Document file not found on server'
       });
     }
 
-    // Send file for viewing/downloading (no root option for absolute paths)
+    const ext = path.extname(filePath).toLowerCase();
+    const mimeByExt = {
+      '.pdf': 'application/pdf',
+      '.jpg': 'image/jpeg',
+      '.jpeg': 'image/jpeg',
+      '.png': 'image/png',
+      '.webp': 'image/webp'
+    };
+
+    res.setHeader('Content-Type', mimeByExt[ext] || 'application/octet-stream');
+    res.setHeader('Content-Disposition', `inline; filename="${document.documentName || path.basename(filePath)}"`);
+
+    // Send file for inline viewing.
     res.sendFile(filePath, (err) => {
       if (err) {
         console.error('Error sending file:', err);

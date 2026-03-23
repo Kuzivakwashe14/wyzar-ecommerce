@@ -3,7 +3,6 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { SignInButton, SignUpButton } from "@clerk/nextjs";
 import { api } from "@/context/AuthContent";
 import {
   NavigationMenu,
@@ -29,6 +28,7 @@ import { Badge } from "@/components/ui/badge";
 import { Sheet, SheetContent, SheetTrigger, SheetTitle, SheetHeader } from "@/components/ui/sheet";
 import { useAuth } from "@/context/AuthContent";
 import { useCart } from "@/context/CartContext";
+import { useUnreadMessages } from "@/context/UnreadMessagesContext";
 import CartSheet from "./CartSheet";
 import {
   LogOut,
@@ -56,31 +56,12 @@ const categories = [
 ];
 
 export default function Navbar() {
-  const { isAuthenticated, user, logout, login } = useAuth();
+  const { isAuthenticated, user, logout, login, signup } = useAuth();
+  const { unreadCount } = useUnreadMessages();
   const { itemCount } = useCart();
   const router = useRouter();
   const [searchQuery, setSearchQuery] = useState("");
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [unreadMessages, setUnreadMessages] = useState(0);
-
-  // Fetch unread message count
-  useEffect(() => {
-    if (isAuthenticated && user) {
-      fetchUnreadCount();
-      // Poll for updates every 30 seconds
-      const interval = setInterval(fetchUnreadCount, 30000);
-      return () => clearInterval(interval);
-    }
-  }, [isAuthenticated, user]);
-
-  const fetchUnreadCount = async () => {
-    try {
-      const response = await api.get('/messages/unread-count');
-      setUnreadMessages(response.data.unreadCount);
-    } catch (error) {
-      console.error('Error fetching unread count:', error);
-    }
-  };
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
@@ -326,15 +307,11 @@ export default function Navbar() {
               </>
             ) : (
               <>
-                <SignInButton mode="modal">
-                  <Button variant="ghost" size="sm" className="hidden sm:inline-flex">Login</Button>
-                </SignInButton>
-                <SignUpButton mode="modal">
-                  <Button size="sm" className="gap-1">
-                    <span className="hidden sm:inline">Sign Up</span>
-                    <span className="sm:hidden">Join</span>
-                  </Button>
-                </SignUpButton>
+                <Button variant="ghost" size="sm" className="hidden sm:inline-flex" onClick={login}>Login</Button>
+                <Button size="sm" className="gap-1" onClick={signup}>
+                  <span className="hidden sm:inline">Sign Up</span>
+                  <span className="sm:hidden">Join</span>
+                </Button>
               </>
             )}
 
@@ -343,12 +320,12 @@ export default function Navbar() {
               <Link href="/messages">
                 <Button variant="ghost" size="icon" className="relative">
                   <MessageCircle className="h-5 w-5" />
-                  {unreadMessages > 0 && (
+                  {unreadCount > 0 && (
                     <Badge
                       variant="destructive"
                       className="absolute -top-2 -right-2 h-5 w-5 flex items-center justify-center p-0 text-xs"
                     >
-                      {unreadMessages > 9 ? '9+' : unreadMessages}
+                      {unreadCount > 9 ? '9+' : unreadCount}
                     </Badge>
                   )}
                 </Button>

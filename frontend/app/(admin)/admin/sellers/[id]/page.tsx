@@ -140,6 +140,28 @@ export default function SellerDetailsPage({ params }: { params: Promise<{ id: st
     }
   };
 
+  const handleReverseVerification = async () => {
+    if (!confirm('Reverse verification and move this seller back to review?')) return;
+
+    try {
+      const reason = prompt('Reason for reversing verification (optional):') || '';
+
+      setProcessing(true);
+      await axiosInstance.put(`/admin/sellers/${id}/reverse-verification`, {
+        reason,
+        resetDocuments: false
+      });
+
+      alert('Seller moved back to review successfully');
+      fetchSellerDetails();
+    } catch (error: any) {
+      console.error('Error reversing verification:', error);
+      alert(error.response?.data?.msg || 'Failed to reverse verification');
+    } finally {
+      setProcessing(false);
+    }
+  };
+
   const handleDelete = async () => {
     if (!confirm('Are you sure you want to DELETE this seller? This action cannot be undone.')) return;
     
@@ -173,7 +195,22 @@ export default function SellerDetailsPage({ params }: { params: Promise<{ id: st
       setTimeout(() => window.URL.revokeObjectURL(url), 100);
     } catch (error: any) {
       console.error('Error viewing document:', error);
-      alert(error.response?.data?.msg || 'Failed to load document');
+      let message = 'Failed to load document';
+
+      try {
+        const errorData = error?.response?.data;
+        if (errorData instanceof Blob) {
+          const text = await errorData.text();
+          const parsed = JSON.parse(text);
+          message = parsed?.msg || parsed?.message || message;
+        } else {
+          message = error?.response?.data?.msg || error?.message || message;
+        }
+      } catch (_) {
+        message = error?.response?.data?.msg || error?.message || message;
+      }
+
+      alert(message);
     }
   };
 
@@ -227,6 +264,16 @@ export default function SellerDetailsPage({ params }: { params: Promise<{ id: st
         </div>
 
         <div className="flex items-center gap-3">
+          {seller.isVerified && (
+            <button
+              onClick={handleReverseVerification}
+              disabled={processing}
+              className="flex items-center gap-2 px-4 py-2 bg-amber-500 hover:bg-amber-600 text-white rounded-lg font-medium transition-colors disabled:opacity-50"
+            >
+              {processing ? <Loader2 className="w-4 h-4 animate-spin"/> : <XCircle className="w-4 h-4"/>}
+              Reverse Verification
+            </button>
+          )}
             {seller.isSuspended ? (
                 <button
                     onClick={() => handleSuspend(false)}
@@ -263,15 +310,15 @@ export default function SellerDetailsPage({ params }: { params: Promise<{ id: st
         <div className="space-y-6 lg:col-span-1">
             
             {/* Status Card */}
-            <div className={`p-4 rounded-xl border ${seller.isSuspended ? 'bg-red-50 border-red-200' : 'bg-green-50 border-green-200'}`}>
+            <div className={`p-4 rounded-xl border ${seller.isSuspended ? 'bg-red-50 border-red-200' : seller.isVerified ? 'bg-green-50 border-green-200' : 'bg-amber-50 border-amber-200'}`}>
                 <div className="flex items-center justify-between mb-2">
-                    <span className={`text-sm font-semibold uppercase ${seller.isSuspended ? 'text-red-700' : 'text-green-700'}`}>
+                <span className={`text-sm font-semibold uppercase ${seller.isSuspended ? 'text-red-700' : seller.isVerified ? 'text-green-700' : 'text-amber-700'}`}>
                         Current Status
                     </span>
-                    {seller.isSuspended ? <Ban className="w-5 h-5 text-red-500"/> : <Shield className="w-5 h-5 text-green-500"/>}
+                {seller.isSuspended ? <Ban className="w-5 h-5 text-red-500"/> : seller.isVerified ? <Shield className="w-5 h-5 text-green-500"/> : <Clock className="w-5 h-5 text-amber-500"/>}
                 </div>
-                <p className={`text-lg font-bold ${seller.isSuspended ? 'text-red-900' : 'text-green-900'}`}>
-                    {seller.isSuspended ? 'Suspended' : 'Active & Verified'}
+              <p className={`text-lg font-bold ${seller.isSuspended ? 'text-red-900' : seller.isVerified ? 'text-green-900' : 'text-amber-900'}`}>
+                {seller.isSuspended ? 'Suspended' : seller.isVerified ? 'Active & Verified' : 'Under Review'}
                 </p>
                 {seller.isSuspended && seller.suspensionReason && (
                     <p className="mt-2 text-sm text-red-600">

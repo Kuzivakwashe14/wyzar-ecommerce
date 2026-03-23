@@ -209,7 +209,22 @@ export default function PendingSellersPage() {
       setTimeout(() => window.URL.revokeObjectURL(url), 100);
     } catch (error: any) {
       console.error('Error viewing document:', error);
-      alert(error.response?.data?.msg || 'Failed to load document');
+      let message = 'Failed to load document';
+
+      try {
+        const errorData = error?.response?.data;
+        if (errorData instanceof Blob) {
+          const text = await errorData.text();
+          const parsed = JSON.parse(text);
+          message = parsed?.msg || parsed?.message || message;
+        } else {
+          message = error?.response?.data?.msg || error?.message || message;
+        }
+      } catch (_) {
+        message = error?.response?.data?.msg || error?.message || message;
+      }
+
+      alert(message);
     }
   };
 

@@ -212,6 +212,7 @@ io.on('connection', (socket) => {
   socket.on('join', (userId) => {
     connectedUsers.set(userId, socket.id);
     socket.userId = userId;
+    socket.join(userId);
     console.log(`User ${userId} joined with socket ${socket.id}`);
   });
 
@@ -249,6 +250,7 @@ io.on('connection', (socket) => {
   socket.on('disconnect', () => {
     if (socket.userId) {
       connectedUsers.delete(socket.userId);
+      socket.leave(socket.userId);
       console.log(`User ${socket.userId} disconnected`);
     }
   });

@@ -144,7 +144,11 @@ export default function AdminDashboard() {
       {/* Stats Cards */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         {/* Total Users */}
-        <div className="bg-white border border-gray-200 rounded-lg p-4 hover:border-shop_dark_green transition-all shadow-sm">
+        <Link
+          href="/admin/users"
+          className="bg-white border border-gray-200 rounded-lg p-4 hover:border-shop_dark_green transition-all shadow-sm block"
+          aria-label="View all registered users"
+        >
           <div className="flex items-center justify-between mb-2">
             <div className="p-2 bg-shop_dark_green/10 rounded-md">
               <Users className="w-4 h-4 text-shop_dark_green" />
@@ -155,10 +159,14 @@ export default function AdminDashboard() {
             {stats?.users.total.toLocaleString()}
           </h3>
           <p className="text-gray-600 text-xs">Registered Users</p>
-        </div>
+        </Link>
 
         {/* Total Sellers */}
-        <div className="bg-white border border-gray-200 rounded-lg p-4 hover:border-shop_light_green transition-all shadow-sm">
+        <Link
+          href="/admin/sellers/verified"
+          className="bg-white border border-gray-200 rounded-lg p-4 hover:border-shop_light_green transition-all shadow-sm block"
+          aria-label="View active sellers"
+        >
           <div className="flex items-center justify-between mb-2">
             <div className="p-2 bg-shop_light_green/10 rounded-md">
               <Store className="w-4 h-4 text-shop_light_green" />
@@ -174,10 +182,14 @@ export default function AdminDashboard() {
               {stats.users.pendingSellers} pending
             </p>
           )}
-        </div>
+        </Link>
 
         {/* Total Products */}
-        <div className="bg-white border border-gray-200 rounded-lg p-4 hover:border-shop_orange transition-all shadow-sm">
+        <Link
+          href="/admin/products"
+          className="bg-white border border-gray-200 rounded-lg p-4 hover:border-shop_orange transition-all shadow-sm block"
+          aria-label="View all products"
+        >
           <div className="flex items-center justify-between mb-2">
             <div className="p-2 bg-shop_orange/10 rounded-md">
               <Package className="w-4 h-4 text-shop_orange" />
@@ -188,10 +200,14 @@ export default function AdminDashboard() {
             {stats?.products.total.toLocaleString()}
           </h3>
           <p className="text-gray-600 text-xs">Total Products</p>
-        </div>
+        </Link>
 
         {/* Total Orders */}
-        <div className="bg-white border border-gray-200 rounded-lg p-4 hover:border-shop_dark_green transition-all shadow-sm">
+        <Link
+          href="/admin/orders"
+          className="bg-white border border-gray-200 rounded-lg p-4 hover:border-shop_dark_green transition-all shadow-sm block"
+          aria-label="View all orders"
+        >
           <div className="flex items-center justify-between mb-2">
             <div className="p-2 bg-shop_light_pink rounded-md">
               <ShoppingCart className="w-4 h-4 text-shop_dark_green" />
@@ -205,7 +221,7 @@ export default function AdminDashboard() {
           <p className="text-shop_light_green text-[10px] mt-1">
             {stats?.orders.today} today
           </p>
-        </div>
+        </Link>
       </div>
 
       {/* Revenue Cards */}

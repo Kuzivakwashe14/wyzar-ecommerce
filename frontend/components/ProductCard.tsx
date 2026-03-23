@@ -199,9 +199,19 @@ export default function ProductCard({ product }: ProductCardProps) {
         {/* Seller */}
         <p className="text-xs text-gray-500 mt-2">
           By{" "}
-          <span className="text-shop_dark_green hover:underline cursor-pointer">
-            {product.seller?.sellerDetails?.businessName || 'Unknown Seller'}
-          </span>
+          {product.seller?.id ? (
+            <Link
+              href={`/sellers/${product.seller.id}`}
+              className="text-shop_dark_green hover:underline"
+              onClick={(e) => e.stopPropagation()}
+            >
+              {product.seller?.sellerDetails?.businessName || 'Unknown Seller'}
+            </Link>
+          ) : (
+            <span className="text-shop_dark_green">
+              {product.seller?.sellerDetails?.businessName || 'Unknown Seller'}
+            </span>
+          )}
         </p>
 
         {/* Price */}

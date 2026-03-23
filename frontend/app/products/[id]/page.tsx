@@ -367,6 +367,19 @@ export default function ProductDetailPage() {
                       </div>
                     )}
                   </div>
+
+                  {(product.seller?.id || (product as any).sellerId) && (
+                    <div className="mt-3 flex items-center gap-2 text-sm text-gray-600">
+                      <Store className="h-4 w-4 text-shop_dark_green" />
+                      <span>Sold by</span>
+                      <Link
+                        href={`/sellers/${product.seller?.id || (product as any).sellerId}`}
+                        className="text-shop_dark_green font-medium hover:underline"
+                      >
+                        {product.seller?.sellerDetails?.businessName || 'Seller'}
+                      </Link>
+                    </div>
+                  )}
                 </div>
 
                 <Separator />
@@ -374,8 +387,13 @@ export default function ProductDetailPage() {
                 <div>
                   <p className="text-sm text-gray-500 mb-1">Price</p>
                   <p className="text-4xl font-bold text-shop_orange">
-                    ${product.price.toFixed(2)}
+                    ${(product.price * quantity).toFixed(2)}
                   </p>
+                  {quantity > 1 && (
+                    <p className="text-sm text-gray-500 mt-1">
+                      ${product.price.toFixed(2)} each x {quantity}
+                    </p>
+                  )}
                 </div>
 
                 {/* Quantity Selector */}
@@ -435,7 +453,7 @@ export default function ProductDetailPage() {
                       size="lg" 
                       onClick={handleWishlist}
                       className={isWishlisted 
-                        ? "bg-shop_orange text-white border-shop_orange hover:bg-shop_orange/90" 
+                        ? "bg-shop_orange text-shop_dark_green border-shop_orange hover:bg-shop_orange/90 hover:text-shop_dark_green" 
                         : "border-shop_orange text-shop_orange hover:bg-shop_orange hover:text-white"
                       }
                     >

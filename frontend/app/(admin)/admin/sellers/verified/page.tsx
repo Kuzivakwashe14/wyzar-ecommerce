@@ -16,7 +16,8 @@ import {
   Shield,
   Ban,
   Eye,
-  CheckCircle2
+  CheckCircle2,
+  XCircle
 } from 'lucide-react';
 
 interface Seller {
@@ -94,6 +95,25 @@ export default function VerifiedSellersPage() {
     } catch (error: any) {
       console.error('Error updating seller status:', error);
       alert(error.response?.data?.msg || 'Failed to update seller status');
+    }
+  };
+
+  const handleReverseVerification = async (sellerId: string) => {
+    if (!confirm('Reverse verification for this seller and move them back to review?')) return;
+
+    try {
+      const reason = prompt('Reason for reversing verification (optional):') || '';
+
+      await axiosInstance.put(`/admin/sellers/${sellerId}/reverse-verification`, {
+        reason,
+        resetDocuments: false
+      });
+
+      fetchSellers();
+      alert('Seller moved back to review successfully');
+    } catch (error: any) {
+      console.error('Error reversing verification:', error);
+      alert(error.response?.data?.msg || 'Failed to reverse verification');
     }
   };
 
@@ -230,6 +250,14 @@ export default function VerifiedSellersPage() {
                           >
                             <Eye className="w-4 h-4" />
                           </Link>
+
+                          <button
+                            onClick={() => handleReverseVerification(seller.id)}
+                            className="p-2 text-gray-400 hover:text-amber-600 hover:bg-amber-50 rounded-lg transition-all"
+                            title="Reverse Verification"
+                          >
+                            <XCircle className="w-4 h-4" />
+                          </button>
                           
                           {seller.isSuspended ? (
                             <button

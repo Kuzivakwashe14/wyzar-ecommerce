@@ -12,6 +12,7 @@ import { Loader2, MessageCircle, Search, ArrowLeft } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import ChatBoxEnhanced from '@/components/chat/ChatBoxEnhanced';
 import { useAuth } from '@/context/AuthContent';
+import { useSocket } from '@/context/SocketContext';
 import Image from 'next/image';
 import { getImageUrl } from '@/lib/utils';
 
@@ -51,6 +52,7 @@ interface Conversation {
 
 export default function MessagesPage() {
   const { user, loading: authLoading, login } = useAuth();
+  const { socket } = useSocket();
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [selectedConversation, setSelectedConversation] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
@@ -63,6 +65,48 @@ export default function MessagesPage() {
       setLoading(false);
     }
   }, [user, authLoading]);
+
+  useEffect(() => {
+    if (!socket || !user) return;
+
+    const handleIncomingMessage = (payload: {
+      conversationId: string;
+      message?: {
+        message: string;
+        createdAt: string;
+      };
+    }) => {
+      if (!payload?.conversationId || !payload?.message) return;
+
+      setConversations((prev) => {
+        const existingIndex = prev.findIndex((c) => c.id === payload.conversationId || c._id === payload.conversationId);
+
+        if (existingIndex === -1) {
+          // New conversation for this user; refresh list from server to get participants and product context.
+          fetchConversations();
+          return prev;
+        }
+
+        const existing = prev[existingIndex];
+        const selectedId = selectedConversation;
+        const isOpen = selectedId === existing.id || selectedId === existing._id;
+        const updated: Conversation = {
+          ...existing,
+          lastMessage: payload.message,
+          unreadCount: isOpen ? 0 : (existing.unreadCount || 0) + 1
+        };
+
+        const next = prev.filter((_, idx) => idx !== existingIndex);
+        return [updated, ...next];
+      });
+    };
+
+    socket.on('new_message', handleIncomingMessage);
+
+    return () => {
+      socket.off('new_message', handleIncomingMessage);
+    };
+  }, [socket, user, selectedConversation]);
 
   const fetchConversations = async () => {
     try {

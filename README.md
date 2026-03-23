@@ -1,147 +1,132 @@
 # WyZar E-commerce
 
-A full-stack e-commerce platform built with Next.js and Express, featuring secure authentication, real-time updates, and comprehensive admin tools.
+Full-stack marketplace platform with seller onboarding, admin moderation tools, real-time messaging, payments, and secure auth.
 
-## Tech Stack
+## Stack
 
 ### Frontend
-- **Framework**: Next.js 16 with React 19
-- **Styling**: Tailwind CSS with Radix UI components
-- **Authentication**: Clerk
-- **State Management**: React Hook Form with Zod validation
-- **Real-time**: Socket.io Client
-- **UI Components**: Radix UI, Framer Motion, Lucide Icons
+- Next.js 16 (App Router) + React 19
+- TypeScript + Tailwind CSS + Radix UI
+- Clerk authentication
+- Axios + React Hook Form + Zod
+- Socket.IO client for real-time features
 
 ### Backend
-- **Framework**: Express 5
-- **Database**: Prisma ORM
-- **Authentication**: Clerk SDK, JWT
-- **Security**: Helmet, CSRF protection, XSS-Clean, Rate Limiting
-- **Payment**: PayNow integration
-- **Notifications**: Africa's Talking, Nodemailer
-- **Testing**: Jest with Supertest
+- Express 5 + Prisma ORM
+- PostgreSQL database
+- Clerk/JWT auth middleware
+- File uploads with Multer (product and verification docs)
+- PayNow payment integration
+- Jest + Supertest tests
 
-## Project Structure
+## Repository Layout
 
-```
+```text
 wyzar-ecommerce/
-├── frontend/          # Next.js application
-├── backend/           # Express API server
-│   └── scripts/       # Database utility scripts
+├── frontend/                  # Next.js app
+├── backend/                   # Express API + Prisma
+├── testsprite_tests/          # API scenario tests
+├── list_users.js              # Root utility script
+├── make_admin.js              # Root utility script
 └── README.md
 ```
 
-## Getting Started
+## Quick Start
 
 ### Prerequisites
-- Node.js (v18 or higher)
-- npm or yarn
-- Database (PostgreSQL/MySQL)
+- Node.js 18+
+- npm
+- PostgreSQL
 
-### Installation
-
-1. **Clone the repository**
-   ```bash
-   git clone <repository-url>
-   cd wyzar-ecommerce
-   ```
-
-2. **Install dependencies**
-   ```bash
-   # Install backend dependencies
-   cd backend
-   npm install
-
-   # Install frontend dependencies
-   cd ../frontend
-   npm install
-   ```
-
-3. **Environment setup**
-
-   Create `.env` files in both `backend/` and `frontend/` directories with the necessary environment variables (database connection, API keys, etc.).
-
-4. **Database setup**
-   ```bash
-   cd backend
-   npx prisma migrate dev
-   npx prisma generate
-   ```
-
-### Running the Application
-
-**Development mode:**
+### 1) Install dependencies
 
 ```bash
-# Terminal 1 - Backend
+cd backend
+npm install
+
+cd ../frontend
+npm install
+```
+
+### 2) Configure environment variables
+
+Create and fill:
+- `backend/.env`
+- `frontend/.env.local`
+
+Minimum required values typically include:
+- database connection (`DATABASE_URL`)
+- Clerk keys/secrets
+- frontend/backend base URLs
+- payment provider settings
+
+### 3) Prepare database
+
+```bash
+cd backend
+npx prisma migrate dev
+npx prisma generate
+```
+
+### 4) Run locally
+
+```bash
+# terminal 1
 cd backend
 npm run dev
 
-# Terminal 2 - Frontend
+# terminal 2
 cd frontend
 npm run dev
 ```
 
-**Production mode:**
+Frontend default: `http://localhost:3000`  
+Backend default: `http://localhost:5000`
 
-```bash
-# Backend
-cd backend
-npm start
+## Scripts
 
-# Frontend
-cd frontend
-npm run build
-npm start
-```
+### Backend (`backend/package.json`)
+- `npm run dev` - start API with nodemon
+- `npm start` - start API in production mode
+- `npm test` - run all tests with coverage
+- `npm run test:watch` - run tests in watch mode
+- `npm run test:validation` - validation tests
+- `npm run test:csrf` - CSRF tests
+- `npm run test:error` - error middleware tests
+- `npm run test:security` - security-focused tests
 
-## Developer Scripts
+### Frontend (`frontend/package.json`)
+- `npm run dev` - start Next.js dev server
+- `npm run build` - build production bundle
+- `npm start` - run production server
+- `npm run lint` - run ESLint
 
-Database utility scripts are located in `backend/scripts/`:
+## Utility Scripts
 
-### List Users
-Lists all users from the database:
-```bash
-node backend/scripts/list_users.js
-```
+Useful admin/dev scripts exist in both places:
 
-### Make Admin
-Sets a user's role to `ADMIN`. Pass an email as an argument:
-```bash
-node backend/scripts/make_admin.js user@example.com
-```
+- Root:
+  - `node list_users.js`
+  - `node make_admin.js <email>`
+- Backend scripts folder (`backend/scripts/`), for example:
+  - `node backend/scripts/list_users.js`
+  - `node backend/scripts/make_admin.js <email>`
 
-**⚠️ Warning**: These scripts modify the database directly. Do NOT run them against production unless you intend to modify production data.
+Use with care: these scripts can change roles/data directly.
 
-## Available Scripts
+## Key Product Flows
 
-### Backend
-- `npm run dev` — Start development server with nodemon
-- `npm start` — Start production server
-- `npm test` — Run all tests with coverage
-- `npm run test:watch` — Run tests in watch mode
-- `npm run test:validation` — Run validation tests
-- `npm run test:csrf` — Run CSRF protection tests
-- `npm run test:security` — Run security tests
+- Seller application and verification document upload
+- Admin seller moderation (verify, suspend, delete constraints)
+- Seller self-service profile updates from dashboard settings
+- Product management and bulk CSV upload
+- Checkout and payment flow (including proof-of-payment flows)
+- Real-time buyer/seller messaging
 
-### Frontend
-- `npm run dev` — Start Next.js development server
-- `npm run build` — Build for production
-- `npm start` — Start production server
-- `npm run lint` — Run ESLint
+## Notes
 
-## Features
-
-- 🔐 Secure authentication with Clerk
-- 🛡️ CSRF protection and security headers
-- ⚡ Real-time updates with Socket.io
-- 💳 Payment integration
-- 📧 Email and SMS notifications
-- 🎨 Modern UI with Radix components
-- 📱 Responsive design
-- 🧪 Comprehensive test coverage
-- 🔒 Input validation with Zod
-- 🚀 Rate limiting and security best practices
+- Seller profile completeness fields are editable from seller dashboard settings and surface in admin seller detail views.
+- Verification document viewing depends on stored file path/URL validity and backend file availability.
 
 ## License
 

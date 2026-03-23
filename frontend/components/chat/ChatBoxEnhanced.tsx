@@ -73,14 +73,27 @@ export default function ChatBoxEnhanced({ conversationId, otherUser, currentUser
 
     const handleNewMessage = (data: any) => {
       if (data.conversationId === conversationId) {
-        setMessages(prev => [...prev, data.message]);
+        setMessages(prev => {
+          const incomingMessageId = data?.message?.id;
+          if (incomingMessageId && prev.some(msg => msg.id === incomingMessageId)) {
+            return prev;
+          }
+          return [...prev, data.message];
+        });
         scrollToBottom();
+
+        // Mark conversation as read on backend immediately
+        api.post(`/messages/mark-read/${conversationId}`).catch(err => {
+          console.error('Error marking conversation as read:', err);
+        });
       }
     };
 
+    socket.on('new_message', handleNewMessage);
     socket.on('newMessage', handleNewMessage);
 
     return () => {
+      socket.off('new_message', handleNewMessage);
       socket.off('newMessage', handleNewMessage);
     };
   }, [socket, conversationId]);
