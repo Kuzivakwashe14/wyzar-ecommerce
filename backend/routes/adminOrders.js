@@ -28,9 +28,20 @@ router.get('/', adminAuth, async (req, res) => {
     // Build where clause
     const where = {};
 
-    // Filter by status
+    // Filter by status — map to Prisma OrderStatus enum values (must be exact enum member names)
     if (status) {
-      where.status = status.toUpperCase();
+      const statusMap = {
+        'pending': 'PENDING',
+        'confirmed': 'CONFIRMED',
+        'paid': 'PAID',
+        'shipped': 'SHIPPED',
+        'delivered': 'DELIVERED',
+        'cancelled': 'CANCELLED'
+      };
+      const mappedStatus = statusMap[status.toLowerCase()];
+      if (mappedStatus) {
+        where.status = mappedStatus;
+      }
     }
 
     // Filter by date range

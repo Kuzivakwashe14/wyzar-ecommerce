@@ -87,15 +87,17 @@ export default function OrdersPage() {
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'Delivered':
+      case 'DELIVERED':
         return 'bg-green-500/10 text-green-400 border-green-500/20';
-      case 'Shipped':
+      case 'SHIPPED':
         return 'bg-blue-500/10 text-blue-400 border-blue-500/20';
-      case 'Paid':
+      case 'PAID':
         return 'bg-purple-500/10 text-purple-400 border-purple-500/20';
-      case 'Pending':
+      case 'PENDING':
         return 'bg-amber-500/10 text-amber-400 border-amber-500/20';
-      case 'Cancelled':
+      case 'CONFIRMED':
+        return 'bg-indigo-500/10 text-indigo-400 border-indigo-500/20';
+      case 'CANCELLED':
         return 'bg-red-500/10 text-red-400 border-red-500/20';
       default:
         return 'bg-slate-500/10 text-gray-600 border-slate-500/20';
@@ -104,15 +106,16 @@ export default function OrdersPage() {
 
   const getStatusIcon = (status: string) => {
     switch (status) {
-      case 'Delivered':
+      case 'DELIVERED':
         return <CheckCircle className="w-4 h-4" />;
-      case 'Shipped':
+      case 'SHIPPED':
         return <Truck className="w-4 h-4" />;
-      case 'Paid':
+      case 'PAID':
         return <Package className="w-4 h-4" />;
-      case 'Pending':
+      case 'PENDING':
+      case 'CONFIRMED':
         return <Clock className="w-4 h-4" />;
-      case 'Cancelled':
+      case 'CANCELLED':
         return <XCircle className="w-4 h-4" />;
       default:
         return <Package className="w-4 h-4" />;
@@ -129,14 +132,14 @@ export default function OrdersPage() {
 
       {/* Stats */}
       <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
-        {['Pending', 'Paid', 'Shipped', 'Delivered', 'Cancelled'].map((status) => (
-          <div key={status} className="bg-white border border-gray-200 rounded-lg p-4">
+        {[['PENDING', 'Pending'], ['PAID', 'Paid'], ['SHIPPED', 'Shipped'], ['DELIVERED', 'Delivered'], ['CANCELLED', 'Cancelled']].map(([dbStatus, label]) => (
+          <div key={dbStatus} className="bg-white border border-gray-200 rounded-lg p-4">
             <div className="flex items-center justify-between mb-2">
-              <span className="text-gray-600 text-sm">{status}</span>
-              {getStatusIcon(status)}
+              <span className="text-gray-600 text-sm">{label}</span>
+              {getStatusIcon(dbStatus)}
             </div>
             <p className="text-2xl font-bold text-gray-900">
-              {orders.filter(o => o.status === status).length}
+              {orders.filter(o => o.status === dbStatus).length}
             </p>
           </div>
         ))}
@@ -155,11 +158,11 @@ export default function OrdersPage() {
             className="px-4 py-2 bg-gray-50 border border-gray-300 rounded-lg text-gray-900 focus:outline-none focus:border-shop_dark_green"
           >
             <option value="">All Orders</option>
-            <option value="Pending">Pending</option>
-            <option value="Paid">Paid</option>
-            <option value="Shipped">Shipped</option>
-            <option value="Delivered">Delivered</option>
-            <option value="Cancelled">Cancelled</option>
+            <option value="PENDING">Pending</option>
+            <option value="PAID">Paid</option>
+            <option value="SHIPPED">Shipped</option>
+            <option value="DELIVERED">Delivered</option>
+            <option value="CANCELLED">Cancelled</option>
           </select>
 
           <div className="text-sm text-gray-600 flex items-center justify-end">
@@ -250,11 +253,12 @@ export default function OrdersPage() {
                           onChange={(e) => handleStatusChange(order.id, e.target.value)}
                           className="px-3 py-1 bg-gray-200 border border-gray-300 rounded-lg text-gray-900 text-sm focus:outline-none focus:border-shop_dark_green"
                         >
-                          <option value="Pending">Pending</option>
-                          <option value="Paid">Paid</option>
-                          <option value="Shipped">Shipped</option>
-                          <option value="Delivered">Delivered</option>
-                          <option value="Cancelled">Cancelled</option>
+                          <option value="PENDING">Pending</option>
+                          <option value="CONFIRMED">Confirmed</option>
+                          <option value="PAID">Paid</option>
+                          <option value="SHIPPED">Shipped</option>
+                          <option value="DELIVERED">Delivered</option>
+                          <option value="CANCELLED">Cancelled</option>
                         </select>
                       </td>
                     </tr>
