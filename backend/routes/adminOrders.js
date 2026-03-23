@@ -139,59 +139,83 @@ router.put('/:id/status', adminAuth, async (req, res) => {
   try {
     const { status } = req.body;
 
-    const validStatuses = ['Pending', 'Paid', 'Shipped', 'Delivered', 'Cancelled'];
-    if (!validStatuses.includes(status)) {
+    // Map to Prisma OrderStatus enum (must be uppercase)
+    const statusMap = {
+      'Pending': 'PENDING',
+      'Confirmed': 'CONFIRMED',
+      'Paid': 'PAID',
+      'Shipped': 'SHIPPED',
+      'Delivered': 'DELIVERED',
+      'Cancelled': 'CANCELLED'
+    };
+
+    const prismaStatus = statusMap[status] || status?.toUpperCase();
+    const validStatuses = ['PENDING', 'CONFIRMED', 'PAID', 'SHIPPED', 'DELIVERED', 'CANCELLED'];
+
+    if (!validStatuses.includes(prismaStatus)) {
       return res.status(400).json({
         success: false,
         msg: 'Invalid status'
       });
     }
 
-    const order = await Order.findById(req.params.id).populate('user', 'email phone');
+    // Find the existing order first
+    const existingOrder = await prisma.order.findUnique({
+      where: { id: req.params.id },
+      include: { user: { select: { id: true, email: true, phone: true } } }
+    });
 
-    if (!order) {
+    if (!existingOrder) {
       return res.status(404).json({
         success: false,
         msg: 'Order not found'
       });
     }
 
-    const oldStatus = order.status;
-    order.status = status;
+    const oldStatus = existingOrder.status;
 
-    // Update timestamps
-    if (status === 'Paid' && !order.paidAt) {
-      order.paidAt = new Date();
+    // Build update data
+    const updateData = { status: prismaStatus };
+    if (prismaStatus === 'PAID' && !existingOrder.paidAt) {
+      updateData.paidAt = new Date();
     }
-    if (status === 'Shipped' && !order.shippedAt) {
-      order.shippedAt = new Date();
+    if (prismaStatus === 'SHIPPED' && !existingOrder.shippedAt) {
+      updateData.shippedAt = new Date();
     }
-    if (status === 'Delivered' && !order.deliveredAt) {
-      order.deliveredAt = new Date();
+    if (prismaStatus === 'DELIVERED' && !existingOrder.deliveredAt) {
+      updateData.deliveredAt = new Date();
     }
 
-    await order.save();
+    // Update the order
+    const updatedOrder = await prisma.order.update({
+      where: { id: req.params.id },
+      data: updateData,
+      include: {
+        user: { select: { id: true, email: true, phone: true } },
+        orderItems: true
+      }
+    });
 
     // Send notification to customer
     try {
       const statusMessages = {
-        'Paid': 'Your payment has been confirmed.',
-        'Shipped': 'Your order has been shipped and is on its way!',
-        'Delivered': 'Your order has been delivered. Thank you for shopping with WyZar!',
-        'Cancelled': 'Your order has been cancelled. If you have any questions, please contact support.'
+        'PAID': 'Your payment has been confirmed.',
+        'SHIPPED': 'Your order has been shipped and is on its way!',
+        'DELIVERED': 'Your order has been delivered. Thank you for shopping with WyZar!',
+        'CANCELLED': 'Your order has been cancelled. If you have any questions, please contact support.'
       };
 
-      if (order.user?.email && statusMessages[status]) {
+      if (updatedOrder.user?.email && statusMessages[prismaStatus]) {
         await sendEmail({
-          to: order.user.email,
+          to: updatedOrder.user.email,
           subject: `Order ${status} - WyZar`,
           html: `
             <h1>Order Status Update</h1>
             <p>Hello,</p>
-            <p>Your order #${order._id} status has been updated.</p>
+            <p>Your order #${updatedOrder.id} status has been updated.</p>
             <p><strong>New Status:</strong> ${status}</p>
-            <p>${statusMessages[status]}</p>
-            <p>Order Total: $${order.totalPrice}</p>
+            <p>${statusMessages[prismaStatus]}</p>
+            <p>Order Total: $${updatedOrder.totalPrice}</p>
             <p>Thank you for shopping with WyZar!</p>
             <p>Best regards,<br>WyZar Team</p>
           `
@@ -204,8 +228,8 @@ router.put('/:id/status', adminAuth, async (req, res) => {
 
     res.json({
       success: true,
-      msg: `Order status updated from ${oldStatus} to ${status}`,
-      order: await Order.findById(order._id).populate('user', 'email phone')
+      msg: `Order status updated from ${oldStatus} to ${prismaStatus}`,
+      order: updatedOrder
     });
   } catch (error) {
     console.error('Error updating order status:', error);
@@ -224,7 +248,10 @@ router.put('/:id/refund', adminAuth, async (req, res) => {
   try {
     const { refundAmount, reason } = req.body;
 
-    const order = await Order.findById(req.params.id).populate('user', 'email phone');
+    const order = await prisma.order.findUnique({
+      where: { id: req.params.id },
+      include: { user: { select: { id: true, email: true, phone: true } } }
+    });
 
     if (!order) {
       return res.status(404).json({
@@ -234,7 +261,7 @@ router.put('/:id/refund', adminAuth, async (req, res) => {
     }
 
     // Check if order is eligible for refund
-    if (!['Paid', 'Shipped'].includes(order.status)) {
+    if (!['PAID', 'SHIPPED'].includes(order.status)) {
       return res.status(400).json({
         success: false,
         msg: 'Order is not eligible for refund'
@@ -250,27 +277,26 @@ router.put('/:id/refund', adminAuth, async (req, res) => {
       });
     }
 
-    // Update order status
-    order.status = 'Cancelled';
-    order.refund = {
-      amount: amount,
-      reason: reason || 'Refund processed by admin',
-      processedBy: req.user.id,
-      processedAt: new Date()
-    };
-
-    await order.save();
+    // Update order status to CANCELLED
+    const updatedOrder = await prisma.order.update({
+      where: { id: req.params.id },
+      data: { status: 'CANCELLED' },
+      include: {
+        user: { select: { id: true, email: true, phone: true } },
+        orderItems: true
+      }
+    });
 
     // Send refund notification
     try {
-      if (order.user?.email) {
+      if (updatedOrder.user?.email) {
         await sendEmail({
-          to: order.user.email,
+          to: updatedOrder.user.email,
           subject: 'Refund Processed - WyZar',
           html: `
             <h1>Refund Processed</h1>
             <p>Hello,</p>
-            <p>A refund has been processed for your order #${order._id}.</p>
+            <p>A refund has been processed for your order #${updatedOrder.id}.</p>
             <p><strong>Refund Amount:</strong> $${amount}</p>
             <p><strong>Reason:</strong> ${reason || 'Refund requested'}</p>
             <p>The amount will be credited to your original payment method within 5-10 business days.</p>
@@ -286,7 +312,7 @@ router.put('/:id/refund', adminAuth, async (req, res) => {
     res.json({
       success: true,
       msg: 'Refund processed successfully',
-      order: await Order.findById(order._id).populate('user', 'email phone')
+      order: updatedOrder
     });
   } catch (error) {
     console.error('Error processing refund:', error);
@@ -310,11 +336,11 @@ router.get('/stats/summary', adminAuth, async (req, res) => {
       deliveredOrders,
       cancelledOrders
     ] = await Promise.all([
-      Order.countDocuments(),
-      Order.countDocuments({ status: 'Pending' }),
-      Order.countDocuments({ status: 'Shipped' }),
-      Order.countDocuments({ status: 'Delivered' }),
-      Order.countDocuments({ status: 'Cancelled' })
+      prisma.order.count(),
+      prisma.order.count({ where: { status: 'PENDING' } }),
+      prisma.order.count({ where: { status: 'SHIPPED' } }),
+      prisma.order.count({ where: { status: 'DELIVERED' } }),
+      prisma.order.count({ where: { status: 'CANCELLED' } })
     ]);
 
     res.json({
