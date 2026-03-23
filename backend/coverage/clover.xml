@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<coverage generated="1774293401959" clover="3.2.0">
-  <project timestamp="1774293401960" name="All files">
-    <metrics statements="3365" coveredstatements="214" conditionals="2196" coveredconditionals="174" methods="390" coveredmethods="33" elements="5951" coveredelements="421" complexity="0" loc="3365" ncloc="3365" packages="4" files="40" classes="40"/>
+<coverage generated="1774295110766" clover="3.2.0">
+  <project timestamp="1774295110767" name="All files">
+    <metrics statements="3405" coveredstatements="253" conditionals="2222" coveredconditionals="200" methods="395" coveredmethods="39" elements="6022" coveredelements="492" complexity="0" loc="3405" ncloc="3405" packages="4" files="40" classes="40"/>
     <package name="middleware">
-      <metrics statements="641" coveredstatements="23" conditionals="382" coveredconditionals="3" methods="82" coveredmethods="5"/>
+      <metrics statements="679" coveredstatements="60" conditionals="406" coveredconditionals="26" methods="87" coveredmethods="11"/>
       <file name="adminAuth.js" path="C:\Users\tawan\Desktop\wyzar-ecommerce\backend\middleware\adminAuth.js">
         <metrics statements="52" coveredstatements="0" conditionals="33" coveredconditionals="0" methods="1" coveredmethods="0"/>
         <line num="3" count="0" type="stmt"/>
@@ -187,24 +187,62 @@
         <line num="163" count="0" type="stmt"/>
       </file>
       <file name="csrfProtection.js" path="C:\Users\tawan\Desktop\wyzar-ecommerce\backend\middleware\csrfProtection.js">
-        <metrics statements="17" coveredstatements="8" conditionals="6" coveredconditionals="0" methods="4" coveredmethods="1"/>
+        <metrics statements="55" coveredstatements="45" conditionals="30" coveredconditionals="23" methods="9" coveredmethods="7"/>
         <line num="2" count="1" type="stmt"/>
-        <line num="10" count="1" type="stmt"/>
-        <line num="22" count="1" type="stmt"/>
-        <line num="24" count="2" type="stmt"/>
-        <line num="29" count="0" type="stmt"/>
-        <line num="35" count="1" type="stmt"/>
-        <line num="37" count="0" type="cond" truecount="0" falsecount="2"/>
-        <line num="39" count="0" type="cond" truecount="0" falsecount="2"/>
-        <line num="40" count="0" type="stmt"/>
-        <line num="47" count="0" type="stmt"/>
-        <line num="53" count="1" type="stmt"/>
-        <line num="54" count="0" type="stmt"/>
-        <line num="63" count="1" type="stmt"/>
-        <line num="64" count="0" type="cond" truecount="0" falsecount="2"/>
-        <line num="67" count="0" type="stmt"/>
-        <line num="74" count="0" type="stmt"/>
-        <line num="80" count="1" type="stmt"/>
+        <line num="19" count="1" type="stmt"/>
+        <line num="21" count="1" type="stmt"/>
+        <line num="25" count="9" type="stmt"/>
+        <line num="26" count="9" type="stmt"/>
+        <line num="27" count="36" type="cond" truecount="1" falsecount="1"/>
+        <line num="33" count="9" type="stmt"/>
+        <line num="34" count="9" type="stmt"/>
+        <line num="35" count="9" type="stmt"/>
+        <line num="36" count="9" type="stmt"/>
+        <line num="41" count="4" type="cond" truecount="1" falsecount="1"/>
+        <line num="42" count="4" type="stmt"/>
+        <line num="43" count="4" type="cond" truecount="2" falsecount="0"/>
+        <line num="44" count="3" type="cond" truecount="1" falsecount="1"/>
+        <line num="45" count="0" type="stmt"/>
+        <line num="46" count="0" type="stmt"/>
+        <line num="48" count="3" type="stmt"/>
+        <line num="53" count="9" type="stmt"/>
+        <line num="68" count="1" type="stmt"/>
+        <line num="69" count="7" type="stmt"/>
+        <line num="70" count="7" type="stmt"/>
+        <line num="71" count="7" type="stmt"/>
+        <line num="72" count="7" type="stmt"/>
+        <line num="82" count="1" type="stmt"/>
+        <line num="83" count="5" type="stmt"/>
+        <line num="84" count="5" type="cond" truecount="2" falsecount="0"/>
+        <line num="87" count="4" type="cond" truecount="4" falsecount="0"/>
+        <line num="91" count="4" type="cond" truecount="2" falsecount="0"/>
+        <line num="92" count="1" type="stmt"/>
+        <line num="95" count="3" type="cond" truecount="2" falsecount="0"/>
+        <line num="96" count="1" type="stmt"/>
+        <line num="102" count="2" type="stmt"/>
+        <line num="112" count="1" type="stmt"/>
+        <line num="114" count="2" type="stmt"/>
+        <line num="115" count="2" type="stmt"/>
+        <line num="116" count="2" type="stmt"/>
+        <line num="118" count="2" type="stmt"/>
+        <line num="119" count="2" type="cond" truecount="1" falsecount="1"/>
+        <line num="122" count="2" type="cond" truecount="4" falsecount="0"/>
+        <line num="126" count="2" type="cond" truecount="2" falsecount="0"/>
+        <line num="127" count="1" type="stmt"/>
+        <line num="130" count="1" type="cond" truecount="1" falsecount="1"/>
+        <line num="131" count="0" type="stmt"/>
+        <line num="137" count="1" type="stmt"/>
+        <line num="143" count="1" type="stmt"/>
+        <line num="144" count="0" type="stmt"/>
+        <line num="145" count="0" type="stmt"/>
+        <line num="146" count="0" type="stmt"/>
+        <line num="147" count="0" type="stmt"/>
+        <line num="153" count="1" type="stmt"/>
+        <line num="154" count="0" type="cond" truecount="0" falsecount="2"/>
+        <line num="156" count="0" type="stmt"/>
+        <line num="163" count="0" type="stmt"/>
+        <line num="170" count="1" type="stmt"/>
+        <line num="172" count="1" type="stmt"/>
       </file>
       <file name="csvUpload.js" path="C:\Users\tawan\Desktop\wyzar-ecommerce\backend\middleware\csvUpload.js">
         <metrics statements="12" coveredstatements="0" conditionals="4" coveredconditionals="0" methods="2" coveredmethods="0"/>
@@ -2691,7 +2729,7 @@
       </file>
     </package>
     <package name="utils">
-      <metrics statements="621" coveredstatements="191" conditionals="417" coveredconditionals="171" methods="87" coveredmethods="28"/>
+      <metrics statements="623" coveredstatements="193" conditionals="419" coveredconditionals="174" methods="87" coveredmethods="28"/>
       <file name="accountLockout.js" path="C:\Users\tawan\Desktop\wyzar-ecommerce\backend\utils\accountLockout.js">
         <metrics statements="77" coveredstatements="0" conditionals="26" coveredconditionals="0" methods="10" coveredmethods="0"/>
         <line num="9" count="0" type="stmt"/>
@@ -3209,7 +3247,7 @@
         <line num="222" count="0" type="stmt"/>
       </file>
       <file name="validation.js" path="C:\Users\tawan\Desktop\wyzar-ecommerce\backend\utils\validation.js">
-        <metrics statements="132" coveredstatements="102" conditionals="128" coveredconditionals="106" methods="10" coveredmethods="10"/>
+        <metrics statements="134" coveredstatements="104" conditionals="130" coveredconditionals="109" methods="10" coveredmethods="10"/>
         <line num="6" count="1" type="stmt"/>
         <line num="11" count="1" type="stmt"/>
         <line num="45" count="5" type="stmt"/>
@@ -3338,10 +3376,12 @@
         <line num="386" count="4" type="cond" truecount="2" falsecount="0"/>
         <line num="387" count="1" type="stmt"/>
         <line num="388" count="1" type="stmt"/>
-        <line num="393" count="3" type="cond" truecount="1" falsecount="1"/>
-        <line num="394" count="3" type="stmt"/>
-        <line num="397" count="3" type="stmt"/>
-        <line num="403" count="1" type="stmt"/>
+        <line num="392" count="3" type="stmt"/>
+        <line num="393" count="3" type="stmt"/>
+        <line num="395" count="3" type="cond" truecount="4" falsecount="0"/>
+        <line num="396" count="2" type="stmt"/>
+        <line num="399" count="3" type="stmt"/>
+        <line num="405" count="1" type="stmt"/>
       </file>
     </package>
     <package name="utils.security">
