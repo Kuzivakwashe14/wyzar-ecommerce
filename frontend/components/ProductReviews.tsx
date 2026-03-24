@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { api, useAuth } from '@/context/AuthContent';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -43,7 +43,7 @@ interface ProductReviewsProps {
 }
 
 export default function ProductReviews({ productId }: ProductReviewsProps) {
-  const { isAuthenticated, user } = useAuth();
+  const { isAuthenticated } = useAuth();
   const [reviews, setReviews] = useState<Review[]>([]);
   const [ratingStats, setRatingStats] = useState<RatingStats | null>(null);
   const [loading, setLoading] = useState(true);
@@ -53,16 +53,8 @@ export default function ProductReviews({ productId }: ProductReviewsProps) {
   const [sortBy, setSortBy] = useState('newest');
   const [userReview, setUserReview] = useState<Review | null>(null);
 
-  useEffect(() => {
-    if (!productId) return; // Guard against undefined productId
-    fetchReviews();
-    if (isAuthenticated) {
-      checkUserReview();
-    }
-  }, [productId, currentPage, sortBy, isAuthenticated]);
-
-  const fetchReviews = async () => {
-    if (!productId) return; // Guard against undefined productId
+  const fetchReviews = useCallback(async () => {
+    if (!productId) return;
     try {
       setLoading(true);
       const { data } = await api.get(
@@ -77,21 +69,29 @@ export default function ProductReviews({ productId }: ProductReviewsProps) {
     } finally {
       setLoading(false);
     }
-  };
+  }, [productId, currentPage, sortBy]);
 
-  const checkUserReview = async () => {
-    if (!productId) return; // Guard against undefined productId
+  const checkUserReview = useCallback(async () => {
+    if (!productId) return;
     try {
       const { data } = await api.get('/reviews/user/me');
-      const review = data.reviews.find((r: any) => {
+      const review = data.reviews.find((r: { product: { id?: string } | string; [key: string]: unknown }) => {
         const rProductId = typeof r.product === 'object' ? r.product.id : r.product;
         return rProductId === productId;
       });
       setUserReview(review || null);
-    } catch (error) {
+    } catch {
       // User might not have any reviews yet
     }
-  };
+  }, [productId]);
+
+  useEffect(() => {
+    if (!productId) return;
+    fetchReviews();
+    if (isAuthenticated) {
+      checkUserReview();
+    }
+  }, [productId, currentPage, sortBy, isAuthenticated, fetchReviews, checkUserReview]);
 
   const handleReviewSubmit = () => {
     fetchReviews();
@@ -104,7 +104,7 @@ export default function ProductReviews({ productId }: ProductReviewsProps) {
       await api.post(`/reviews/${reviewId}/helpful`);
       fetchReviews();
       toast.success('Thank you for your feedback!');
-    } catch (error) {
+    } catch {
       toast.error('Failed to mark review as helpful');
     }
   };

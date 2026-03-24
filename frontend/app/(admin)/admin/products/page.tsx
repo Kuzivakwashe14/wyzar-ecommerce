@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { useAuth } from '@/context/AuthContent';
 import {
   Search,
@@ -48,11 +48,7 @@ export default function ProductsPage() {
   const [totalPages, setTotalPages] = useState(1);
   const [totalProducts, setTotalProducts] = useState(0);
 
-  useEffect(() => {
-    fetchProducts();
-  }, [currentPage, search, category, featured]);
-
-  const fetchProducts = async () => {
+  const fetchProducts = useCallback(async () => {
     try {
       setLoading(true);
       const params = new URLSearchParams({
@@ -73,7 +69,11 @@ export default function ProductsPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [axiosInstance, currentPage, search, category, featured]);
+
+  useEffect(() => {
+    fetchProducts();
+  }, [fetchProducts]);
 
   const handleFeature = async (productId: string, isFeatured: boolean) => {
     try {
@@ -82,9 +82,10 @@ export default function ProductsPage() {
       });
       alert(!isFeatured ? 'Product featured successfully' : 'Product unfeatured successfully');
       fetchProducts();
-    } catch (error: any) {
-      console.error('Error featuring product:', error);
-      alert(error.response?.data?.msg || 'Failed to update product');
+    } catch (error: unknown) {
+      const errObj = error as { response?: { data?: { msg?: string } } };
+      console.error('Error featuring product:', errObj);
+      alert(errObj.response?.data?.msg || 'Failed to update product');
     }
   };
 
@@ -97,9 +98,10 @@ export default function ProductsPage() {
       await axiosInstance.delete(`/admin/products/${productId}`);
       alert('Product deleted successfully');
       fetchProducts();
-    } catch (error: any) {
-      console.error('Error deleting product:', error);
-      alert(error.response?.data?.msg || 'Failed to delete product');
+    } catch (error: unknown) {
+      const errObj = error as { response?: { data?: { msg?: string } } };
+      console.error('Error deleting product:', errObj);
+      alert(errObj.response?.data?.msg || 'Failed to delete product');
     }
   };
 
@@ -255,14 +257,17 @@ export default function ProductsPage() {
                       <td className="px-6 py-4">
                         <div className="flex items-center gap-3">
                           {product.images && product.images.length > 0 ? (
-                            <img
+                            <Image
                               src={
                                 product.images[0].startsWith('http')
                                   ? product.images[0]
                                   : `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'}/${product.images[0].startsWith('/') ? product.images[0].slice(1) : product.images[0]}`
                               }
                               alt={product.name}
+                              width={48}
+                              height={48}
                               className="w-12 h-12 rounded-lg object-cover"
+                              unoptimized
                             />
                           ) : (
                             <div className="w-12 h-12 bg-gray-100 rounded-lg flex items-center justify-center">

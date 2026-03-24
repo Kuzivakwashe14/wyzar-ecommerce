@@ -2,7 +2,6 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { ShoppingBag, Users, Zap, ShieldCheck } from "lucide-react";
 import Link from "next/link";
-import Image from "next/image";
 
 export default function AboutUsPage() {
   return (
@@ -43,7 +42,7 @@ export default function AboutUsPage() {
               In a landscape where trust can be hard to find online, Wyzar stands as a beacon of reliability. We vet our sellers, verify products, and ensure that every transaction—whether in USD or ZiG—is safe and transparent.
             </p>
             <p>
-              We aren't just an online store; we are a community. We exist to help local entrepreneurs scale their businesses and to give Zimbabwean shoppers access to the products they love without the hassle of importing or navigating unreliable social media groups.
+              We aren&apos;t just an online store; we are a community. We exist to help local entrepreneurs scale their businesses and to give Zimbabwean shoppers access to the products they love without the hassle of importing or navigating unreliable social media groups.
             </p>
           </div>
         </div>
@@ -73,7 +72,7 @@ export default function AboutUsPage() {
                 </div>
                 <h3 className="text-xl font-bold mb-2">Community First</h3>
                 <p className="text-gray-600">
-                  We champion local businesses. When you buy on Wyzar, you're supporting a fellow Zimbabwean's dream.
+                   We champion local businesses. When you buy on Wyzar, you&apos;re supporting a fellow Zimbabwean&apos;s dream.
                 </p>
               </CardContent>
             </Card>
@@ -109,7 +108,7 @@ export default function AboutUsPage() {
       <section className="py-20 px-6 text-center">
         <h2 className="text-3xl font-bold mb-6">Join the Revolution</h2>
         <p className="text-xl text-gray-600 mb-8 max-w-2xl mx-auto">
-          Whether you're looking to buy or sell, there's a place for you at Wyzar.
+           Whether you&apos;re looking to buy or sell, there&apos;s a place for you at Wyzar.
         </p>
         <div className="flex flex-col sm:flex-row justify-center gap-4">
           <Link href="/auth">

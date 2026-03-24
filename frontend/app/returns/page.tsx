@@ -30,7 +30,7 @@ export default function ReturnsPage() {
               <ol className="list-decimal pl-5 space-y-2">
                 <li>Log in to your WyZar account and go to <strong>My Orders</strong>.</li>
                 <li>Select the order containing the item you wish to return.</li>
-                <li>Click on "Request Return" and follow the instructions to provide a reason and photos if necessary.</li>
+                 <li>Click on &quot;Request Return&quot; and follow the instructions to provide a reason and photos if necessary.</li>
                 <li>Our support team will review your request and provide further instructions on where to send the item.</li>
               </ol>
             </section>

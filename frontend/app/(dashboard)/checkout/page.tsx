@@ -29,8 +29,6 @@ import { toast } from "sonner";
 import { Smartphone, Building2, Banknote } from "lucide-react";
 import { getImageUrl } from "@/lib/utils";
 
-// Get the backend URL
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
 
 // 1. Define the form schema for shipping
 const shippingSchema = z.object({
@@ -58,7 +56,7 @@ export default function CheckoutPage() {
       router.push("/products"); // Logged in, but empty cart
     }
   }
-}, [isAuthenticated, authLoading, itemCount, router]);
+}, [isAuthenticated, authLoading, itemCount, router, login]);
 
   // 3. Define the form
   const form = useForm<z.infer<typeof shippingSchema>>({
@@ -89,7 +87,7 @@ export default function CheckoutPage() {
         paymentMethod: values.paymentMethod,
       });
 
-      const { paynowRedirectUrl, redirectUrl, message, paymentMethod } = response.data;
+      const { paynowRedirectUrl, redirectUrl, message } = response.data;
 
       // Clear the cart *after* order is created
       clearCart();
@@ -108,11 +106,11 @@ export default function CheckoutPage() {
         router.push('/order/success');
       }
 
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error("Order creation failed:", error);
       let errorMessage = "Order failed. Please try again.";
       if (axios.isAxiosError(error) && error.response) {
-        errorMessage = error.response.data.msg || errorMessage;
+        errorMessage = (error.response.data as { msg?: string })?.msg || errorMessage;
       }
       alert(`Error: ${errorMessage}`); // Use an alert for now
       setIsSubmitting(false);
@@ -246,6 +244,7 @@ export default function CheckoutPage() {
               >
                 {isSubmitting 
                   ? "Processing..." 
+                  // eslint-disable-next-line react-hooks/incompatible-library
                   : form.watch("paymentMethod") === "CashOnDelivery" 
                     ? "Place Order (Pay on Delivery)" 
                     : "Place Order"

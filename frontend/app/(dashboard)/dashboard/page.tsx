@@ -6,9 +6,7 @@ import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { DollarSign, Package, Clock, ShieldAlert, AlertTriangle, HourglassIcon } from "lucide-react";
-import { toast } from "sonner";
+import { DollarSign, Package, Clock, ShieldAlert, HourglassIcon } from "lucide-react";
 
 interface SellerStats {
   totalEarnings: number;
@@ -17,11 +15,10 @@ interface SellerStats {
 }
 
 export default function DashboardPage() {
-  const { user, isAuthenticated, loading, login, refreshUser } = useAuth();
+  const { user, isAuthenticated, loading, login } = useAuth();
   const router = useRouter();
   const [stats, setStats] = useState<SellerStats | null>(null);
   const [statsLoading, setStatsLoading] = useState(true);
-  const [deleteLoading, setDeleteLoading] = useState(false);
 
   // --- Fetch Seller Stats ---
   useEffect(() => {
@@ -51,23 +48,6 @@ export default function DashboardPage() {
     }
   }, [isAuthenticated, user, loading]);
 
-  const handleDeleteAccount = async () => {
-    if (!confirm("Are you sure you want to DELETE your seller account? This will remove all your products and seller details. This action cannot be undone.")) return;
-
-    try {
-      setDeleteLoading(true);
-      await api.delete("/seller/delete-account");
-      toast.success("Seller account deleted successfully.");
-      await refreshUser();
-      router.push("/");
-    } catch (error: any) {
-      console.error("Error deleting account:", error);
-      toast.error(error.response?.data?.msg || "Failed to delete account");
-    } finally {
-      setDeleteLoading(false);
-    }
-  };
-
   // --- Page Protection ---
   useEffect(() => {
     if (!loading) {
@@ -77,7 +57,7 @@ export default function DashboardPage() {
         router.push("/become-a-seller"); // Not a seller
       }
     }
-  }, [isAuthenticated, user, loading, router]);
+  }, [isAuthenticated, user, loading, router, login]);
 
   // --- Show Loading State ---
   if (loading || !user || !user.isSeller) {
@@ -128,7 +108,7 @@ export default function DashboardPage() {
             </li>
             <li className="flex items-start gap-2">
               <span className="text-shop_light_green font-bold">2.</span>
-              Once approved, you'll receive an email notification.
+              Once approved, you&apos;ll receive an email notification.
             </li>
             <li className="flex items-start gap-2">
               <span className="text-shop_light_green font-bold">3.</span>

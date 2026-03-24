@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { useAuth } from '@/context/AuthContent';
 import {
   CheckCircle,
@@ -8,8 +8,6 @@ import {
   FileText,
   Mail,
   Phone,
-  Building,
-  Calendar,
   AlertCircle,
   Loader2
 } from 'lucide-react';
@@ -69,11 +67,7 @@ export default function PendingSellersPage() {
   const [expandedDocuments, setExpandedDocuments] = useState<Set<string>>(new Set());
   const [documentRejectReasons, setDocumentRejectReasons] = useState<{ [key: string]: string }>({});
 
-  useEffect(() => {
-    fetchPendingSellers();
-  }, []);
-
-  const fetchPendingSellers = async () => {
+  const fetchPendingSellers = useCallback(async () => {
     try {
       setLoading(true);
       const res = await axiosInstance.get('/admin/sellers/pending');
@@ -83,7 +77,11 @@ export default function PendingSellersPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [axiosInstance]);
+
+  useEffect(() => {
+    fetchPendingSellers();
+  }, [fetchPendingSellers]);
 
   const handleApprove = async (sellerId: string) => {
     if (!confirm('Are you sure you want to approve this seller?')) return;
@@ -96,9 +94,10 @@ export default function PendingSellersPage() {
       alert('Seller approved successfully!');
       fetchPendingSellers();
       setSelectedSeller(null);
-    } catch (error: any) {
-      console.error('Error approving seller:', error);
-      alert(error.response?.data?.msg || 'Failed to approve seller');
+    } catch (error: unknown) {
+      const errObj = error as { response?: { data?: { msg?: string } } };
+      console.error('Error approving seller:', errObj);
+      alert(errObj.response?.data?.msg || 'Failed to approve seller');
     } finally {
       setProcessing(null);
     }
@@ -122,9 +121,10 @@ export default function PendingSellersPage() {
       fetchPendingSellers();
       setSelectedSeller(null);
       setRejectReason('');
-    } catch (error: any) {
-      console.error('Error rejecting seller:', error);
-      alert(error.response?.data?.msg || 'Failed to reject seller');
+    } catch (error: unknown) {
+      const errObj = error as { response?: { data?: { msg?: string } } };
+      console.error('Error rejecting seller:', errObj);
+      alert(errObj.response?.data?.msg || 'Failed to reject seller');
     } finally {
       setProcessing(null);
     }
@@ -140,9 +140,10 @@ export default function PendingSellersPage() {
       });
       alert('Document approved successfully!');
       fetchPendingSellers();
-    } catch (error: any) {
-      console.error('Error approving document:', error);
-      alert(error.response?.data?.msg || 'Failed to approve document');
+    } catch (error: unknown) {
+      const errObj = error as { response?: { data?: { msg?: string } } };
+      console.error('Error approving document:', errObj);
+      alert(errObj.response?.data?.msg || 'Failed to approve document');
     } finally {
       setProcessing(null);
     }
@@ -170,9 +171,10 @@ export default function PendingSellersPage() {
         delete updated[documentId];
         return updated;
       });
-    } catch (error: any) {
-      console.error('Error rejecting document:', error);
-      alert(error.response?.data?.msg || 'Failed to reject document');
+    } catch (error: unknown) {
+      const errObj = error as { response?: { data?: { msg?: string } } };
+      console.error('Error rejecting document:', errObj);
+      alert(errObj.response?.data?.msg || 'Failed to reject document');
     } finally {
       setProcessing(null);
     }
@@ -207,21 +209,22 @@ export default function PendingSellersPage() {
 
       // Clean up the blob URL after a short delay
       setTimeout(() => window.URL.revokeObjectURL(url), 100);
-    } catch (error: any) {
-      console.error('Error viewing document:', error);
+    } catch (error: unknown) {
+      const errObj = error as { response?: { data?: { msg?: string }; message?: string }; message?: string };
+      console.error('Error viewing document:', errObj);
       let message = 'Failed to load document';
 
       try {
-        const errorData = error?.response?.data;
+        const errorData = errObj?.response?.data;
         if (errorData instanceof Blob) {
-          const text = await errorData.text();
-          const parsed = JSON.parse(text);
+          const text = await (errorData as Blob).text();
+          const parsed = JSON.parse(text) as { msg?: string; message?: string };
           message = parsed?.msg || parsed?.message || message;
         } else {
-          message = error?.response?.data?.msg || error?.message || message;
+          message = errObj?.response?.data?.msg || errObj?.message || message;
         }
-      } catch (_) {
-        message = error?.response?.data?.msg || error?.message || message;
+      } catch {
+        message = errObj?.response?.data?.msg || errObj?.message || message;
       }
 
       alert(message);

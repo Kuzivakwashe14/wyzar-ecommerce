@@ -14,7 +14,6 @@ import { Button } from "@/components/ui/button";
 import {
   Form,
   FormControl,
-  FormDescription,
   FormField,
   FormItem,
   FormLabel,
@@ -59,7 +58,7 @@ export default function EditProductPage() {
   const router = useRouter();
   const params = useParams();
   const { id } = params; // Get product ID from URL
-  const { user, isAuthenticated, loading: authLoading } = useAuth();
+  const { loading: authLoading } = useAuth();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [product, setProduct] = useState<Product | null>(null);
   const [selectedFiles, setSelectedFiles] = useState<FileList | null>(null);
@@ -90,13 +89,13 @@ export default function EditProductPage() {
           countryOfOrigin: productData.countryOfOrigin,
         });
 
-      } catch (err) {
+      } catch {
         toast("Error", { description: "Could not fetch product details." });
         router.push("/dashboard/products");
       }
     };
     fetchProduct();
-  }, [id, form, router, toast]);
+  }, [id, form, router]);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files.length > 0) {
@@ -136,11 +135,11 @@ export default function EditProductPage() {
       });
       router.push("/dashboard/products"); // Go back to products list
 
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error("Product update failed:", error);
       let errorMessage = "Update failed. Please try again.";
       if (axios.isAxiosError(error) && error.response) {
-        errorMessage = error.response.data.msg || errorMessage;
+        errorMessage = (error.response.data as { msg?: string })?.msg || errorMessage;
       }
       toast(
         "Error", {

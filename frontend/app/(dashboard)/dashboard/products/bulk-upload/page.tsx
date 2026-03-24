@@ -60,7 +60,7 @@ const BulkUploadPage = () => {
       else if (!user?.isSeller) router.push("/become-a-seller");
       else if (user?.isSeller && !user?.isVerified) router.push("/dashboard");
     }
-  }, [isAuthenticated, user, authLoading, router]);
+  }, [isAuthenticated, user, authLoading, router, login]);
 
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     if (event.target.files) {
@@ -121,7 +121,7 @@ const BulkUploadPage = () => {
       const validProducts: PreviewProduct[] = [];
       const rowErrors: string[] = [];
 
-      parsed.data.forEach((row, index) => {
+      parsed.data.forEach((row: CsvRow, index: number) => {
         const rowNumber = index + 2;
         const name = (row.name || '').trim();
         const description = (row.description || '').trim();
@@ -147,8 +147,8 @@ const BulkUploadPage = () => {
 
         const imageUrlsFromCsv = (row.images || '')
           .split(',')
-          .map((img) => img.trim())
-          .filter((img) => img.length > 0);
+          .map((img: string) => img.trim())
+          .filter((img: string) => img.length > 0);
 
         validProducts.push({
           rowNumber,
@@ -166,7 +166,7 @@ const BulkUploadPage = () => {
       });
 
       if (parsed.errors.length > 0) {
-        parsed.errors.forEach((err) => {
+        parsed.errors.forEach((err: { row?: number; message: string }) => {
           const rowLabel = typeof err.row === 'number' ? String(err.row + 1) : 'unknown';
           rowErrors.push(`Row ${rowLabel}: ${err.message}`);
         });
@@ -185,7 +185,7 @@ const BulkUploadPage = () => {
       } else {
         toast.success(`Preview ready for ${validProducts.length} product(s).`);
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('CSV parsing error:', error);
       toast.error('Could not parse CSV file. Please check the format.');
     } finally {
@@ -243,8 +243,9 @@ const BulkUploadPage = () => {
           },
         });
         successCount += 1;
-      } catch (error: any) {
-        const msg = error?.response?.data?.msg || 'Failed to save product';
+      } catch (error: unknown) {
+        const errObj = error as { response?: { data?: { msg?: string } } };
+        const msg = errObj?.response?.data?.msg || 'Failed to save product';
         failedRows.push(`Row ${product.rowNumber}: ${msg}`);
       }
     }
@@ -271,15 +272,16 @@ const BulkUploadPage = () => {
     setIsSaving(false);
   };
 
-  if (authLoading) {
-    return <div className="container py-8"><p>Loading...</p></div>;
-  }
-
   useEffect(() => {
     return () => {
       revokePreviewUrls(previewProducts);
     };
-  }, [previewProducts]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  if (authLoading) {
+    return <div className="container py-8"><p>Loading...</p></div>;
+  }
 
   return (
     <div className="container mx-auto py-10">
@@ -294,7 +296,7 @@ const BulkUploadPage = () => {
           <div className="space-y-2">
             <h3 className="font-semibold">Step 1: Download Template</h3>
             <p className="text-sm text-muted-foreground">
-              Download the CSV template. The 'images' column can be used as reference links, but you will attach final files in preview.
+              Download the CSV template. The &apos;images&apos; column can be used as reference links, but you will attach final files in preview.
             </p>
             <Button variant="outline" onClick={handleDownloadTemplate}>
               Download Template
@@ -375,6 +377,7 @@ const BulkUploadPage = () => {
                       {product.imagePreviewUrls.length > 0 && (
                         <div className="mt-2 grid grid-cols-2 sm:grid-cols-4 gap-2">
                           {product.imagePreviewUrls.map((url, imgIndex) => (
+                            // eslint-disable-next-line @next/next/no-img-element
                             <img
                               key={`${product.rowNumber}-${imgIndex}`}
                               src={url}

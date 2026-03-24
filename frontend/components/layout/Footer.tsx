@@ -1,18 +1,14 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
-import { toast } from "sonner";
+
+
 import Container from "@/components/Container";
 import Logo from "@/components/Logo";
 import { 
   Mail, 
   Phone, 
   MapPin,
-  CreditCard,
-  Truck,
-  Shield,
-  RotateCcw,
 } from "lucide-react";
 
 const footerLinks = {
@@ -47,54 +43,7 @@ const footerLinks = {
 };
 
 
-
-const features = [
-  { icon: Truck, title: "Free Shipping", description: "On orders over $50" },
-  { icon: RotateCcw, title: "Easy Returns", description: "30 days return policy" },
-  { icon: Shield, title: "Secure Payment", description: "100% secure checkout" },
-  { icon: CreditCard, title: "Multiple Payment", description: "Various payment methods" },
-];
-
 export default function Footer() {
-  const [email, setEmail] = useState("");
-  const [isSubmitting, setIsSubmitting] = useState(false);
-
-  const handleSubscribe = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!email.trim()) {
-      toast.error("Please enter your email address");
-      return;
-    }
-
-    // Basic email validation
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(email)) {
-      toast.error("Please enter a valid email address");
-      return;
-    }
-
-    setIsSubmitting(true);
-    try {
-      // Simulate API call - replace with actual newsletter API when available
-      await new Promise((resolve) => setTimeout(resolve, 1000));
-      
-      // Store in localStorage as backup until API is ready
-      const subscribers = JSON.parse(localStorage.getItem("newsletter_subscribers") || "[]");
-      if (!subscribers.includes(email)) {
-        subscribers.push(email);
-        localStorage.setItem("newsletter_subscribers", JSON.stringify(subscribers));
-      }
-
-      toast.success("Welcome! You've successfully subscribed to our newsletter.", {
-        description: "You'll receive updates on new products and exclusive offers.",
-      });
-      setEmail("");
-    } catch {
-      toast.error("Failed to subscribe. Please try again.");
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
 
   return (
     <footer className="bg-shop_dark_green text-white">

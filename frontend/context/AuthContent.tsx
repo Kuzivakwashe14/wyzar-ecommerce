@@ -109,9 +109,10 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         headers: { Authorization: `Bearer ${token}` }
       });
       setUser(res.data);
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const axiosError = error as { response?: { status?: number } };
       // If 401, it might mean user doesn't exist yet (syncing) or token invalid
-      if (error.response?.status !== 401) {
+      if (axiosError.response?.status !== 401) {
         console.error('Failed to load user:', error);
       }
       setUser(null);

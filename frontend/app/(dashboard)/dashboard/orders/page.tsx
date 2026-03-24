@@ -72,9 +72,10 @@ const SellerOrdersPage = () => {
         } else {
           setError(data.msg || 'Failed to fetch orders.');
         }
-      } catch (err: any) {
-        setError(err.response?.data?.msg || 'An error occurred while fetching orders.');
-        console.error(err);
+      } catch (err: unknown) {
+        const errObj = err as { response?: { data?: { msg?: string } } };
+        setError(errObj.response?.data?.msg || 'An error occurred while fetching orders.');
+        console.error(errObj);
       } finally {
         setLoading(false);
       }
@@ -83,12 +84,8 @@ const SellerOrdersPage = () => {
     if (!authLoading) {
       fetchOrders();
     }
-  }, [isAuthenticated, authLoading]);
+  }, [isAuthenticated, authLoading, user]);
 
-  // Helper to convert backend uppercase status to frontend title case for API calls
-  const toTitleCase = (status: string) => {
-    return status.charAt(0).toUpperCase() + status.slice(1).toLowerCase();
-  };
 
   const handleStatusUpdate = async (orderId: string, newStatus: string) => {
     if (!isAuthenticated) {
@@ -114,35 +111,10 @@ const SellerOrdersPage = () => {
       } else {
         toast.error(data.msg || 'Failed to update order status.');
       }
-    } catch (err: any) {
-      toast.error(err.response?.data?.msg || 'An error occurred.');
-      console.error(err);
-    }
-  };
-
-  // Handle manual payment confirmation for Paynow orders
-  const handleConfirmPayment = async (orderId: string) => {
-    if (!isAuthenticated) {
-      toast.error('Authentication error. Please log in again.');
-      return;
-    }
-
-    try {
-      const { data } = await api.post(`/orders/${orderId}/confirm-payment`);
-
-      if (data.success) {
-        setOrders(prevOrders =>
-          prevOrders.map(order =>
-            order.id === orderId ? { ...order, status: 'PAID' } : order
-          )
-        );
-        toast.success(data.msg || 'Payment confirmed successfully!');
-      } else {
-        toast.error(data.msg || 'Failed to confirm payment.');
-      }
-    } catch (err: any) {
-      toast.error(err.response?.data?.msg || 'An error occurred.');
-      console.error(err);
+    } catch (err: unknown) {
+      const errObj = err as { response?: { data?: { msg?: string } } };
+      toast.error(errObj.response?.data?.msg || 'An error occurred.');
+      console.error(errObj);
     }
   };
 

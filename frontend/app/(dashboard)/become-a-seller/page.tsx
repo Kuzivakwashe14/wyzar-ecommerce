@@ -7,7 +7,6 @@ import { api, useAuth } from "@/context/AuthContent";
 import { toast } from "sonner"
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
-import axios from "axios";
 import { motion, AnimatePresence } from "framer-motion";
 
 import { Button } from "@/components/ui/button";
@@ -21,10 +20,6 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import {
-  RadioGroup,
-  RadioGroupItem,
-} from "@/components/ui/radio-group";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Progress } from "@/components/ui/progress";
@@ -77,7 +72,6 @@ export default function BecomeASellerPage() {
   
   const [currentStep, setCurrentStep] = useState(1);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [eligibilityError, setEligibilityError] = useState<string | null>(null);
   const [phoneCode, setPhoneCode] = useState("+263");
   const [whatsappCode, setWhatsappCode] = useState("+263");
 
@@ -132,18 +126,20 @@ export default function BecomeASellerPage() {
       ]);
       
       // Gatekeeper Check
-      const revenue = form.getValues("annualRevenue");
+      // annualRevenue is collected but used only for informational purposes.
       // Strict rejection logic removed, now just verification flow.
       // But we can warn or flag.
       
     } else if (currentStep === 2) {
       // Validate documents
       const sellerType = form.getValues("sellerType");
-      const fieldsToValidate: any[] = ["doc_id", "doc_bank"];
+      const fieldsToValidate = ["doc_id", "doc_bank"] as const;
+      const dynamicFields: string[] = [...fieldsToValidate];
       if (sellerType === "business") {
-        fieldsToValidate.push("doc_certificate");
+        dynamicFields.push("doc_certificate");
       }
-      isValid = await form.trigger(fieldsToValidate);
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      isValid = await form.trigger(dynamicFields as any);
     }
 
     if (isValid) {
@@ -207,7 +203,7 @@ export default function BecomeASellerPage() {
       const documentTypes: string[] = [];
       
       // Helper to append file
-      const appendFile = (fileList: any, type: string) => {
+      const appendFile = (fileList: FileList | null | undefined, type: string) => {
         if (fileList && fileList.length > 0) {
           formData.append("documents", fileList[0]);
           documentTypes.push(type);
@@ -236,15 +232,16 @@ export default function BecomeASellerPage() {
       });
       router.push("/dashboard");
 
-    } catch (error: any) {
-      console.error(error);
-      if (error.response?.status === 429) {
+    } catch (error: unknown) {
+      const errObj = error as { response?: { status?: number; data?: { msg?: string } } };
+      console.error(errObj);
+      if (errObj.response?.status === 429) {
          toast.error("Too Many Attempts", {
            description: "You've submitted too many applications. Please wait a while before trying again.",
          });
       } else {
         toast.error("Application Failed", {
-          description: error.response?.data?.msg || "Something went wrong.",
+          description: errObj.response?.data?.msg || "Something went wrong.",
         });
       }
     } finally {
@@ -503,7 +500,9 @@ export default function BecomeASellerPage() {
         <p className="text-sm text-blue-700">Please upload clear images (JPG/PNG) or PDFs. Max 5MB each.</p>
       </div>
 
-      <FormField control={form.control} name="doc_id" render={({ field: { value, onChange, ...field } }) => (
+      <FormField control={form.control} name="doc_id" render={
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+        ({ field: { onChange, value: _v, ...field } }) => (
         <FormItem>
           <FormLabel>Government ID (Passport / National ID) *</FormLabel>
           <FormControl>
@@ -521,7 +520,9 @@ export default function BecomeASellerPage() {
         </FormItem>
       )} />
 
-       <FormField control={form.control} name="doc_bank" render={({ field: { value, onChange, ...field } }) => (
+       <FormField control={form.control} name="doc_bank" render={
+         // eslint-disable-next-line @typescript-eslint/no-unused-vars
+         ({ field: { onChange, value: _v, ...field } }) => (
         <FormItem>
           <FormLabel>Bank Confirmation / Statement *</FormLabel>
           <FormDescription>Proof of account for payouts.</FormDescription>
@@ -541,7 +542,9 @@ export default function BecomeASellerPage() {
       )} />
 
       {form.watch("sellerType") === "business" && (
-        <FormField control={form.control} name="doc_certificate" render={({ field: { value, onChange, ...field } }) => (
+        <FormField control={form.control} name="doc_certificate" render={
+          // eslint-disable-next-line @typescript-eslint/no-unused-vars
+          ({ field: { onChange, value: _v, ...field } }) => (
           <FormItem>
             <FormLabel>Company Registration Certificate *</FormLabel>
             <FormControl>
@@ -560,7 +563,9 @@ export default function BecomeASellerPage() {
         )} />
       )}
 
-      <FormField control={form.control} name="doc_tax" render={({ field: { value, onChange, ...field } }) => (
+      <FormField control={form.control} name="doc_tax" render={
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+        ({ field: { onChange, value: _v, ...field } }) => (
         <FormItem>
           <FormLabel>Tax Clearance (Optional)</FormLabel>
           <FormControl>
@@ -686,7 +691,7 @@ export default function BecomeASellerPage() {
           console.error("Validation Errors:", JSON.stringify(errors, null, 2));
           console.log("Current Form Values:", form.getValues());
           toast.error("Form Validation Failed", {
-            description: Object.values(errors).map((e: any) => e.message).join(", ") || "Unknown error. Check console."
+            description: Object.values(errors).map((e) => (e as { message?: string })?.message).join(", ") || "Unknown error. Check console."
           });
         })} className="bg-white p-6 md:p-8 rounded-xl border shadow-sm space-y-8">
           

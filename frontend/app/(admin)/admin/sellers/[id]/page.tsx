@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { useAuth } from '@/context/AuthContent';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
@@ -8,14 +8,12 @@ import {
   ArrowLeft,
   Mail,
   Phone,
-  Calendar,
   Shield,
   Ban,
   FileText,
   MapPin,
   Globe,
   DollarSign,
-  Package,
   Clock,
   CheckCircle,
   XCircle,
@@ -86,6 +84,12 @@ interface SellerDetail {
   };
 }
 
+interface SellerStats {
+  products: number;
+  orders: number;
+  revenue: number;
+}
+
 export default function SellerDetailsPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
   const router = useRouter();
@@ -93,29 +97,30 @@ export default function SellerDetailsPage({ params }: { params: Promise<{ id: st
   
   const [seller, setSeller] = useState<SellerDetail | null>(null);
   const [loading, setLoading] = useState(true);
-  const [stats, setStats] = useState<any>(null);
+  const [stats, setStats] = useState<SellerStats | null>(null);
   const [processing, setProcessing] = useState(false);
 
-  useEffect(() => {
-    fetchSellerDetails();
-  }, [id]);
-
-  const fetchSellerDetails = async () => {
+  const fetchSellerDetails = useCallback(async () => {
     try {
       setLoading(true);
       const res = await axiosInstance.get(`/admin/sellers/${id}`);
       setSeller(res.data.seller);
       setStats(res.data.stats);
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const errObj = error as { response?: { status?: number; data?: { msg?: string } } };
       console.error('Error fetching seller details:', error);
-      if (error.response?.status === 404) {
+      if (errObj.response?.status === 404) {
         alert('Seller not found');
         router.push('/admin/sellers');
       }
     } finally {
       setLoading(false);
     }
-  };
+  }, [id, axiosInstance, router]);
+
+  useEffect(() => {
+    fetchSellerDetails();
+  }, [fetchSellerDetails]);
 
   const handleSuspend = async (suspend: boolean) => {
     if (!confirm(`Are you sure you want to ${suspend ? 'suspend' : 'unsuspend'} this seller?`)) return;
@@ -132,9 +137,10 @@ export default function SellerDetailsPage({ params }: { params: Promise<{ id: st
 
       alert(`Seller ${suspend ? 'suspended' : 'unsuspended'} successfully`);
       fetchSellerDetails();
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const errObj = error as { response?: { data?: { msg?: string } } };
       console.error('Error updating seller status:', error);
-      alert(error.response?.data?.msg || 'Failed to update status');
+      alert(errObj.response?.data?.msg || 'Failed to update status');
     } finally {
       setProcessing(false);
     }
@@ -154,9 +160,10 @@ export default function SellerDetailsPage({ params }: { params: Promise<{ id: st
 
       alert('Seller moved back to review successfully');
       fetchSellerDetails();
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const errObj = error as { response?: { data?: { msg?: string } } };
       console.error('Error reversing verification:', error);
-      alert(error.response?.data?.msg || 'Failed to reverse verification');
+      alert(errObj.response?.data?.msg || 'Failed to reverse verification');
     } finally {
       setProcessing(false);
     }
@@ -173,9 +180,10 @@ export default function SellerDetailsPage({ params }: { params: Promise<{ id: st
       await axiosInstance.delete(`/admin/sellers/${id}`);
       alert('Seller deleted successfully');
       router.push('/admin/sellers/verified');
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const errObj = error as { response?: { data?: { msg?: string } } };
       console.error('Error deleting seller:', error);
-      alert(error.response?.data?.msg || 'Failed to delete seller');
+      alert(errObj.response?.data?.msg || 'Failed to delete seller');
     } finally {
       setProcessing(false);
     }
@@ -193,21 +201,22 @@ export default function SellerDetailsPage({ params }: { params: Promise<{ id: st
       const url = window.URL.createObjectURL(blob);
       window.open(url, '_blank');
       setTimeout(() => window.URL.revokeObjectURL(url), 100);
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const errObj = error as { response?: { data?: Blob | { msg?: string; message?: string } }; message?: string };
       console.error('Error viewing document:', error);
       let message = 'Failed to load document';
 
       try {
-        const errorData = error?.response?.data;
+        const errorData = errObj?.response?.data;
         if (errorData instanceof Blob) {
           const text = await errorData.text();
           const parsed = JSON.parse(text);
           message = parsed?.msg || parsed?.message || message;
         } else {
-          message = error?.response?.data?.msg || error?.message || message;
+          message = (errorData as { msg?: string; message?: string })?.msg || (errorData as { msg?: string; message?: string })?.message || errObj?.message || message;
         }
-      } catch (_) {
-        message = error?.response?.data?.msg || error?.message || message;
+      } catch {
+        message = (errObj?.response?.data as { msg?: string })?.msg || errObj?.message || message;
       }
 
       alert(message);

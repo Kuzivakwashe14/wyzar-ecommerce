@@ -1,18 +1,15 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { useAuth } from '@/context/AuthContent';
 import {
   Search,
-  Filter,
   ChevronLeft,
   ChevronRight,
   Mail,
   Phone,
   Ban,
   CheckCircle,
-  XCircle,
-  MoreVertical,
   Shield
 } from 'lucide-react';
 
@@ -44,13 +41,8 @@ export default function UsersPage() {
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [totalUsers, setTotalUsers] = useState(0);
-  const [selectedUser, setSelectedUser] = useState<User | null>(null);
 
-  useEffect(() => {
-    fetchUsers();
-  }, [currentPage, search, filterSeller, filterSuspended]);
-
-  const fetchUsers = async () => {
+  const fetchUsers = useCallback(async () => {
     try {
       setLoading(true);
       const params = new URLSearchParams({
@@ -71,7 +63,11 @@ export default function UsersPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [axiosInstance, currentPage, search, filterSeller, filterSuspended]);
+
+  useEffect(() => {
+    fetchUsers();
+  }, [fetchUsers]);
 
   const handleSuspend = async (userId: string, suspend: boolean, reason?: string) => {
     try {
@@ -81,10 +77,10 @@ export default function UsersPage() {
       });
       alert(suspend ? 'User suspended successfully' : 'User unsuspended successfully');
       fetchUsers();
-      setSelectedUser(null);
-    } catch (error: any) {
-      console.error('Error suspending user:', error);
-      alert(error.response?.data?.msg || 'Failed to update user');
+    } catch (error: unknown) {
+      const errObj = error as { response?: { data?: { msg?: string } } };
+      console.error('Error suspending user:', errObj);
+      alert(errObj.response?.data?.msg || 'Failed to update user');
     }
   };
 

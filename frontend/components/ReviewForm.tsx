@@ -72,9 +72,10 @@ export default function ReviewForm({
       }
 
       onSuccess();
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const errObj = error as { response?: { data?: { msg?: string } } };
       console.error('Error submitting review:', error);
-      toast.error(error.response?.data?.msg || 'Failed to submit review');
+      toast.error(errObj.response?.data?.msg || 'Failed to submit review');
     } finally {
       setSubmitting(false);
     }

@@ -1,10 +1,10 @@
 "use client";
 
-import { useEffect, useState, Suspense } from "react";
-import { useSearchParams, useRouter } from "next/navigation";
+import { useEffect, useState, Suspense, useCallback } from "react";
+import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { useAuth, api } from "@/context/AuthContent";
-import { CheckCircle2, Copy, Upload, MessageCircle, Smartphone, Building2, AlertTriangle, XCircle, CreditCard, RefreshCw } from "lucide-react";
+import { CheckCircle2, Copy, Upload, MessageCircle, Smartphone, Building2, AlertTriangle, XCircle, RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -40,8 +40,6 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 
-// Get the backend URL
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
 
 interface OrderItem {
   id: string;
@@ -81,7 +79,6 @@ function OrderSuccessContent() {
   const { loading: authLoading } = useAuth();
   const searchParams = useSearchParams();
   const orderId = searchParams.get("orderId");
-  const router = useRouter();
 
   const [order, setOrder] = useState<OrderData | null>(null);
   const [sellers, setSellers] = useState<SellerPaymentInfo[]>([]);
@@ -96,11 +93,7 @@ function OrderSuccessContent() {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [isUploading, setIsUploading] = useState(false);
 
-  useEffect(() => {
-    fetchOrderPaymentInfo();
-  }, [orderId, authLoading]);
-
-  async function fetchOrderPaymentInfo() {
+  const fetchOrderPaymentInfo = useCallback(async () => {
     if (!orderId) {
         setError("No order ID provided");
         setIsLoading(false);
@@ -114,13 +107,18 @@ function OrderSuccessContent() {
         setOrder(response.data.order);
         setSellers(response.data.sellers);
         setNewPaymentMethod(response.data.order.paymentMethod);
-      } catch (err: any) {
+      } catch (err: unknown) {
+        const errObj = err as { response?: { data?: { msg?: string } } };
         console.error("Error fetching order:", err);
-        setError(err.response?.data?.msg || "Failed to load order details");
+        setError(errObj.response?.data?.msg || "Failed to load order details");
       } finally {
         setIsLoading(false);
       }
-  }
+  }, [orderId, authLoading]);
+
+  useEffect(() => {
+    fetchOrderPaymentInfo();
+  }, [fetchOrderPaymentInfo]);
 
   const copyToClipboard = (text: string, label: string) => {
     navigator.clipboard.writeText(text);
@@ -152,9 +150,10 @@ function OrderSuccessContent() {
       toast.success("Order cancelled successfully");
       // Refresh order data
       fetchOrderPaymentInfo();
-    } catch (err: any) {
+    } catch (err: unknown) {
+      const errObj = err as { response?: { data?: { msg?: string } } };
       console.error("Cancel error:", err);
-      toast.error(err.response?.data?.msg || "Failed to cancel order");
+      toast.error(errObj.response?.data?.msg || "Failed to cancel order");
     } finally {
       setIsCancelling(false);
     }
@@ -175,9 +174,10 @@ function OrderSuccessContent() {
       setPaymentDialogOpen(false);
       // Refresh order data
       fetchOrderPaymentInfo();
-    } catch (err: any) {
+    } catch (err: unknown) {
+      const errObj = err as { response?: { data?: { msg?: string } } };
       console.error("Update payment error:", err);
-      toast.error(err.response?.data?.msg || "Failed to update payment method");
+      toast.error(errObj.response?.data?.msg || "Failed to update payment method");
     } finally {
       setIsUpdatingPayment(false);
     }
@@ -511,9 +511,10 @@ function OrderSuccessContent() {
                          // Refresh order to show success state
                          fetchOrderPaymentInfo();
                          setSelectedFile(null);
-                      } catch (err: any) {
-                         console.error("Upload proof error:", err);
-                         toast.error(err.response?.data?.msg || "Failed to upload proof");
+                       } catch (err: unknown) {
+                          const errObj = err as { response?: { data?: { msg?: string } } };
+                          console.error("Upload proof error:", err);
+                          toast.error(errObj.response?.data?.msg || "Failed to upload proof");
                       } finally {
                         setIsUploading(false);
                       }

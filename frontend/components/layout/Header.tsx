@@ -1,10 +1,10 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { SignOutButton, UserButton, useUser, useAuth as useClerkAuth } from "@clerk/nextjs";
-import { api } from "@/context/AuthContent";
+import { SignOutButton, useUser } from "@clerk/nextjs";
+
 import Container from "@/components/Container";
 import Logo from "@/components/Logo";
 import { Button } from "@/components/ui/button";
@@ -26,7 +26,6 @@ import { useUnreadMessages } from "@/context/UnreadMessagesContext";
 import CartSheet from "./CartSheet";
 import MobileMenu from "./MobileMenu";
 import {
-  Search,
   Heart,
   User,
   LogOut,

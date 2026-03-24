@@ -29,7 +29,7 @@ export default function ContactUsPage() {
         <div className="text-center mb-12">
           <h1 className="text-4xl font-extrabold text-shop_dark_green mb-4">Contact Us</h1>
           <p className="text-xl text-gray-600">
-            We're here to help. Reach out to our local support team.
+            We&apos;re here to help. Reach out to our local support team.
           </p>
         </div>
 

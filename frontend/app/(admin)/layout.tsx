@@ -34,7 +34,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     if (!loading && (!user || (user.role !== 'admin' && user.role !== 'ADMIN'))) {
       login();
     }
-  }, [user, loading, router]);
+  }, [user, loading, router, login]);
 
   if (loading) {
     return (

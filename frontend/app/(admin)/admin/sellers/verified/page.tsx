@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { useAuth } from '@/context/AuthContent';
 import Link from 'next/link';
 import {
@@ -11,8 +11,6 @@ import {
   MapPin,
   Mail,
   Phone,
-  Calendar,
-  MoreVertical,
   Shield,
   Ban,
   Eye,
@@ -47,11 +45,7 @@ export default function VerifiedSellersPage() {
   const [totalPages, setTotalPages] = useState(1);
   const [totalSellers, setTotalSellers] = useState(0);
 
-  useEffect(() => {
-    fetchSellers();
-  }, [currentPage]);
-
-  const fetchSellers = async (searchQuery = search) => {
+  const fetchSellers = useCallback(async (searchQuery = search) => {
     try {
       setLoading(true);
       const params = new URLSearchParams({
@@ -69,7 +63,11 @@ export default function VerifiedSellersPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [axiosInstance, currentPage, search]);
+
+  useEffect(() => {
+    fetchSellers();
+  }, [fetchSellers]);
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
@@ -92,9 +90,10 @@ export default function VerifiedSellersPage() {
       // Refresh list
       fetchSellers();
       alert(`Seller ${suspend ? 'suspended' : 'unsuspended'} successfully`);
-    } catch (error: any) {
-      console.error('Error updating seller status:', error);
-      alert(error.response?.data?.msg || 'Failed to update seller status');
+    } catch (error: unknown) {
+      const errObj = error as { response?: { data?: { msg?: string } } };
+      console.error('Error updating seller status:', errObj);
+      alert(errObj.response?.data?.msg || 'Failed to update seller status');
     }
   };
 
@@ -111,9 +110,10 @@ export default function VerifiedSellersPage() {
 
       fetchSellers();
       alert('Seller moved back to review successfully');
-    } catch (error: any) {
-      console.error('Error reversing verification:', error);
-      alert(error.response?.data?.msg || 'Failed to reverse verification');
+    } catch (error: unknown) {
+      const errObj = error as { response?: { data?: { msg?: string } } };
+      console.error('Error reversing verification:', errObj);
+      alert(errObj.response?.data?.msg || 'Failed to reverse verification');
     }
   };
 

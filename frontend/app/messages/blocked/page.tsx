@@ -34,7 +34,7 @@ export default function BlockedUsersPage() {
     }
 
     fetchBlockedUsers();
-  }, [user]);
+  }, [user, login]);
 
   const fetchBlockedUsers = async () => {
     try {
@@ -115,7 +115,7 @@ export default function BlockedUsersPage() {
               <Ban className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
               <h3 className="text-xl font-semibold mb-2">No blocked users</h3>
               <p className="text-muted-foreground">
-                You haven't blocked anyone yet
+                You haven&apos;t blocked anyone yet
               </p>
             </div>
           ) : (

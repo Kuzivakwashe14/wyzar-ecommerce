@@ -1,7 +1,7 @@
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { Search, Mail, Phone, MessageSquare, FileQuestion } from "lucide-react";
+import { Search, Mail, MessageSquare, FileQuestion } from "lucide-react";
 import Link from "next/link";
 
 export default function HelpUnknownPage() { // Renamed to avoid conflicts if any, though "HelpPage" is standard
@@ -111,7 +111,7 @@ export default function HelpUnknownPage() { // Renamed to avoid conflicts if any
 }
 
 // Simple icons for this file
-function UserPlusIcon(props: any) {
+function UserPlusIcon(props: React.SVGProps<SVGSVGElement>) {
   return (
     <svg
       {...props}
@@ -133,7 +133,7 @@ function UserPlusIcon(props: any) {
   )
 }
 
-function BoxIcon(props: any) {
+function BoxIcon(props: React.SVGProps<SVGSVGElement>) {
   return (
     <svg
       {...props}

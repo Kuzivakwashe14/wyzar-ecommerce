@@ -31,11 +31,10 @@ import {
   MapPin,
   Clock,
   MessageCircle,
-  Check,
   Copy
 } from "lucide-react";
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
+type ProductWithSellerId = Product & { sellerId?: string };
 
 export default function ProductDetailPage() {
   const [product, setProduct] = useState<Product | null>(null);
@@ -154,7 +153,7 @@ export default function ProductDetailPage() {
       setStartingChat(true);
 
       // Get the seller ID from either seller.id or sellerId field
-      const sellerId = product.seller?.id || (product as any).sellerId;
+      const sellerId = product.seller?.id || (product as ProductWithSellerId).sellerId;
 
       if (!sellerId) {
         toast.error("Seller information not available");
@@ -162,7 +161,7 @@ export default function ProductDetailPage() {
       }
 
       // Create or get conversation
-      const response = await api.post('/messages/send', {
+      await api.post('/messages/send', {
         receiverId: sellerId,
         productId: product.id,
         message: `Hi, I'm interested in ${product.name}. Is this still available?`
@@ -171,9 +170,10 @@ export default function ProductDetailPage() {
       toast.success("Message sent!");
       // Redirect to messages page
       router.push('/messages');
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Error starting chat:', error);
-      const errorMessage = error.response?.data?.msg || 'Failed to start chat';
+      const errObj = error as { response?: { data?: { msg?: string } } };
+      const errorMessage = errObj.response?.data?.msg || 'Failed to start chat';
       toast.error(errorMessage);
     } finally {
       setStartingChat(false);
@@ -368,12 +368,12 @@ export default function ProductDetailPage() {
                     )}
                   </div>
 
-                  {(product.seller?.id || (product as any).sellerId) && (
+                  {(product.seller?.id || (product as ProductWithSellerId).sellerId) && (
                     <div className="mt-3 flex items-center gap-2 text-sm text-gray-600">
                       <Store className="h-4 w-4 text-shop_dark_green" />
                       <span>Sold by</span>
                       <Link
-                        href={`/sellers/${product.seller?.id || (product as any).sellerId}`}
+                        href={`/sellers/${product.seller?.id || (product as ProductWithSellerId).sellerId}`}
                         className="text-shop_dark_green font-medium hover:underline"
                       >
                         {product.seller?.sellerDetails?.businessName || 'Seller'}

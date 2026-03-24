@@ -57,11 +57,11 @@ const formSchema = z.object({
     .refine((files) => files?.length >= 1, "At least one image is required.")
     .refine((files) => files?.length <= 5, "Maximum 5 images allowed.")
     .refine((files) =>
-      Array.from(files).every((file: any) => file?.size <= MAX_FILE_SIZE),
+      Array.from(files).every((file: unknown) => (file as File)?.size <= MAX_FILE_SIZE),
       `Max file size is 5MB.`
     )
     .refine((files) =>
-      Array.from(files).every((file: any) => ACCEPTED_IMAGE_TYPES.includes(file?.type)),
+      Array.from(files).every((file: unknown) => ACCEPTED_IMAGE_TYPES.includes((file as File)?.type)),
       "Only .jpg, .jpeg, and .png files are accepted."
     ),
 });
@@ -78,7 +78,7 @@ export default function NewProductPage() {
       else if (!user?.isSeller) router.push("/become-a-seller");
       else if (user?.isSeller && !user?.isVerified) router.push("/dashboard");
     }
-  }, [isAuthenticated, user, loading, router]);
+  }, [isAuthenticated, user, loading, router, login]);
 
   // 3. Define the form
   const form = useForm({
@@ -110,7 +110,7 @@ export default function NewProductPage() {
     formData.append("countryOfOrigin", values.countryOfOrigin || "");
 
     // Append all files
-    Array.from(values.productImages).forEach((file: any) => {
+    Array.from(values.productImages as FileList).forEach((file: File) => {
       formData.append("productImages", file);
     });
 
@@ -127,11 +127,11 @@ export default function NewProductPage() {
       form.reset();
       router.push("/dashboard"); // Go back to dashboard
 
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error("Product creation failed:", error);
       let errorMessage = "Creation failed. Please try again.";
       if (axios.isAxiosError(error) && error.response) {
-        errorMessage = error.response.data.msg || errorMessage;
+        errorMessage = (error.response.data as { msg?: string })?.msg || errorMessage;
       }
       toast(
         "Error",{
@@ -185,7 +185,8 @@ export default function NewProductPage() {
           <FormField
             control={form.control}
             name="productImages"
-            render={({ field }) => (
+            // eslint-disable-next-line @typescript-eslint/no-unused-vars
+            render={({ field: _field }) => (
               <FormItem>
                 <FormLabel>Product Images</FormLabel>
                 <FormControl>

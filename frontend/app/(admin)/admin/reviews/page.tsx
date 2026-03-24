@@ -1,8 +1,8 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { useAuth } from '@/context/AuthContent';
-import { Star, CheckCircle, XCircle, Trash2, Eye } from 'lucide-react';
+import { Star, CheckCircle, XCircle, Trash2 } from 'lucide-react';
 
 interface Review {
   id: string;
@@ -32,11 +32,7 @@ export default function ReviewsPage() {
   const [statusFilter, setStatusFilter] = useState('');
   const [selectedReview, setSelectedReview] = useState<Review | null>(null);
 
-  useEffect(() => {
-    fetchReviews();
-  }, [currentPage, statusFilter]);
-
-  const fetchReviews = async () => {
+  const fetchReviews = useCallback(async () => {
     try {
       setLoading(true);
       const params = new URLSearchParams({
@@ -53,7 +49,11 @@ export default function ReviewsPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [axiosInstance, currentPage, statusFilter]);
+
+  useEffect(() => {
+    fetchReviews();
+  }, [fetchReviews]);
 
   const handleApprove = async (reviewId: string, approve: boolean) => {
     try {
@@ -61,9 +61,10 @@ export default function ReviewsPage() {
       alert(`Review ${approve ? 'approved' : 'rejected'} successfully`);
       fetchReviews();
       setSelectedReview(null);
-    } catch (error: any) {
-      console.error('Error updating review:', error);
-      alert(error.response?.data?.msg || 'Failed to update review');
+    } catch (error: unknown) {
+      const errObj = error as { response?: { data?: { msg?: string } } };
+      console.error('Error updating review:', errObj);
+      alert(errObj.response?.data?.msg || 'Failed to update review');
     }
   };
 
@@ -75,9 +76,10 @@ export default function ReviewsPage() {
       alert('Review deleted successfully');
       fetchReviews();
       setSelectedReview(null);
-    } catch (error: any) {
-      console.error('Error deleting review:', error);
-      alert(error.response?.data?.msg || 'Failed to delete review');
+    } catch (error: unknown) {
+      const errObj = error as { response?: { data?: { msg?: string } } };
+      console.error('Error deleting review:', errObj);
+      alert(errObj.response?.data?.msg || 'Failed to delete review');
     }
   };
 

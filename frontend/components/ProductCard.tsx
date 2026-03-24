@@ -13,6 +13,9 @@ import { useWishlist } from "@/context/WishlistContext";
 import { getImageUrl, cn } from "@/lib/utils";
 import { Heart, ShoppingCart, Star, Eye } from "lucide-react";
 
+// Module-level timestamp used to avoid calling Date.now() during render
+const MODULE_LOAD_TIMESTAMP = Date.now();
+
 // Define the Product type to match our API response
 export interface Product {
   id: string;
@@ -49,9 +52,9 @@ export default function ProductCard({ product }: ProductCardProps) {
   const router = useRouter();
 
   const imageUrl = getImageUrl(product.images[0]);
-  // Map backend fields to frontend expectation
-  const rating = product.rating?.average || (product as any).ratingAverage || 0;
-  const reviewCount = product.rating?.count || (product as any).ratingCount || 0;
+  const productWithExtra = product as Product & { ratingAverage?: number; ratingCount?: number };
+  const rating = product.rating?.average || productWithExtra.ratingAverage || 0;
+  const reviewCount = product.rating?.count || productWithExtra.ratingCount || 0;
   const isWishlisted = isInWishlist(product.id);
 
   const handleAddToCart = (e: React.MouseEvent) => {
@@ -114,7 +117,7 @@ export default function ProductCard({ product }: ProductCardProps) {
             </Badge>
           )}
           {/* Check if product is new (created within last 7 days) */}
-          {new Date(product.createdAt) > new Date(Date.now() - 7 * 24 * 60 * 60 * 1000) && (
+          {new Date(product.createdAt) > new Date(MODULE_LOAD_TIMESTAMP - 7 * 24 * 60 * 60 * 1000) && (
             <Badge className="bg-shop_light_green text-white text-xs">
               New
             </Badge>

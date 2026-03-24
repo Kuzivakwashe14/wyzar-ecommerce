@@ -1,11 +1,10 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { useAuth } from '@/context/AuthContent';
 import {
   Shield,
   UserPlus,
-  Key,
   Trash2,
   Users,
   Crown,
@@ -46,31 +45,33 @@ export default function AccessControlPage() {
     confirmPassword: ''
   });
 
-  useEffect(() => {
-    fetchAdmins();
-    fetchStats();
-  }, []);
-
-  const fetchAdmins = async () => {
+  const fetchAdmins = useCallback(async () => {
     try {
       const res = await axiosInstance.get('/admin/access-control/admins');
       setAdmins(res.data.admins);
-    } catch (error: any) {
-      console.error('Error fetching admins:', error);
+    } catch (error: unknown) {
+      const errObj = error as { response?: { data?: { msg?: string } } };
+      console.error('Error fetching admins:', errObj);
       toast.error('Failed to load admins');
     } finally {
       setLoading(false);
     }
-  };
+  }, [axiosInstance]);
 
-  const fetchStats = async () => {
+  const fetchStats = useCallback(async () => {
     try {
       const res = await axiosInstance.get('/admin/access-control/role-stats');
       setStats(res.data.stats);
-    } catch (error: any) {
-      console.error('Error fetching stats:', error);
+    } catch (error: unknown) {
+      const errObj = error as { message?: string };
+      console.error('Error fetching stats:', errObj);
     }
-  };
+  }, [axiosInstance]);
+
+  useEffect(() => {
+    fetchAdmins();
+    fetchStats();
+  }, [fetchAdmins, fetchStats]);
 
   const handleCreateAdmin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -101,8 +102,9 @@ export default function AccessControlPage() {
 
       // Refresh stats
       fetchStats();
-    } catch (error: any) {
-      const errorMsg = error.response?.data?.msg || 'Failed to create admin';
+    } catch (error: unknown) {
+      const errObj = error as { response?: { data?: { msg?: string } } };
+      const errorMsg = errObj.response?.data?.msg || 'Failed to create admin';
       toast.error(errorMsg);
     }
   };
@@ -118,8 +120,9 @@ export default function AccessControlPage() {
       toast.success(res.data.msg);
       setAdmins(admins.filter(a => a.id !== adminId));
       fetchStats();
-    } catch (error: any) {
-      const errorMsg = error.response?.data?.msg || 'Failed to remove admin';
+    } catch (error: unknown) {
+      const errObj = error as { response?: { data?: { msg?: string } } };
+      const errorMsg = errObj.response?.data?.msg || 'Failed to remove admin';
       toast.error(errorMsg);
     }
   };

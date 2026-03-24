@@ -23,12 +23,8 @@ export const SocketProvider: React.FC<{ children: React.ReactNode }> = ({ childr
 
   useEffect(() => {
     if (!user) {
-      // Disconnect if user logs out
-      if (socket) {
-        socket.disconnect();
-        setSocket(null);
-        setIsConnected(false);
-      }
+      // User logged out – the cleanup from the previous effect run
+      // already called socket.disconnect(); nothing to do here.
       return;
     }
 
@@ -59,11 +55,14 @@ export const SocketProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       setIsConnected(false);
     });
 
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setSocket(newSocket);
 
-    // Cleanup on unmount
+    // Cleanup: disconnect & reset state
     return () => {
       newSocket.disconnect();
+      setSocket(null);
+      setIsConnected(false);
     };
   }, [user]);
 

@@ -60,15 +60,14 @@ export default function SettingsPage() {
         });
       }
     }
-  }, [isAuthenticated, user, loading, router, form]);
+  }, [isAuthenticated, user, loading, router, form, login]);
 
 
   // 4. Define the submit handler
   async function onSubmit(values: z.infer<typeof formSchema>) {
     setIsSubmitting(true);
     try {
-      // Call our new PUT route
-      const response = await api.put("/seller/profile", values);
+      await api.put("/seller/profile", values);
 
       // Refresh the user data in our context
       await refreshUser();   
@@ -78,11 +77,11 @@ export default function SettingsPage() {
         description: "Your business profile has been updated.",
       });
 
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error("Profile update failed:", error);
       let errorMessage = "Update failed. Please try again.";
       if (axios.isAxiosError(error) && error.response) {
-        errorMessage = error.response.data.msg || errorMessage;
+        errorMessage = (error.response.data as { msg?: string })?.msg || errorMessage;
       }
       toast(
         "Error",{

@@ -3,7 +3,6 @@
 
 import { useEffect, useState } from "react";
 import { useAuth, api } from "@/context/AuthContent";
-import { useRouter } from "next/navigation";
 import Image from "next/image";
 import {
   Accordion,
@@ -33,7 +32,6 @@ interface Order {
 }
 
 export default function MyOrdersPage() {
-  const router = useRouter();
   const { isAuthenticated, loading: authLoading, login } = useAuth();
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
@@ -43,7 +41,7 @@ export default function MyOrdersPage() {
     if (!authLoading && !isAuthenticated) {
       login();
     }
-  }, [isAuthenticated, authLoading, router]);
+  }, [isAuthenticated, authLoading, login]);
 
   // 2. Fetch orders
   useEffect(() => {

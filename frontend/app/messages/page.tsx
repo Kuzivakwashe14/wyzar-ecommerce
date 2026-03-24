@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { api } from '@/context/AuthContent';
 import { Card } from '@/components/ui/card';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -58,13 +58,30 @@ export default function MessagesPage() {
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
 
+  const fetchConversations = useCallback(async () => {
+    try {
+      setLoading(true);
+      const response = await api.get('/messages/conversations');
+      setConversations(response.data);
+    } catch (error: unknown) {
+      const errObj = error as { response?: { status?: number } };
+      if (errObj?.response?.status === 401) {
+        console.log('User not authenticated');
+      } else {
+        console.error('Error fetching conversations:', error);
+      }
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
   useEffect(() => {
     if (!authLoading && user) {
       fetchConversations();
     } else if (!authLoading && !user) {
       setLoading(false);
     }
-  }, [user, authLoading]);
+  }, [user, authLoading, fetchConversations]);
 
   useEffect(() => {
     if (!socket || !user) return;
@@ -106,30 +123,16 @@ export default function MessagesPage() {
     return () => {
       socket.off('new_message', handleIncomingMessage);
     };
-  }, [socket, user, selectedConversation]);
+  }, [socket, user, selectedConversation, fetchConversations]);
 
-  const fetchConversations = async () => {
-    try {
-      setLoading(true);
-      const response = await api.get('/messages/conversations');
-      setConversations(response.data);
-    } catch (error: any) {
-      if (error?.response?.status === 401) {
-        console.log('User not authenticated');
-      } else {
-        console.error('Error fetching conversations:', error);
-      }
-    } finally {
-      setLoading(false);
-    }
+
+
+  const getUserDisplayName = (otherUser: Conversation['otherUser']) => {
+    return otherUser?.sellerDetails?.businessName || otherUser?.email?.split('@')[0] || 'User';
   };
 
-  const getUserDisplayName = (user: any) => {
-    return user?.sellerDetails?.businessName || user?.email?.split('@')[0] || 'User';
-  };
-
-  const getInitials = (user: any) => {
-    const name = getUserDisplayName(user);
+  const getInitials = (otherUser: Conversation['otherUser']) => {
+    const name = getUserDisplayName(otherUser);
     return name?.substring(0, 2).toUpperCase() || 'U';
   };
 

@@ -8,7 +8,7 @@ export default function TermsConditionsPage() {
         <div className="prose prose-green max-w-none text-gray-700">
           <h2 className="text-xl font-bold mt-8 mb-4">1. Introduction</h2>
           <p>
-            Welcome to Wyzar Marketplace! These terms and conditions outline the rules and regulations for the use of Wyzar's Website. By accessing this website we assume you accept these terms and conditions. Do not continue to use Wyzar if you do not agree to take all of the terms and conditions stated on this page.
+            Welcome to Wyzar Marketplace! These terms and conditions outline the rules and regulations for the use of Wyzar&apos;s Website. By accessing this website we assume you accept these terms and conditions. Do not continue to use Wyzar if you do not agree to take all of the terms and conditions stated on this page.
           </p>
 
           <h2 className="text-xl font-bold mt-8 mb-4">2. Buying and Payments</h2>

@@ -10,7 +10,7 @@ const API_BASE_URL = 'http://localhost:5000/api';
 export const apiRequest = async (
   endpoint: string,
   options: RequestInit = {}
-): Promise<any> => {
+): Promise<unknown> => {
   try {
     const authToken = localStorage.getItem('authToken'); // or however you store it
 
@@ -67,7 +67,7 @@ export const apiRequest = async (
 };
 
 // Example usage functions
-export const createOrder = async (orderData: any) => {
+export const createOrder = async (orderData: Record<string, unknown>) => {
   return apiRequest('/orders/create', {
     method: 'POST',
     body: JSON.stringify(orderData)
@@ -110,7 +110,7 @@ export const deleteProduct = async (productId: string) => {
   });
 };
 
-export const createReview = async (reviewData: any) => {
+export const createReview = async (reviewData: Record<string, unknown>) => {
   return apiRequest('/reviews', {
     method: 'POST',
     body: JSON.stringify(reviewData)

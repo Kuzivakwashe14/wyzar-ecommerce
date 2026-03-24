@@ -1,7 +1,7 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { useAuth, api } from "@/context/AuthContent";
+import { useEffect, useState, useCallback } from "react";
+import { api } from "@/context/AuthContent";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -15,13 +15,9 @@ import {
 } from "@/components/ui/table";
 import { 
   CheckCircle2, 
-  XCircle, 
-  Eye, 
   FileText, 
-  Download,
   ExternalLink,
   Search,
-  Filter
 } from "lucide-react";
 import { toast } from "sonner";
 import { Input } from "@/components/ui/input";
@@ -46,18 +42,17 @@ interface Order {
     email: string;
     phone: string;
   };
-  orderItems: any[];
+  orderItems: { name: string; quantity: number; price: number }[];
 }
 
 export default function AdminPaymentVerificationPage() {
-  const { user } = useAuth();
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedProof, setSelectedProof] = useState<string | null>(null);
   const [verifyingId, setVerifyingId] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
 
-  const fetchPendingOrders = async () => {
+  const fetchPendingOrders = useCallback(async () => {
     try {
       setLoading(true);
       // Fetch PENDING orders
@@ -76,11 +71,11 @@ export default function AdminPaymentVerificationPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
   useEffect(() => {
     fetchPendingOrders();
-  }, []);
+  }, [fetchPendingOrders]);
 
   const handleVerify = async (orderId: string) => {
     if (!confirm("Are you sure you want to verify this payment? This will mark the order as PAID.")) return;
@@ -90,9 +85,10 @@ export default function AdminPaymentVerificationPage() {
       await api.put(`/orders/${orderId}/verify-payment`);
       toast.success("Payment verified successfully");
       fetchPendingOrders(); // Refresh list
-    } catch (error: any) {
-      console.error("Verification error:", error);
-      toast.error(error.response?.data?.msg || "Failed to verify payment");
+    } catch (error: unknown) {
+      const errObj = error as { response?: { data?: { msg?: string } } };
+      console.error("Verification error:", errObj);
+      toast.error(errObj.response?.data?.msg || "Failed to verify payment");
     } finally {
       setVerifyingId(null);
     }
@@ -239,17 +235,13 @@ export default function AdminPaymentVerificationPage() {
             </DialogDescription>
           </DialogHeader>
           <div className="mt-4 flex justify-center bg-slate-100 rounded-lg p-4">
-            {selectedProof && (
-               selectedProof.toLowerCase().endsWith('.pdf') ? (
-                 <iframe src={selectedProof} className="w-full h-[60vh]" title="Proof PDF" />
-               ) : (
-                 <img 
-                   src={selectedProof} 
-                   alt="Payment Proof" 
-                   className="max-w-full h-auto object-contain max-h-[70vh]" 
-                 />
-               )
-            )}
+            {selectedProof && (() => {
+              if (selectedProof.toLowerCase().endsWith('.pdf')) {
+                return <iframe src={selectedProof} className="w-full h-[60vh]" title="Proof PDF" />;
+              }
+              // eslint-disable-next-line @next/next/no-img-element
+              return <img src={selectedProof} alt="Payment Proof" className="max-w-full h-auto object-contain max-h-[70vh]" />;
+            })()}
           </div>
           <div className="flex justify-end gap-2 mt-4">
              <Button variant="outline" onClick={() => window.open(selectedProof!, '_blank')}>

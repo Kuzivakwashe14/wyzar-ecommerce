@@ -39,20 +39,22 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
   useEffect(() => {
     if (loading) return;
 
-    setCartItems([]);
-
+    let newCart: CartItem[] = [];
     try {
       const savedCart = localStorage.getItem(storageKey);
       if (savedCart) {
         const parsed = JSON.parse(savedCart);
         if (Array.isArray(parsed)) {
-          setCartItems(parsed);
+          newCart = parsed;
         }
       }
     } catch (error) {
       console.error('Error loading cart from localStorage:', error);
     }
-    setIsHydrated(true);
+    queueMicrotask(() => {
+      setCartItems(newCart);
+      setIsHydrated(true);
+    });
   }, [storageKey, loading]);
 
   // 6. Save cart to scoped localStorage key whenever it changes

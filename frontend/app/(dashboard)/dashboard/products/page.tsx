@@ -38,7 +38,6 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
 
 export default function MyProductsPage() {
   const router = useRouter();
@@ -53,7 +52,7 @@ export default function MyProductsPage() {
       else if (!user?.isSeller) router.push("/become-a-seller");
       else if (user?.isSeller && !user?.isVerified) router.push("/dashboard");
     }
-  }, [isAuthenticated, user, authLoading, router]);
+  }, [isAuthenticated, user, authLoading, router, login]);
 
   // 2. Fetch seller's products
   useEffect(() => {
@@ -72,7 +71,7 @@ export default function MyProductsPage() {
       };
       fetchProducts();
     }
-  }, [user, toast]);
+  }, [user]);
 
   // 3. Handle Delete
   const handleDelete = async (productId: string) => {

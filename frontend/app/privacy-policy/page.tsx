@@ -7,7 +7,7 @@ export default function PrivacyPolicyPage() {
 
         <div className="prose prose-green max-w-none text-gray-700">
           <p>
-            At Wyzar Marketplace ("we", "us", "our"), accessible from wyzar.co.zw, one of our main priorities is the privacy of our visitors. This Privacy Policy document contains types of information that is collected and recorded by Wyzar and how we use it.
+            At Wyzar Marketplace (&quot;we&quot;, &quot;us&quot;, &quot;our&quot;), accessible from wyzar.co.zw, one of our main priorities is the privacy of our visitors. This Privacy Policy document contains types of information that is collected and recorded by Wyzar and how we use it.
           </p>
 
           <h2 className="text-xl font-bold mt-8 mb-4">1. Data Protection Act (Zimbabwe)</h2>

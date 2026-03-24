@@ -1,9 +1,8 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { useAuth } from '@/context/AuthContent';
 import {
-  Search,
   ChevronLeft,
   ChevronRight,
   Package,
@@ -39,17 +38,13 @@ export default function OrdersPage() {
   const { axiosInstance } = useAuth();
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
-  const [search, setSearch] = useState('');
+
   const [statusFilter, setStatusFilter] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [totalOrders, setTotalOrders] = useState(0);
 
-  useEffect(() => {
-    fetchOrders();
-  }, [currentPage, statusFilter]);
-
-  const fetchOrders = async () => {
+  const fetchOrders = useCallback(async () => {
     try {
       setLoading(true);
       const params = new URLSearchParams({
@@ -68,7 +63,11 @@ export default function OrdersPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [axiosInstance, currentPage, statusFilter]);
+
+  useEffect(() => {
+    fetchOrders();
+  }, [fetchOrders]);
 
   const handleStatusChange = async (orderId: string, newStatus: string) => {
     if (!confirm(`Change order status to ${newStatus}?`)) return;
@@ -79,9 +78,10 @@ export default function OrdersPage() {
       });
       alert('Order status updated successfully');
       fetchOrders();
-    } catch (error: any) {
-      console.error('Error updating order status:', error);
-      alert(error.response?.data?.msg || 'Failed to update order status');
+    } catch (error: unknown) {
+      const errObj = error as { response?: { data?: { msg?: string } } };
+      console.error('Error updating order status:', errObj);
+      alert(errObj.response?.data?.msg || 'Failed to update order status');
     }
   };
 

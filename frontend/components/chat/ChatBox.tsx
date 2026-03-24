@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { api } from '@/context/AuthContent';
 import { useSocket } from '@/context/SocketContext';
 import { Button } from '@/components/ui/button';
@@ -50,46 +50,7 @@ export default function ChatBox({ conversationId, otherUser, currentUserId }: Ch
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
-  // Fetch messages
-  useEffect(() => {
-    fetchMessages();
-  }, [conversationId]);
-
-  // Socket listeners
-  useEffect(() => {
-    if (!socket) return;
-
-    const handleNewMessage = (data: any) => {
-      if (data.conversationId === conversationId) {
-        setMessages(prev => [...prev, data.message]);
-        scrollToBottom();
-      }
-    };
-
-    const handleUserTyping = (data: any) => {
-      if (data.conversationId === conversationId && data.userId === otherUser.id) {
-        setIsTyping(true);
-      }
-    };
-
-    const handleUserStopTyping = (data: any) => {
-      if (data.conversationId === conversationId && data.userId === otherUser.id) {
-        setIsTyping(false);
-      }
-    };
-
-    socket.on('new_message', handleNewMessage);
-    socket.on('user_typing', handleUserTyping);
-    socket.on('user_stop_typing', handleUserStopTyping);
-
-    return () => {
-      socket.off('new_message', handleNewMessage);
-      socket.off('user_typing', handleUserTyping);
-      socket.off('user_stop_typing', handleUserStopTyping);
-    };
-  }, [socket, conversationId, otherUser.id]);
-
-  const fetchMessages = async () => {
+  const fetchMessages = useCallback(async () => {
     try {
       setLoading(true);
       const response = await api.get(`/messages/conversation/${conversationId}`);
@@ -100,7 +61,12 @@ export default function ChatBox({ conversationId, otherUser, currentUserId }: Ch
     } finally {
       setLoading(false);
     }
-  };
+  }, [conversationId]);
+
+  // Fetch messages
+  useEffect(() => {
+    fetchMessages();
+  }, [fetchMessages]);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -127,6 +93,40 @@ export default function ChatBox({ conversationId, otherUser, currentUserId }: Ch
       });
     }, 2000);
   };
+
+  // Socket listeners
+  useEffect(() => {
+    if (!socket) return;
+
+    const handleNewMessage = (data: { conversationId: string; message: unknown }) => {
+      if (data.conversationId === conversationId) {
+        setMessages(prev => [...prev, data.message as Message]);
+        scrollToBottom();
+      }
+    };
+
+    const handleUserTyping = (data: { conversationId: string; userId: string }) => {
+      if (data.conversationId === conversationId && data.userId === otherUser.id) {
+        setIsTyping(true);
+      }
+    };
+
+    const handleUserStopTyping = (data: { conversationId: string; userId: string }) => {
+      if (data.conversationId === conversationId && data.userId === otherUser.id) {
+        setIsTyping(false);
+      }
+    };
+
+    socket.on('new_message', handleNewMessage);
+    socket.on('user_typing', handleUserTyping);
+    socket.on('user_stop_typing', handleUserStopTyping);
+
+    return () => {
+      socket.off('new_message', handleNewMessage);
+      socket.off('user_typing', handleUserTyping);
+      socket.off('user_stop_typing', handleUserStopTyping);
+    };
+  }, [socket, conversationId, otherUser.id]);
 
   const handleSendMessage = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -165,11 +165,11 @@ export default function ChatBox({ conversationId, otherUser, currentUserId }: Ch
     }
   };
 
-  const getUserDisplayName = (user: any) => {
+  const getUserDisplayName = (user: ChatBoxProps['otherUser'] | Message['sender']) => {
     return user.sellerDetails?.businessName || user.email.split('@')[0];
   };
 
-  const getInitials = (user: any) => {
+  const getInitials = (user: ChatBoxProps['otherUser'] | Message['sender']) => {
     const name = getUserDisplayName(user);
     return name.substring(0, 2).toUpperCase();
   };

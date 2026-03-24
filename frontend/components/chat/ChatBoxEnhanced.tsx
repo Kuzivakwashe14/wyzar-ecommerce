@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { api } from '@/context/AuthContent';
 import { useSocket } from '@/context/SocketContext';
 import { Button } from '@/components/ui/button';
@@ -64,14 +64,28 @@ export default function ChatBoxEnhanced({ conversationId, otherUser, currentUser
   const { socket } = useSocket();
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
+  const fetchMessages = useCallback(async () => {
+    try {
+      const { data } = await api.get(`/messages/conversation/${conversationId}`);
+      setMessages(data);
+    } catch (error: unknown) {
+      const errObj = error as { response?: { status?: number } };
+      if (errObj.response?.status !== 404) {
+        console.error('Failed to fetch messages:', error);
+      }
+    } finally {
+      setLoading(false);
+    }
+  }, [conversationId]);
+
   useEffect(() => {
     fetchMessages();
-  }, [conversationId]);
+  }, [fetchMessages]);
 
   useEffect(() => {
     if (!socket) return;
 
-    const handleNewMessage = (data: any) => {
+    const handleNewMessage = (data: { conversationId: string; message: Message }) => {
       if (data.conversationId === conversationId) {
         setMessages(prev => {
           const incomingMessageId = data?.message?.id;
@@ -102,19 +116,6 @@ export default function ChatBoxEnhanced({ conversationId, otherUser, currentUser
     scrollToBottom();
   }, [messages]);
 
-  const fetchMessages = async () => {
-    try {
-      setLoading(true);
-      const response = await api.get(`/messages/conversation/${conversationId}`);
-      setMessages(response.data);
-    } catch (error: any) {
-      if (error?.response?.status !== 404) {
-        console.error('Error fetching messages:', error);
-      }
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -140,11 +141,11 @@ export default function ChatBoxEnhanced({ conversationId, otherUser, currentUser
     }
   };
 
-  const getUserDisplayName = (user: any) => {
+  const getUserDisplayName = (user: ChatBoxProps['otherUser']) => {
     return user.sellerDetails?.businessName || user.email?.split('@')[0] || 'User';
   };
 
-  const getInitials = (user: any) => {
+  const getInitials = (user: ChatBoxProps['otherUser']) => {
     const name = getUserDisplayName(user);
     return name.substring(0, 2).toUpperCase();
   };

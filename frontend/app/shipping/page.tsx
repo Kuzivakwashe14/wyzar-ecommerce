@@ -18,7 +18,7 @@ export default function ShippingPage() {
             <section>
               <h2 className="text-xl font-bold text-gray-900 mb-3">Delivery Times</h2>
               <p>
-                Delivery times vary depending on the seller's location and your destination.
+                Delivery times vary depending on the seller&apos;s location and your destination.
               </p>
               <ul className="list-disc pl-5 space-y-2 mt-2">
                 <li><strong>Harare & Bulawayo:</strong> 1-3 business days</li>
