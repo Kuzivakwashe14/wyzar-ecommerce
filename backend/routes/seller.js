@@ -10,6 +10,7 @@ const path = require("path");
 const crypto = require("crypto");
 const fs = require("fs");
 const { getStoragePath, getPublicUrl } = require("../config/localStorage");
+const { uploadToImageKit, validateConfig } = require("../config/imagekit");
 
 // Helper to calculate file hash
 const calculateFileHash = (filePath) => {
@@ -192,9 +193,26 @@ router.post("/apply", auth, sellerAppLimiter, flexibleUpload, validateBody(selle
         return res.status(400).json({ msg: `Document '${file.originalname}' has already been used by another account.` });
       }
 
+      // Upload to ImageKit
+      let documentPath = file.path;
+      if (validateConfig()) {
+        const uploadResult = await uploadToImageKit(
+          file.path,
+          file.originalname,
+          'verification',
+          { tags: ['verification', `user-${req.user.id}`] }
+        );
+        if (uploadResult.success) {
+          documentPath = uploadResult.url;
+          try { fs.unlinkSync(file.path); } catch(e) {}
+        } else {
+          console.warn('ImageKit upload failed for document:', uploadResult.error);
+        }
+      }
+
       processedDocuments.push({
         documentType: docTypes[i] || "other",
-        documentPath: file.path,
+        documentPath: documentPath,
         documentName: file.originalname,
         fileHash: fileHash,
         uploadedAt: new Date(),
@@ -395,12 +413,29 @@ router.post("/upload-document", auth, uploadLimiter, (req, res) => {
         return res.status(400).json({ msg: "This document has already been used by another account." });
       }
 
+      // Upload to ImageKit
+      let documentPath = req.file.path;
+      if (validateConfig()) {
+        const uploadResult = await uploadToImageKit(
+          req.file.path,
+          req.file.originalname,
+          'verification',
+          { tags: ['verification', `user-${req.user.id}`] }
+        );
+        if (uploadResult.success) {
+          documentPath = uploadResult.url;
+          try { fs.unlinkSync(req.file.path); } catch(e) {}
+        } else {
+          console.warn('ImageKit upload failed for document:', uploadResult.error);
+        }
+      }
+
       // Add new document
       const newDocument = await prisma.verificationDocument.create({
         data: {
           sellerDetailsId: user.sellerDetails.id,
           documentType: documentType.toUpperCase().replace("-", "_"),
-          documentPath: req.file.path,
+          documentPath: documentPath,
           documentName: req.file.originalname,
           fileHash: fileHash,
           status: "PENDING",
