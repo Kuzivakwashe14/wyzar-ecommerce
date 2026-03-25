@@ -597,6 +597,7 @@ export default function BecomeASellerPage() {
             <div className="space-y-1 leading-none">
               <FormLabel>I agree to the Catalog Quality Standards</FormLabel>
               <FormDescription>All product images will be on neutral backgrounds and include accurate descriptions/UPCs.</FormDescription>
+              <FormMessage />
             </div>
           </FormItem>
         )} />
@@ -607,6 +608,7 @@ export default function BecomeASellerPage() {
             <div className="space-y-1 leading-none">
               <FormLabel>I agree to the Service Level Agreement (SLA)</FormLabel>
               <FormDescription>I will ship orders within 48 hours, provide tracking, and maintain a low defect rate.</FormDescription>
+              <FormMessage />
             </div>
           </FormItem>
         )} />
