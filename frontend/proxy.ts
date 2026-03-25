@@ -1,17 +1,19 @@
 import { clerkMiddleware, createRouteMatcher } from '@clerk/nextjs/server';
 
-// Define public routes that don't require authentication
-const isPublicRoute = createRouteMatcher([
-  '/',
-  '/products(.*)',
-  '/about',
-  '/contact',
-  '/api/webhooks(.*)',
+// Define routes that require authentication
+// Note: Next.js route groups like (dashboard) don't appear in URLs
+const isProtectedRoute = createRouteMatcher([
+  "/messages(.*)",
+  "/dashboard(.*)",
+  "/become-a-seller(.*)",
+  "/checkout(.*)",
+  "/my-orders(.*)",
+  "/order(.*)",
+  "/admin(.*)",
 ]);
 
 export default clerkMiddleware(async (auth, req) => {
-  // If it's not a public route, require authentication
-  if (!isPublicRoute(req)) {
+  if (isProtectedRoute(req)) {
     await auth.protect();
   }
 });
