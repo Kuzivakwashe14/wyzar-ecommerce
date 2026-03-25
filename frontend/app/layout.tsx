@@ -27,8 +27,8 @@ export default function RootLayout({
 }>) {
   return (
     <ClerkProvider>
-      <html lang="en">
-        <body className={`${inter.className} min-h-screen flex flex-col bg-white`}>
+      <html lang="en" suppressHydrationWarning>
+        <body className={`${inter.className} min-h-screen flex flex-col bg-white`} suppressHydrationWarning>
           <ImageKitProvider>
             <AuthProvider>
               <SocketProvider>
